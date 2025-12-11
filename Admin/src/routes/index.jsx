@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 // Pages Component
 import Chat from "../pages/Chat/Chat";
 import Chatbot from "../pages/Chatbot/index";
+import AIAgentTest from "../pages/AIAgentTest/index";
 
 // // File Manager
 import FileManager from "../pages/FileManager/index";
@@ -196,6 +197,7 @@ const authProtectedRoutes = [
   //chat
   { path: "/chat", component: <Chat /> },
   { path: "/chatbot", component: <Chatbot /> },
+  { path: "/ai-agent-test", component: <AIAgentTest /> },
 
   //File Manager
   { path: "/apps-filemanager", component: <FileManager /> },

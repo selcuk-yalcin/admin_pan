@@ -201,6 +201,9 @@ const SidebarContent = (props) => {
                   <Link to="/chatbot">AI Chatbot</Link>
                 </li>
                 <li>
+                  <Link to="/ai-agent-test">Test AI Agent</Link>
+                </li>
+                <li>
                   <Link to="/chat">{props.t("Chat")}</Link>
                 </li>
               </ul>
