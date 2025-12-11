@@ -193,18 +193,18 @@ const SidebarContent = (props) => {
             <li>
               <Link to="/#" className="has-arrow">
                 <i className="bx bx-bot"></i>
-                <span>Chatbot</span>
+                <span>{props.t("Chatbot")}</span>
                 <span className="badge rounded-pill bg-success float-end">AI</span>
               </Link>
               <ul className="sub-menu" aria-expanded="false">
                 <li>
-                  <Link to="/chatbot">AI Chatbot</Link>
+                  <Link to="/chatbot">{props.t("AI Chatbot")}</Link>
                 </li>
                 <li>
-                  <Link to="/ai-agent-test">Test AI Agent</Link>
+                  <Link to="/ai-agent-test">{props.t("Test AI Agent")}</Link>
                 </li>
                 <li>
-                  <Link to="/visual-look">Visual Look</Link>
+                  <Link to="/visual-look">{props.t("Visual Look")}</Link>
                 </li>
                 <li>
                   <Link to="/chat">{props.t("Chat")}</Link>

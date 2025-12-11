@@ -282,20 +282,20 @@ const Navbar = (props) => {
                           setchatbot(!chatbot);
                         }}
                       >
-                        Chatbot <span className="badge rounded-pill bg-success ms-1">AI</span>
+                        {props.t("Chatbot")} <span className="badge rounded-pill bg-success ms-1">AI</span>
                         <div className="arrow-down"></div>
                       </Link>
                       <div
                         className={classname("dropdown-menu", { show: chatbot })}
                       >
                         <Link to="/chatbot" className="dropdown-item">
-                          AI Chatbot
+                          {props.t("AI Chatbot")}
                         </Link>
                         <Link to="/ai-agent-test" className="dropdown-item">
-                          Test AI Agent
+                          {props.t("Test AI Agent")}
                         </Link>
                         <Link to="/visual-look" className="dropdown-item">
-                          Visual Look
+                          {props.t("Visual Look")}
                         </Link>
                         <Link to="/chat" className="dropdown-item">
                           {props.t("Chat")}

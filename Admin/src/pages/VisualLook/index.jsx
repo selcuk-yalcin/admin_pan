@@ -22,7 +22,7 @@ const VisualLook = () => {
   document.title = "Visual Look | Skote - React Admin & Dashboard Template";
 
   const [activeTab, setActiveTab] = useState("general");
-  const [agentName, setAgentName] = useState("Gali Bot");
+  const [agentName, setAgentName] = useState("Infera Bot");
   const [agentOpened, setAgentOpened] = useState(false);
   const [colorMode, setColorMode] = useState("Light Mode");
   const [selectedColor, setSelectedColor] = useState("#3b82f6");
@@ -413,7 +413,7 @@ const VisualLook = () => {
 
                       <div className="text-center mt-3">
                         <small className="text-muted">
-                          Powered by <strong>Gali Chat</strong>
+                          Powered by <strong>Infera</strong>
                         </small>
                       </div>
                     </div>
