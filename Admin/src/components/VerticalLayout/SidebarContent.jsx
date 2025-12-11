@@ -209,6 +209,43 @@ const SidebarContent = (props) => {
                 <li>
                   <Link to="/chat">{props.t("Chat")}</Link>
                 </li>
+                <li>
+                  <Link to="/pages-pricing">{props.t("Pricing")}</Link>
+                </li>
+              </ul>
+            </li>
+
+            <li>
+              <Link to="/#" className="has-arrow">
+                <i className="bx bx-receipt"></i>
+                <span>{props.t("Invoice Bot")}</span>
+                <span className="badge rounded-pill bg-success float-end">AI</span>
+              </Link>
+              <ul className="sub-menu" aria-expanded="false">
+                <li>
+                  <Link to="/invoices-list">{props.t("Invoice List")}</Link>
+                </li>
+                <li>
+                  <Link to="/invoices-detail">{props.t("Invoice Detail")}</Link>
+                </li>
+                <li>
+                  <Link to="/invoice-bot-trendyol">{props.t("Trendyol API")}</Link>
+                </li>
+                <li>
+                  <Link to="/invoice-bot-templates">{props.t("Template Management")}</Link>
+                </li>
+                <li>
+                  <Link to="/invoice-bot-pdf">{props.t("PDF Generation")}</Link>
+                </li>
+                <li>
+                  <Link to="/invoice-bot-accountant">{props.t("Accountant Email")}</Link>
+                </li>
+                <li>
+                  <Link to="/invoice-bot-logs">{props.t("Log Viewer")}</Link>
+                </li>
+                <li>
+                  <Link to="/pages-pricing">{props.t("Pricing")}</Link>
+                </li>
               </ul>
             </li>
 
@@ -330,21 +367,6 @@ const SidebarContent = (props) => {
                 <i className="bx bx-dollar-circle"></i>
                 <span>{props.t("Pricing")}</span>
               </Link>
-            </li>
-
-            <li>
-              <Link to="/#" className="has-arrow ">
-                <i className="bx bx-receipt"></i>
-                <span>{props.t("Invoices")}</span>
-              </Link>
-              <ul className="sub-menu" aria-expanded="false">
-                <li>
-                  <Link to="/invoices-list">{props.t("Invoice List")}</Link>
-                </li>
-                <li>
-                  <Link to="/invoices-detail">{props.t("Invoice Detail")}</Link>
-                </li>
-              </ul>
             </li>
 
             {/* <li>

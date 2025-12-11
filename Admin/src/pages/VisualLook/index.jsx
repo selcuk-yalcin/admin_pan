@@ -228,42 +228,325 @@ const VisualLook = () => {
                     </TabPane>
 
                     <TabPane tabId="input">
-                      <div className="text-center py-5">
-                        <i className="bx bx-message-square-edit display-4 text-muted mb-3"></i>
-                        <h5 className="text-muted">Input Settings</h5>
-                        <p className="text-muted">Configure input field settings and behavior</p>
+                      <div>
+                        <FormGroup className="mb-4">
+                          <Label>Placeholder Message</Label>
+                          <p className="text-muted small mb-2">
+                            Write the input placeholder message that your users will see in the send message input from AI Agent
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder=""
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Request Message</Label>
+                          <p className="text-muted small mb-2">
+                            Write the input placeholder message that your users will see after they send the message in AI Agent
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder=""
+                            className="form-control"
+                          />
+                        </FormGroup>
                       </div>
                     </TabPane>
 
                     <TabPane tabId="action-buttons">
-                      <div className="text-center py-5">
-                        <i className="bx bx-pointer display-4 text-muted mb-3"></i>
-                        <h5 className="text-muted">Action Buttons</h5>
-                        <p className="text-muted">Customize action buttons and quick replies</p>
+                      <div>
+                        <FormGroup className="mb-4">
+                          <Label>Human Button Message</Label>
+                          <p className="text-muted small mb-2">
+                            Write the message that your users will see on the human help button from AI Agent
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder=""
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Finish Button Message</Label>
+                          <p className="text-muted small mb-2">
+                            Write the message that your users will see on the finish conversation button from AI Agent
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder=""
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <div className="mb-4">
+                          <p className="text-muted small mb-3">
+                            Enable/Disable the action buttons for human help and finish conversation
+                          </p>
+                          
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <Label className="mb-0">Human Help</Label>
+                            <div className="form-check form-switch">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="humanHelpSwitch"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center">
+                            <Label className="mb-0">Finish Conversation</Label>
+                            <div className="form-check form-switch">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="finishConversationSwitch"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </TabPane>
 
                     <TabPane tabId="messages">
-                      <div className="text-center py-5">
-                        <i className="bx bx-message-detail display-4 text-muted mb-3"></i>
-                        <h5 className="text-muted">Messages</h5>
-                        <p className="text-muted">Configure message styles and templates</p>
+                      <div>
+                        <FormGroup className="mb-4">
+                          <Label>Bot Welcome Message</Label>
+                          <p className="text-muted small mb-2">
+                            Write the first message that your bot will send to users when they open the chat
+                          </p>
+                          <Input
+                            type="textarea"
+                            rows="3"
+                            placeholder="Welcome! How can I assist you today?"
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Bot Response Delay</Label>
+                          <p className="text-muted small mb-2">
+                            Set the delay (in milliseconds) before the bot responds to messages
+                          </p>
+                          <Input
+                            type="number"
+                            placeholder="1000"
+                            className="form-control"
+                            style={{ maxWidth: "200px" }}
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Typing Indicator</Label>
+                          <p className="text-muted small mb-2">
+                            Show typing indicator while bot is preparing a response
+                          </p>
+                          <div className="form-check form-switch form-switch-lg">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id="typingIndicatorSwitch"
+                              defaultChecked
+                            />
+                            <label className="form-check-label" htmlFor="typingIndicatorSwitch">
+                              Enabled
+                            </label>
+                          </div>
+                        </FormGroup>
                       </div>
                     </TabPane>
 
                     <TabPane tabId="human-form">
-                      <div className="text-center py-5">
-                        <i className="bx bx-user-circle display-4 text-muted mb-3"></i>
-                        <h5 className="text-muted">Human Form</h5>
-                        <p className="text-muted">Setup human agent handoff form</p>
+                      <div>
+                        <FormGroup className="mb-4">
+                          <Label>Human Form Title</Label>
+                          <p className="text-muted small mb-2">
+                            Set the title that appears on the human handoff form
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder="Contact Human Agent"
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Human Form Description</Label>
+                          <p className="text-muted small mb-2">
+                            Write a brief description for users before they request human help
+                          </p>
+                          <Input
+                            type="textarea"
+                            rows="3"
+                            placeholder="Please provide your details and a human agent will assist you shortly."
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Required Fields</Label>
+                          <p className="text-muted small mb-3">
+                            Select which fields are required in the human handoff form
+                          </p>
+                          
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Name</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="nameRequired"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Email</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="emailRequired"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Phone</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="phoneRequired"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center">
+                            <Label className="mb-0 small">Message</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="messageRequired"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+                        </FormGroup>
                       </div>
                     </TabPane>
 
                     <TabPane tabId="leads-form">
-                      <div className="text-center py-5">
-                        <i className="bx bx-id-card display-4 text-muted mb-3"></i>
-                        <h5 className="text-muted">Leads Form</h5>
-                        <p className="text-muted">Configure lead capture form fields</p>
+                      <div>
+                        <FormGroup className="mb-4">
+                          <Label>Lead Form Title</Label>
+                          <p className="text-muted small mb-2">
+                            Set the title that appears on the lead capture form
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder="Get in Touch"
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Lead Form Description</Label>
+                          <p className="text-muted small mb-2">
+                            Write a brief description to encourage users to submit their information
+                          </p>
+                          <Input
+                            type="textarea"
+                            rows="3"
+                            placeholder="Leave your details and we'll get back to you as soon as possible."
+                            className="form-control"
+                          />
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Form Fields</Label>
+                          <p className="text-muted small mb-3">
+                            Configure which fields to collect from leads
+                          </p>
+                          
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Full Name</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="leadNameField"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Email Address</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="leadEmailField"
+                                defaultChecked
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Phone Number</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="leadPhoneField"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <Label className="mb-0 small">Company Name</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="leadCompanyField"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center">
+                            <Label className="mb-0 small">Additional Notes</Label>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="leadNotesField"
+                              />
+                            </div>
+                          </div>
+                        </FormGroup>
+
+                        <FormGroup className="mb-4">
+                          <Label>Submit Button Text</Label>
+                          <p className="text-muted small mb-2">
+                            Customize the text on the submit button
+                          </p>
+                          <Input
+                            type="text"
+                            placeholder="Submit"
+                            className="form-control"
+                            style={{ maxWidth: "200px" }}
+                          />
+                        </FormGroup>
                       </div>
                     </TabPane>
 

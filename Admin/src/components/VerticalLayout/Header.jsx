@@ -86,13 +86,13 @@ const Header = props => {
             <div className="navbar-brand-box d-lg-none d-md-block">
               <Link to="/" className="logo logo-dark">
                 <span className="logo-sm">
-                  <img src={logo} alt="" height="22" />
+                  <h4 className="mb-0 text-dark" style={{ fontWeight: "bold", fontSize: "20px" }}>Infera</h4>
                 </span>
               </Link>
 
               <Link to="/" className="logo logo-light">
                 <span className="logo-sm">
-                  <img src={logoLightSvg} alt="" height="22" />
+                  <h4 className="mb-0 text-white" style={{ fontWeight: "bold", fontSize: "20px" }}>Infera</h4>
                 </span>
               </Link>
             </div>
