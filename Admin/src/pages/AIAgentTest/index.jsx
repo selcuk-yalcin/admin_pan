@@ -22,7 +22,7 @@ const AIAgentTest = () => {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [agentName, setAgentName] = useState("Gali Bot");
+  const [agentName, setAgentName] = useState("Infera Bot");
   const [isOnline, setIsOnline] = useState(true);
   const messagesEndRef = useRef(null);
 
@@ -283,7 +283,7 @@ const AIAgentTest = () => {
 
                     <div className="text-center mt-3">
                       <small className="text-muted">
-                        Powered by <strong>GaliChat</strong>
+                        Powered by <strong>Infera</strong>
                       </small>
                     </div>
                   </div>
@@ -359,7 +359,7 @@ const AIAgentTest = () => {
                   <div className="bg-light p-3 rounded mb-3" style={{ position: "relative" }}>
                     <pre className="mb-0" style={{ fontSize: "12px", whiteSpace: "pre-wrap" }}>
 {`<script
-  src="https://widget.galichat.com/gali-embeded.min.js"
+  src="https://widget.infera.com/infera-embeded.min.js"
   chat-hash="io4pj2iwfiibnjfl05x3hs"
   defer>
 </script>`}
