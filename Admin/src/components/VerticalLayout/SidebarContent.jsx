@@ -170,9 +170,9 @@ const SidebarContent = (props) => {
                 {/* <li>
                   <Link to="/dashboard-crypto">{props.t("Crypto")}</Link>
                 </li> */}
-                <li>
+                {/* <li>
                   <Link to="/blog">{props.t("Blog")}</Link>
-                </li>
+                </li> */}
                 {/* <li>
                   <Link to="/dashboard-job">
                     {props.t("Job")}
@@ -383,7 +383,7 @@ const SidebarContent = (props) => {
               </ul>
             </li>
 
-            <li>
+            {/* <li>
               <Link to="/#" className="has-arrow ">
                 <i className="bx bxs-detail" />
 
@@ -400,7 +400,7 @@ const SidebarContent = (props) => {
                   <Link to="/blog-details">{props.t("Blog Details")}</Link>
                 </li>
               </ul>
-            </li>
+            </li> */}
 
             {/* <li>
               <Link to="/#">
