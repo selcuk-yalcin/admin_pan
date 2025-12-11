@@ -173,11 +173,11 @@ const SidebarContent = (props) => {
                 <li>
                   <Link to="/blog">{props.t("Blog")}</Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/dashboard-job">
                     {props.t("Job")}
                   </Link>
-                </li>
+                </li> */}
               </ul>
             </li>
 
@@ -402,7 +402,7 @@ const SidebarContent = (props) => {
               </ul>
             </li>
 
-            <li>
+            {/* <li>
               <Link to="/#">
 
                 <i className="bx bx-briefcase-alt"></i>
@@ -438,7 +438,7 @@ const SidebarContent = (props) => {
                   </ul>
                 </li>
               </ul>
-            </li>
+            </li> */}
 
             <li className="menu-title">Pages</li>
             <li>

@@ -134,9 +134,9 @@ const Navbar = (props) => {
                     <Link to="/blog" className="dropdown-item">
                       {props.t("Blog")}
                     </Link>
-                    <Link to="/dashboard-job" className="dropdown-item">
+                    {/* <Link to="/dashboard-job" className="dropdown-item">
                       {props.t("Jobs")}
-                    </Link>
+                    </Link> */}
                   </div>
                 </li>
 
@@ -548,7 +548,7 @@ const Navbar = (props) => {
                       </div>
                     </div>
 
-                    <div className="dropdown">
+                    {/* <div className="dropdown">
                       <Link
                         to="/#"
                         className="dropdown-item arrow-none"
@@ -610,7 +610,7 @@ const Navbar = (props) => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </li>
 
