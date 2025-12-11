@@ -3,8 +3,13 @@ import spain from "../assets/images/flags/spain.jpg"
 import germany from "../assets/images/flags/germany.jpg"
 import italy from "../assets/images/flags/italy.jpg"
 import russia from "../assets/images/flags/russia.jpg"
+import turkey from "../assets/images/flags/turkey.jpg"
 
 const languages = {
+  tr: {
+    label: "Türkçe",
+    flag: turkey,
+  },
   sp: {
     label: "Spanish",
     flag: spain,
@@ -21,7 +26,7 @@ const languages = {
     label: "Russian",
     flag: russia,
   },
-  en: {
+  eng: {
     label: "English",
     flag: usFlag,
   },
