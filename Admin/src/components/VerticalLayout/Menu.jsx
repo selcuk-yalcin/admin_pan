@@ -46,6 +46,12 @@ const menuItems = [
       ],
     },
     {
+      id: "pricing",
+      label: "Pricing",
+      icon: "mdi mdi-currency-usd",
+      link: "/pages-pricing",
+    },
+    {
       id: "pages",
       label: "Pages",
       isHeader: true,
@@ -118,12 +124,6 @@ const menuItems = [
           id: "faq",
           label: "FAQs",
           link: "/pages-faqs",
-          parentId: "utility",
-        },
-        {
-          id: "pricing",
-          label: "Pricing",
-          link: "/pages-pricing",
           parentId: "utility",
         },
         {

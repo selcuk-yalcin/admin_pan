@@ -310,6 +310,13 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
+              <Link to="/pages-pricing">
+                <i className="bx bx-dollar-circle"></i>
+                <span>{props.t("Pricing")}</span>
+              </Link>
+            </li>
+
+            <li>
               <Link to="/#" className="has-arrow ">
                 <i className="bx bx-receipt"></i>
                 <span>{props.t("Invoices")}</span>
@@ -527,9 +534,6 @@ const SidebarContent = (props) => {
                 </li>
                 <li>
                   <Link to="/pages-faqs">{props.t("FAQs")}</Link>
-                </li>
-                <li>
-                  <Link to="/pages-pricing">{props.t("Pricing")}</Link>
                 </li>
                 <li>
                   <Link to="/pages-404">{props.t("Error 404")}</Link>
