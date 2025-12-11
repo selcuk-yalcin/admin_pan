@@ -383,40 +383,6 @@ const AIAgentTest = () => {
                   </div>
                 </CardBody>
               </Card>
-
-              <Card>
-                <CardBody>
-                  <h5 className="card-title mb-3">Agent Settings</h5>
-                  <div className="mb-3">
-                    <label className="form-label">Agent Name</label>
-                    <Input
-                      type="text"
-                      value={agentName}
-                      onChange={(e) => setAgentName(e.target.value)}
-                      placeholder="Enter agent name"
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Status</label>
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="agentStatus"
-                        checked={isOnline}
-                        onChange={(e) => setIsOnline(e.target.checked)}
-                      />
-                      <label className="form-check-label" htmlFor="agentStatus">
-                        {isOnline ? 'Online' : 'Offline'}
-                      </label>
-                    </div>
-                  </div>
-                  <Button color="danger" outline className="w-100" onClick={handleReset}>
-                    <i className="bx bx-reset me-1"></i>
-                    Reset Conversation
-                  </Button>
-                </CardBody>
-              </Card>
             </Col>
           </Row>
         </Container>
