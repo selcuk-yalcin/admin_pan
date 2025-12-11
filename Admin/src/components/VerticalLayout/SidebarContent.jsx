@@ -191,18 +191,19 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
-              <Link to="/chat" className="">
-                <i className="bx bx-chat"></i>
-                <span>{props.t("Chat")}</span>
-              </Link>
-            </li>
-            
-            <li>
-              <Link to="/chatbot" className="">
+              <Link to="/#" className="has-arrow">
                 <i className="bx bx-bot"></i>
                 <span>Chatbot</span>
                 <span className="badge rounded-pill bg-success float-end">AI</span>
               </Link>
+              <ul className="sub-menu" aria-expanded="false">
+                <li>
+                  <Link to="/chatbot">AI Chatbot</Link>
+                </li>
+                <li>
+                  <Link to="/chat">{props.t("Chat")}</Link>
+                </li>
+              </ul>
             </li>
 
             <li>

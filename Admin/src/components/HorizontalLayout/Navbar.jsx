@@ -14,6 +14,7 @@ const Navbar = (props) => {
   const [dashboard, setdashboard] = useState(false);
   const [ui, setui] = useState(false);
   const [app, setapp] = useState(false);
+  const [chatbot, setchatbot] = useState(false);
   const [email, setemail] = useState(false);
   const [ecommerce, setecommerce] = useState(false);
   const [crypto, setcrypto] = useState(false);
@@ -272,12 +273,29 @@ const Navbar = (props) => {
                     <Link to="/calendar" className="dropdown-item">
                       {props.t("Calendar")}
                     </Link>
-                    <Link to="/chat" className="dropdown-item">
-                      {props.t("Chat")}
-                    </Link>
-                    <Link to="/chatbot" className="dropdown-item">
-                      Chatbot <span className="badge rounded-pill bg-success ms-1">AI</span>
-                    </Link>
+                    <div className="dropdown">
+                      <Link
+                        to="/#"
+                        className="dropdown-item arrow-none"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setchatbot(!chatbot);
+                        }}
+                      >
+                        Chatbot <span className="badge rounded-pill bg-success ms-1">AI</span>
+                        <div className="arrow-down"></div>
+                      </Link>
+                      <div
+                        className={classname("dropdown-menu", { show: chatbot })}
+                      >
+                        <Link to="/chatbot" className="dropdown-item">
+                          AI Chatbot
+                        </Link>
+                        <Link to="/chat" className="dropdown-item">
+                          {props.t("Chat")}
+                        </Link>
+                      </div>
+                    </div>
                     <Link to="/apps-filemanager" className="dropdown-item">
                       {props.t("File Manager")}
                     </Link>
