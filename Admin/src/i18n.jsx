@@ -3,32 +3,36 @@ import detector from "i18next-browser-languagedetector"
 import { initReactI18next } from "react-i18next"
 
 import translationTR from "./locales/tr/translation.json"
-import translationGr from "./locales/gr/translation.json"
-import translationIT from "./locales/it/translation.json"
-import translationRS from "./locales/rs/translation.json"
+// import translationGr from "./locales/gr/translation.json"
+// import translationIT from "./locales/it/translation.json"
+// import translationRS from "./locales/rs/translation.json"
 import translationSP from "./locales/sp/translation.json"
 import translationENG from "./locales/eng/translation.json"
+// import translationAR from "./locales/ar/translation.json"
 
 // the translations
 const resources = {
   tr: {
     translation: translationTR,
   },
-  gr: {
-    translation: translationGr,
-  },
-  it: {
-    translation: translationIT,
-  },
-  rs: {
-    translation: translationRS,
+  eng: {
+    translation: translationENG,
   },
   sp: {
     translation: translationSP,
   },
-  eng: {
-    translation: translationENG,
-  },
+  // ar: {
+  //   translation: translationAR,
+  // },
+  // gr: {
+  //   translation: translationGr,
+  // },
+  // it: {
+  //   translation: translationIT,
+  // },
+  // rs: {
+  //   translation: translationRS,
+  // },
 }
 
 const language = localStorage.getItem("I18N_LANGUAGE")
