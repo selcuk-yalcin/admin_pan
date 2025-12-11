@@ -440,7 +440,7 @@ const Navbar = (props) => {
                       </div>
                     </div> */}
 
-                    <div className="dropdown">
+                    {/* <div className="dropdown">
                       <Link
                         to="/#"
                         className="dropdown-item  arrow-none"
@@ -469,7 +469,7 @@ const Navbar = (props) => {
                           {props.t("Create New")}
                         </Link>
                       </div>
-                    </div>
+                    </div> */}
                     <div className="dropdown">
                       <Link
                         to="/#"
