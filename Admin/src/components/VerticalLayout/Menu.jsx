@@ -463,27 +463,27 @@ const menuItems = [
         },
       ],
     },
-    {
-      id: "maps",
-      novidade: false,
-      label: "Maps",
-      icon: "mdi-map-marker-outline",
-      link: "/#",
-      subItems: [
-        {
-          id: 131,
-          label: "Google Maps",
-          link: "/maps-google",
-          parentId: "maps",
-        },
-        {
-          id: 132,
-          label: "Vector Maps",
-          link: "/maps-vector",
-          parentId: "maps",
-        },
-      ],
-    },
+    // {
+    //   id: "maps",
+    //   novidade: false,
+    //   label: "Maps",
+    //   icon: "mdi-map-marker-outline",
+    //   link: "/#",
+    //   subItems: [
+    //     {
+    //       id: 131,
+    //       label: "Google Maps",
+    //       link: "/maps-google",
+    //       parentId: "maps",
+    //     },
+    //     {
+    //       id: 132,
+    //       label: "Vector Maps",
+    //       link: "/maps-vector",
+    //       parentId: "maps",
+    //     },
+    //   ],
+    // },
     {
       id: "multilevel",
       novidade: false,
