@@ -766,7 +766,8 @@ const Navbar = (props) => {
                         </Link>
                       </div>
                     </div>
-                    <div className="dropdown">
+                    {/* Maps Menu - Disabled */}
+                    {/* <div className="dropdown">
                       <Link
                         to="/#"
                         className="dropdown-item  arrow-none"
@@ -785,7 +786,7 @@ const Navbar = (props) => {
                         </Link>
 
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </li>
 

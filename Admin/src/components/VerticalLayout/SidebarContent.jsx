@@ -748,7 +748,8 @@ const SidebarContent = (props) => {
               </ul>
             </li>
 
-            <li>
+            {/* Maps Menu - Disabled */}
+            {/* <li>
               <Link to="/#" className="has-arrow ">
                 <i className="bx bx-map"></i>
                 <span>{props.t("Maps")}</span>
@@ -758,7 +759,7 @@ const SidebarContent = (props) => {
                   <Link to="/maps-google">{props.t("Google Maps")}</Link>
                 </li>
               </ul>
-            </li>
+            </li> */}
 
             <li>
               <Link to="/#" className="has-arrow ">
