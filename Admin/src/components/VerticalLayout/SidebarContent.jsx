@@ -196,6 +196,15 @@ const SidebarContent = (props) => {
                 <span>{props.t("Chat")}</span>
               </Link>
             </li>
+            
+            <li>
+              <Link to="/chatbot" className="">
+                <i className="bx bx-bot"></i>
+                <span>Chatbot</span>
+                <span className="badge rounded-pill bg-success float-end">AI</span>
+              </Link>
+            </li>
+
             <li>
               <Link to="/apps-filemanager">
                 <i className="bx bx-file"></i>

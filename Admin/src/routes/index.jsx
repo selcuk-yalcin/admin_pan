@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 
 // Pages Component
 import Chat from "../pages/Chat/Chat";
+import Chatbot from "../pages/Chatbot/index";
 
 // // File Manager
 import FileManager from "../pages/FileManager/index";
@@ -194,6 +195,7 @@ const authProtectedRoutes = [
 
   //chat
   { path: "/chat", component: <Chat /> },
+  { path: "/chatbot", component: <Chatbot /> },
 
   //File Manager
   { path: "/apps-filemanager", component: <FileManager /> },

@@ -275,6 +275,9 @@ const Navbar = (props) => {
                     <Link to="/chat" className="dropdown-item">
                       {props.t("Chat")}
                     </Link>
+                    <Link to="/chatbot" className="dropdown-item">
+                      Chatbot <span className="badge rounded-pill bg-success ms-1">AI</span>
+                    </Link>
                     <Link to="/apps-filemanager" className="dropdown-item">
                       {props.t("File Manager")}
                     </Link>
