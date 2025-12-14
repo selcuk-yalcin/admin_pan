@@ -223,6 +223,9 @@ const SidebarContent = (props) => {
               </Link>
               <ul className="sub-menu" aria-expanded="false">
                 <li>
+                  <Link to="/invoice-bot-dashboard">{props.t("Dashboard")}</Link>
+                </li>
+                <li>
                   <Link to="/invoices-list">{props.t("Invoice List")}</Link>
                 </li>
                 <li>
@@ -495,61 +498,61 @@ const SidebarContent = (props) => {
                 <li>
                   <Link to="/pages-login">{props.t("Login")}</Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/pages-login-2">{props.t("Login 2")}</Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to="/pages-register">{props.t("Register")}</Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/pages-register-2">{props.t("Register 2")}</Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to="/page-recoverpw">
                     {props.t("Recover Password")}
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/page-recoverpw-2">
                     {props.t("Recover Password 2")}
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to="/auth-lock-screen">{props.t("Lock Screen")}</Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/auth-lock-screen-2">
                     {props.t("Lock Screen 2")}
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to="/page-confirm-mail">{props.t("Confirm Mail")}</Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/page-confirm-mail-2">
                     {props.t("Confirm Mail 2")}
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to="/auth-email-verification">
                     {props.t("Email Verification")}
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/auth-email-verification-2">
                     {props.t("Email Verification 2")}
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to="/auth-two-step-verification">
                     {props.t("Two Step Verification")}
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to="/auth-two-step-verification-2">
                     {props.t("Two Step Verification 2")}
                   </Link>
-                </li>
+                </li> */}
               </ul>
             </li>
             <li>

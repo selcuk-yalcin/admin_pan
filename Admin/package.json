@@ -20,6 +20,7 @@
     "@fullcalendar/react": "^6.1.19",
     "@hello-pangea/dnd": "^18.0.1",
     "@react-google-maps/api": "^2.20.7",
+    "@supabase/supabase-js": "^2.87.1",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
