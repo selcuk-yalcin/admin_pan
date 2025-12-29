@@ -78,7 +78,7 @@ const FormWizard = () => {
                             }}
                             disabled={!(passedSteps || []).includes(1)}
                           >
-                            <span className="number">1.</span> Seller Details
+                            <span className="number">1.</span> Kaza isleme  
                           </NavLink>
                         </NavItem>
                         <NavItem
@@ -91,7 +91,7 @@ const FormWizard = () => {
                             }}
                             disabled={!(passedSteps || []).includes(2)}
                           >
-                            <span className="number">2.</span> Company
+                            <span className="number">2.</span> Form 2
                             Document
                           </NavLink>
                         </NavItem>
@@ -105,7 +105,7 @@ const FormWizard = () => {
                             }}
                             disabled={!(passedSteps || []).includes(3)}
                           >
-                            <span className="number">3.</span> Bank Details
+                            <span className="number">3.</span> Bank 
                           </NavLink>
                         </NavItem>
                         <NavItem

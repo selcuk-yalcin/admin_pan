@@ -23,6 +23,10 @@ Starterkit/
 outputs/
 /src/
 
+# Vercel
+/vercel.json
+package-lock.json
+
 # Node modules
 node_modules/
 
