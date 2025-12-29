@@ -46,7 +46,7 @@ const FormWizard = () => {
             <Col lg="12">
               <Card>
                 <CardBody>
-                  <h4 className="card-title mb-4">Basic Wizard</h4>
+                  <h4 className="card-title mb-4">Root Cause Analysis</h4>
                   <div className="wizard clearfix">
                     <div className="steps clearfix">
                       <ul>
@@ -56,7 +56,7 @@ const FormWizard = () => {
                             onClick={() => setactiveTab(1)}
                             disabled={!(passedSteps || []).includes(1)}
                           >
-                            <span className="number">1.</span> Seller Details
+                            <span className="number">1.</span> Ilk konu 
                           </NavLink>
                         </NavItem>
                         <NavItem className={classnames({ current: activeTab === 2 })}>
