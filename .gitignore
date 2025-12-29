@@ -23,9 +23,11 @@ Starterkit/
 outputs/
 /src/
 
-# Vercel
-/vercel.json
-package-lock.json
+# Vercel - Use dashboard config only
+vercel.json
+.vercel
+*.vercel.json
+Admin/vercel.json
 
 # Node modules
 node_modules/
