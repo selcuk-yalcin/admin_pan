@@ -23,11 +23,9 @@ Starterkit/
 outputs/
 /src/
 
-# Vercel - Use dashboard config only
-vercel.json
+# Vercel - Use dashboard config (only ignore root vercel.json)
+/vercel.json
 .vercel
-*.vercel.json
-Admin/vercel.json
 
 # Node modules
 node_modules/
