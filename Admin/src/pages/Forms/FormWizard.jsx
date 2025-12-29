@@ -105,7 +105,7 @@ const FormWizard = () => {
                             }}
                             disabled={!(passedSteps || []).includes(3)}
                           >
-                            <span className="number">3.</span> Bank 
+                            <span className="number">3.</span> Kaza raporu 2 
                           </NavLink>
                         </NavItem>
                         <NavItem
@@ -118,7 +118,7 @@ const FormWizard = () => {
                             }}
                             disabled={!(passedSteps || []).includes(4)}
                           >
-                            <span className="number">4.</span> Confirm Detail
+                            <span className="number">4.</span> Detaylari Onayla 
                           </NavLink>
                         </NavItem>
                       </ul>
@@ -131,7 +131,7 @@ const FormWizard = () => {
                               <Col lg="6">
                                 <div className="mb-3">
                                   <Label for="basicpill-firstname-input1">
-                                    First name
+                                    isim
                                   </Label>
                                   <Input
                                     type="text"
@@ -144,13 +144,13 @@ const FormWizard = () => {
                               <Col lg="6">
                                 <div className="mb-3">
                                   <Label for="basicpill-lastname-input2">
-                                    Last name
+                                    Soyad
                                   </Label>
                                   <Input
                                     type="text"
                                     className="form-control"
                                     id="basicpill-lastname-input2"
-                                    placeholder="Enter Your Last Name"
+                                    placeholder="Buraya olayin detaylarini yazin"
                                   />
                                 </div>
                               </Col>
@@ -166,7 +166,7 @@ const FormWizard = () => {
                                     type="text"
                                     className="form-control"
                                     id="basicpill-phoneno-input3"
-                                    placeholder="Enter Your Phone No."
+                                    placeholder="Buraya telefon numaranizi yazin"
                                   />
                                 </div>
                               </Col>
