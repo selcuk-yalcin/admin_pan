@@ -1,0 +1,233 @@
+{
+  "part1": {
+    "ref_no": "INC-20251222-234246",
+    "reported_by": "",
+    "date_time": "22.12.25 11:42PM",
+    "incident_type": "Serious injury",
+    "brief_details": {
+      "what": "Asit tankından sızıntı oldu, iki çalışan kimyasal yanıklarla acil servise kaldırıldı.",
+      "where": "İzmir Aliağa'daki kimya fabrikası",
+      "when": "2024-11-03T09:15:00",
+      "who": [
+        {
+          "name": "Ayşe Kaya",
+          "age": 35
+        },
+        {
+          "name": "Fatma Öztürk",
+          "age": 29
+        }
+      ],
+      "emergency_measures": "Acil servise kaldırıldılar."
+    },
+    "forwarded_to": "",
+    "forwarded_date_time": ""
+  },
+  "part2": {
+    "type_of_event": "Accident",
+    "actual_potential_harm": "2. \"Serious\"",
+    "riddor_reportable": "Y",
+    "riddor_date_reported": "22.12.25",
+    "accident_book_entry": "Y",
+    "accident_book_date": "22.12.25",
+    "accident_book_ref": "356/25",
+    "investigation_level": "Medium level",
+    "initial_assessment_by": "H&S Officer",
+    "assessment_date": "22.12.25",
+    "further_investigation_required": "Y",
+    "priority": "High",
+    "investigation_team": [
+      "H&S Officer",
+      "Line Manager",
+      "Technical Expert"
+    ]
+  },
+  "part3_rca": {
+    "incident_summary": "What happened: Asit tankından sızıntı oldu, iki çalışan kimyasal yanıklarla acil servise kaldırıldı.. Who: [{'name': 'Ayşe Kaya', 'age': 35}, {'name': 'Fatma Öztürk', 'age': 29}]. Where: İzmir Aliağa'daki kimya fabrikası. Event type: Accident. Severity: 2. \"Serious\"",
+    "five_why_chains": [
+      {
+        "chain_id": "A",
+        "description": "Chemical leak due to equipment failure",
+        "whys": [
+          {
+            "question": "Why did the incident occur?",
+            "answer": "There was a chemical leak."
+          },
+          {
+            "question": "Why was there a chemical leak?",
+            "answer": "The tank was not properly maintained."
+          },
+          {
+            "question": "Why was the tank not properly maintained?",
+            "answer": "Maintenance schedules were not followed."
+          },
+          {
+            "question": "Why were maintenance schedules not followed?",
+            "answer": "There was a lack of accountability for maintenance tasks."
+          },
+          {
+            "question": "Why was there a lack of accountability?",
+            "answer": "The maintenance management system was inadequate."
+          }
+        ],
+        "root_cause": "The maintenance management system was inadequate."
+      },
+      {
+        "chain_id": "B",
+        "description": "Inadequate safety training for employees",
+        "whys": [
+          {
+            "question": "Why did the incident occur?",
+            "answer": "Two employees suffered chemical burns."
+          },
+          {
+            "question": "Why did they suffer chemical burns?",
+            "answer": "They were exposed to the chemical leak."
+          },
+          {
+            "question": "Why were they exposed to the chemical leak?",
+            "answer": "They did not know the proper safety protocols."
+          },
+          {
+            "question": "Why did they not know the proper safety protocols?",
+            "answer": "Safety training was insufficient."
+          },
+          {
+            "question": "Why was safety training insufficient?",
+            "answer": "There was no regular training program in place."
+          }
+        ],
+        "root_cause": "There was no regular training program in place."
+      },
+      {
+        "chain_id": "C",
+        "description": "Lack of emergency response procedures",
+        "whys": [
+          {
+            "question": "Why did the incident occur?",
+            "answer": "Emergency services were needed for the injured employees."
+          },
+          {
+            "question": "Why were emergency services needed?",
+            "answer": "The employees were seriously injured."
+          },
+          {
+            "question": "Why were they seriously injured?",
+            "answer": "There were no immediate emergency response procedures."
+          },
+          {
+            "question": "Why were there no immediate emergency response procedures?",
+            "answer": "Emergency response plans were not developed or communicated."
+          },
+          {
+            "question": "Why were emergency response plans not developed?",
+            "answer": "The organization did not prioritize safety planning."
+          }
+        ],
+        "root_cause": "The organization did not prioritize safety planning."
+      }
+    ],
+    "immediate_causes": [
+      {
+        "cause": "Chemical leak",
+        "description": "There was a chemical leak from the tank."
+      },
+      {
+        "cause": "Exposure to chemicals",
+        "description": "Employees were exposed to the chemical leak, leading to burns."
+      }
+    ],
+    "underlying_causes": [
+      {
+        "cause": "Inadequate maintenance",
+        "description": "The tank was not properly maintained, leading to the leak."
+      },
+      {
+        "cause": "Insufficient safety training",
+        "description": "Employees did not know the proper safety protocols due to lack of training."
+      },
+      {
+        "cause": "Lack of emergency response procedures",
+        "description": "There were no immediate emergency response procedures in place for the incident."
+      }
+    ],
+    "root_causes": [
+      {
+        "cause": "Inadequate maintenance management system",
+        "description": "The maintenance management system was inadequate, leading to poor maintenance practices."
+      },
+      {
+        "cause": "No regular training program",
+        "description": "There was no regular training program in place for safety protocols."
+      },
+      {
+        "cause": "Lack of safety planning prioritization",
+        "description": "The organization did not prioritize safety planning, resulting in unpreparedness for emergencies."
+      }
+    ],
+    "causal_relationships": [
+      {
+        "from": "Chemical leak",
+        "through": "Inadequate maintenance",
+        "to": "Inadequate maintenance management system",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Exposure to chemicals",
+        "through": "Inadequate maintenance",
+        "to": "Inadequate maintenance management system",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Chemical leak",
+        "through": "Insufficient safety training",
+        "to": "Inadequate maintenance management system",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Exposure to chemicals",
+        "through": "Insufficient safety training",
+        "to": "Inadequate maintenance management system",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Chemical leak",
+        "through": "Lack of emergency response procedures",
+        "to": "Inadequate maintenance management system",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Exposure to chemicals",
+        "through": "Lack of emergency response procedures",
+        "to": "Inadequate maintenance management system",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Chemical leak",
+        "through": "Inadequate maintenance",
+        "to": "No regular training program",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Exposure to chemicals",
+        "through": "Inadequate maintenance",
+        "to": "No regular training program",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Chemical leak",
+        "through": "Insufficient safety training",
+        "to": "No regular training program",
+        "relationship_type": "causal_chain"
+      },
+      {
+        "from": "Exposure to chemicals",
+        "through": "Insufficient safety training",
+        "to": "No regular training program",
+        "relationship_type": "causal_chain"
+      }
+    ],
+    "analysis_method": "5 Why Analysis + Causal Chain"
+  },
+  "status": "investigation_complete"
+}

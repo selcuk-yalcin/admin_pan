@@ -223,9 +223,6 @@ const SidebarContent = (props) => {
               </Link>
               <ul className="sub-menu" aria-expanded="false">
                 <li>
-                  <Link to="/invoice-bot-dashboard">{props.t("Dashboard")}</Link>
-                </li>
-                <li>
                   <Link to="/invoices-list">{props.t("Invoice List")}</Link>
                 </li>
                 <li>
@@ -251,6 +248,28 @@ const SidebarContent = (props) => {
                 </li>
               </ul>
             </li>
+
+            <li>
+              <Link to="/#" className="has-arrow">
+                <i className="bx bx-search-alt"></i>
+                <span>{props.t("Kök Neden Analizi")}</span>
+                <span className="badge rounded-pill bg-success float-end">AI</span>
+              </Link>
+              <ul className="sub-menu" aria-expanded="false">
+                <li>
+                  <Link to="/root-cause-analysis">{props.t("Form")}</Link>
+                </li>
+              </ul>
+            </li>
+
+
+            {/*<li>
+              <Link to="/email-panel">
+                <i className="bx bx-mail-send"></i>
+                <span>{props.t("Email Automation")}</span>
+                <span className="badge rounded-pill bg-success float-end">AI</span>
+              </Link>
+            </li> */}
 
             <li>
               <Link to="/apps-filemanager">

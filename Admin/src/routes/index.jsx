@@ -6,7 +6,8 @@ import Chat from "../pages/Chat/Chat";
 import Chatbot from "../pages/Chatbot/index";
 import AIAgentTest from "../pages/AIAgentTest/index";
 import VisualLook from "../pages/VisualLook/index";
-import DashboardInvoiceBot from "../pages/InvoiceBot/DashboardInvoiceBot";
+import EmailPanel from "../pages/EmailPanel";
+import RootCausePanel from "../pages/RootCausePanel";
 
 // // File Manager
 import FileManager from "../pages/FileManager/index";
@@ -201,9 +202,8 @@ const authProtectedRoutes = [
   { path: "/chatbot", component: <Chatbot /> },
   { path: "/ai-agent-test", component: <AIAgentTest /> },
   { path: "/visual-look", component: <VisualLook /> },
-  
-  //invoice bot
-  { path: "/invoice-bot-dashboard", component: <DashboardInvoiceBot /> },
+  { path: "/email-panel", component: <EmailPanel /> },
+  { path: "/root-cause-analysis", component: <RootCausePanel /> },
 
   //File Manager
   { path: "/apps-filemanager", component: <FileManager /> },

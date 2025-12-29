@@ -1,0 +1,493 @@
+{
+  "timestamp": "2025-12-22T23:43:11.053585",
+  "total": 2,
+  "successful": 2,
+  "failed": 0,
+  "results": [
+    {
+      "scenario_id": 1,
+      "title": "İnşaat İskelesi Çökmesi",
+      "status": "success",
+      "json_path": "outputs/batch_investigations/data/20251222_Insaat_Iskelesi_Cokmesi.json",
+      "word_path": "outputs/batch_investigations/reports/word/20251222_Insaat_Iskelesi_Cokmesi.docx",
+      "pdf_path": "outputs/batch_investigations/reports/pdf/20251222_Insaat_Iskelesi_Cokmesi.pdf",
+      "investigation_data": {
+        "part1": {
+          "ref_no": "INC-20251222-234219",
+          "reported_by": "",
+          "date_time": "22.12.25 11:42PM",
+          "incident_type": "Serious injury",
+          "brief_details": {
+            "what": "İskele çökmesi meydana geldi.",
+            "where": "Ankara Çankaya'daki 8 katlı konut inşaatı",
+            "when": "15 Aralık 2024 saat 14:30",
+            "who": [
+              {
+                "name": "Mehmet Yılmaz",
+                "age": 32,
+                "injury": "bacağından kırık"
+              },
+              {
+                "name": "Ali Demir",
+                "age": 28,
+                "injury": "kafasından yaralandı"
+              }
+            ],
+            "emergency_measures": "Her iki işçi de hastaneye kaldırıldı."
+          },
+          "forwarded_to": "",
+          "forwarded_date_time": ""
+        },
+        "part2": {
+          "type_of_event": "Accident",
+          "actual_potential_harm": "Serious",
+          "riddor_reportable": "Y",
+          "riddor_date_reported": "22.12.25",
+          "accident_book_entry": "Y",
+          "accident_book_date": "22.12.25",
+          "accident_book_ref": "356/25",
+          "investigation_level": "Medium level",
+          "initial_assessment_by": "H&S Officer",
+          "assessment_date": "22.12.25",
+          "further_investigation_required": "Y",
+          "priority": "High",
+          "investigation_team": [
+            "H&S Officer",
+            "Line Manager",
+            "Technical Expert",
+            "Site Supervisor"
+          ]
+        },
+        "part3_rca": {
+          "incident_summary": "What happened: İskele çökmesi meydana geldi.. Who: [{'name': 'Mehmet Yılmaz', 'age': 32, 'injury': 'bacağından kırık'}, {'name': 'Ali Demir', 'age': 28, 'injury': 'kafasından yaralandı'}]. Where: Ankara Çankaya'daki 8 katlı konut inşaatı. Event type: Accident. Severity: Serious",
+          "five_why_chains": [
+            {
+              "chain_id": "A",
+              "description": "Structural failure of the construction site",
+              "whys": [
+                {
+                  "question": "Why did the incident occur?",
+                  "answer": "The structure collapsed."
+                },
+                {
+                  "question": "Why did the structure collapse?",
+                  "answer": "The materials used were substandard."
+                },
+                {
+                  "question": "Why were substandard materials used?",
+                  "answer": "There was a lack of quality control in procurement."
+                },
+                {
+                  "question": "Why was there a lack of quality control?",
+                  "answer": "The procurement process was not properly monitored."
+                },
+                {
+                  "question": "Why was the procurement process not monitored?",
+                  "answer": "There were insufficient resources allocated for oversight."
+                }
+              ],
+              "root_cause": "Inadequate resource allocation for quality control in procurement."
+            },
+            {
+              "chain_id": "B",
+              "description": "Inadequate safety measures at the construction site",
+              "whys": [
+                {
+                  "question": "Why did the incident occur?",
+                  "answer": "Workers were exposed to unsafe conditions."
+                },
+                {
+                  "question": "Why were workers exposed to unsafe conditions?",
+                  "answer": "There were no safety protocols in place."
+                },
+                {
+                  "question": "Why were there no safety protocols?",
+                  "answer": "Safety training was not provided to the workers."
+                },
+                {
+                  "question": "Why was safety training not provided?",
+                  "answer": "The company did not prioritize safety training."
+                },
+                {
+                  "question": "Why did the company not prioritize safety training?",
+                  "answer": "Management did not recognize the importance of worker safety."
+                }
+              ],
+              "root_cause": "Management's lack of recognition of the importance of worker safety."
+            },
+            {
+              "chain_id": "C",
+              "description": "Poor communication among construction teams",
+              "whys": [
+                {
+                  "question": "Why did the incident occur?",
+                  "answer": "There was a lack of communication between teams."
+                },
+                {
+                  "question": "Why was there a lack of communication?",
+                  "answer": "There were no established communication protocols."
+                },
+                {
+                  "question": "Why were there no established communication protocols?",
+                  "answer": "The project management was ineffective."
+                },
+                {
+                  "question": "Why was project management ineffective?",
+                  "answer": "There was high turnover in management positions."
+                },
+                {
+                  "question": "Why was there high turnover in management positions?",
+                  "answer": "The work environment was not supportive."
+                }
+              ],
+              "root_cause": "Unsupportive work environment leading to high turnover in management."
+            }
+          ],
+          "immediate_causes": [
+            {
+              "cause": "Structural collapse",
+              "description": "The structure collapsed, leading to the incident."
+            },
+            {
+              "cause": "Unsafe working conditions",
+              "description": "Workers were exposed to unsafe conditions at the construction site."
+            }
+          ],
+          "underlying_causes": [
+            {
+              "cause": "Substandard materials",
+              "description": "The materials used in construction were substandard."
+            },
+            {
+              "cause": "Lack of safety protocols",
+              "description": "There were no safety protocols in place to protect workers."
+            },
+            {
+              "cause": "Ineffective project management",
+              "description": "The project management was ineffective, leading to poor communication."
+            }
+          ],
+          "root_causes": [
+            {
+              "cause": "Inadequate resource allocation",
+              "description": "Insufficient resources were allocated for quality control in procurement."
+            },
+            {
+              "cause": "Management's lack of recognition",
+              "description": "Management did not recognize the importance of worker safety."
+            },
+            {
+              "cause": "Unsupportive work environment",
+              "description": "The work environment was not supportive, leading to high turnover in management."
+            }
+          ],
+          "causal_relationships": [
+            {
+              "from": "Structural collapse",
+              "through": "Substandard materials",
+              "to": "Inadequate resource allocation",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Unsafe working conditions",
+              "through": "Substandard materials",
+              "to": "Inadequate resource allocation",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Structural collapse",
+              "through": "Lack of safety protocols",
+              "to": "Inadequate resource allocation",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Unsafe working conditions",
+              "through": "Lack of safety protocols",
+              "to": "Inadequate resource allocation",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Structural collapse",
+              "through": "Ineffective project management",
+              "to": "Inadequate resource allocation",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Unsafe working conditions",
+              "through": "Ineffective project management",
+              "to": "Inadequate resource allocation",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Structural collapse",
+              "through": "Substandard materials",
+              "to": "Management's lack of recognition",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Unsafe working conditions",
+              "through": "Substandard materials",
+              "to": "Management's lack of recognition",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Structural collapse",
+              "through": "Lack of safety protocols",
+              "to": "Management's lack of recognition",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Unsafe working conditions",
+              "through": "Lack of safety protocols",
+              "to": "Management's lack of recognition",
+              "relationship_type": "causal_chain"
+            }
+          ],
+          "analysis_method": "5 Why Analysis + Causal Chain"
+        },
+        "status": "investigation_complete"
+      }
+    },
+    {
+      "scenario_id": 2,
+      "title": "Kimyasal Madde Sızıntısı",
+      "status": "success",
+      "json_path": "outputs/batch_investigations/data/20251222_Kimyasal_Madde_Sizintisi.json",
+      "word_path": "outputs/batch_investigations/reports/word/20251222_Kimyasal_Madde_Sizintisi.docx",
+      "pdf_path": "outputs/batch_investigations/reports/pdf/20251222_Kimyasal_Madde_Sizintisi.pdf",
+      "investigation_data": {
+        "part1": {
+          "ref_no": "INC-20251222-234246",
+          "reported_by": "",
+          "date_time": "22.12.25 11:42PM",
+          "incident_type": "Serious injury",
+          "brief_details": {
+            "what": "Asit tankından sızıntı oldu, iki çalışan kimyasal yanıklarla acil servise kaldırıldı.",
+            "where": "İzmir Aliağa'daki kimya fabrikası",
+            "when": "2024-11-03T09:15:00",
+            "who": [
+              {
+                "name": "Ayşe Kaya",
+                "age": 35
+              },
+              {
+                "name": "Fatma Öztürk",
+                "age": 29
+              }
+            ],
+            "emergency_measures": "Acil servise kaldırıldılar."
+          },
+          "forwarded_to": "",
+          "forwarded_date_time": ""
+        },
+        "part2": {
+          "type_of_event": "Accident",
+          "actual_potential_harm": "2. \"Serious\"",
+          "riddor_reportable": "Y",
+          "riddor_date_reported": "22.12.25",
+          "accident_book_entry": "Y",
+          "accident_book_date": "22.12.25",
+          "accident_book_ref": "356/25",
+          "investigation_level": "Medium level",
+          "initial_assessment_by": "H&S Officer",
+          "assessment_date": "22.12.25",
+          "further_investigation_required": "Y",
+          "priority": "High",
+          "investigation_team": [
+            "H&S Officer",
+            "Line Manager",
+            "Technical Expert"
+          ]
+        },
+        "part3_rca": {
+          "incident_summary": "What happened: Asit tankından sızıntı oldu, iki çalışan kimyasal yanıklarla acil servise kaldırıldı.. Who: [{'name': 'Ayşe Kaya', 'age': 35}, {'name': 'Fatma Öztürk', 'age': 29}]. Where: İzmir Aliağa'daki kimya fabrikası. Event type: Accident. Severity: 2. \"Serious\"",
+          "five_why_chains": [
+            {
+              "chain_id": "A",
+              "description": "Chemical leak due to equipment failure",
+              "whys": [
+                {
+                  "question": "Why did the incident occur?",
+                  "answer": "There was a chemical leak."
+                },
+                {
+                  "question": "Why was there a chemical leak?",
+                  "answer": "The tank was not properly maintained."
+                },
+                {
+                  "question": "Why was the tank not properly maintained?",
+                  "answer": "Maintenance schedules were not followed."
+                },
+                {
+                  "question": "Why were maintenance schedules not followed?",
+                  "answer": "There was a lack of accountability for maintenance tasks."
+                },
+                {
+                  "question": "Why was there a lack of accountability?",
+                  "answer": "The maintenance management system was inadequate."
+                }
+              ],
+              "root_cause": "The maintenance management system was inadequate."
+            },
+            {
+              "chain_id": "B",
+              "description": "Inadequate safety training for employees",
+              "whys": [
+                {
+                  "question": "Why did the incident occur?",
+                  "answer": "Two employees suffered chemical burns."
+                },
+                {
+                  "question": "Why did they suffer chemical burns?",
+                  "answer": "They were exposed to the chemical leak."
+                },
+                {
+                  "question": "Why were they exposed to the chemical leak?",
+                  "answer": "They did not know the proper safety protocols."
+                },
+                {
+                  "question": "Why did they not know the proper safety protocols?",
+                  "answer": "Safety training was insufficient."
+                },
+                {
+                  "question": "Why was safety training insufficient?",
+                  "answer": "There was no regular training program in place."
+                }
+              ],
+              "root_cause": "There was no regular training program in place."
+            },
+            {
+              "chain_id": "C",
+              "description": "Lack of emergency response procedures",
+              "whys": [
+                {
+                  "question": "Why did the incident occur?",
+                  "answer": "Emergency services were needed for the injured employees."
+                },
+                {
+                  "question": "Why were emergency services needed?",
+                  "answer": "The employees were seriously injured."
+                },
+                {
+                  "question": "Why were they seriously injured?",
+                  "answer": "There were no immediate emergency response procedures."
+                },
+                {
+                  "question": "Why were there no immediate emergency response procedures?",
+                  "answer": "Emergency response plans were not developed or communicated."
+                },
+                {
+                  "question": "Why were emergency response plans not developed?",
+                  "answer": "The organization did not prioritize safety planning."
+                }
+              ],
+              "root_cause": "The organization did not prioritize safety planning."
+            }
+          ],
+          "immediate_causes": [
+            {
+              "cause": "Chemical leak",
+              "description": "There was a chemical leak from the tank."
+            },
+            {
+              "cause": "Exposure to chemicals",
+              "description": "Employees were exposed to the chemical leak, leading to burns."
+            }
+          ],
+          "underlying_causes": [
+            {
+              "cause": "Inadequate maintenance",
+              "description": "The tank was not properly maintained, leading to the leak."
+            },
+            {
+              "cause": "Insufficient safety training",
+              "description": "Employees did not know the proper safety protocols due to lack of training."
+            },
+            {
+              "cause": "Lack of emergency response procedures",
+              "description": "There were no immediate emergency response procedures in place for the incident."
+            }
+          ],
+          "root_causes": [
+            {
+              "cause": "Inadequate maintenance management system",
+              "description": "The maintenance management system was inadequate, leading to poor maintenance practices."
+            },
+            {
+              "cause": "No regular training program",
+              "description": "There was no regular training program in place for safety protocols."
+            },
+            {
+              "cause": "Lack of safety planning prioritization",
+              "description": "The organization did not prioritize safety planning, resulting in unpreparedness for emergencies."
+            }
+          ],
+          "causal_relationships": [
+            {
+              "from": "Chemical leak",
+              "through": "Inadequate maintenance",
+              "to": "Inadequate maintenance management system",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Exposure to chemicals",
+              "through": "Inadequate maintenance",
+              "to": "Inadequate maintenance management system",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Chemical leak",
+              "through": "Insufficient safety training",
+              "to": "Inadequate maintenance management system",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Exposure to chemicals",
+              "through": "Insufficient safety training",
+              "to": "Inadequate maintenance management system",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Chemical leak",
+              "through": "Lack of emergency response procedures",
+              "to": "Inadequate maintenance management system",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Exposure to chemicals",
+              "through": "Lack of emergency response procedures",
+              "to": "Inadequate maintenance management system",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Chemical leak",
+              "through": "Inadequate maintenance",
+              "to": "No regular training program",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Exposure to chemicals",
+              "through": "Inadequate maintenance",
+              "to": "No regular training program",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Chemical leak",
+              "through": "Insufficient safety training",
+              "to": "No regular training program",
+              "relationship_type": "causal_chain"
+            },
+            {
+              "from": "Exposure to chemicals",
+              "through": "Insufficient safety training",
+              "to": "No regular training program",
+              "relationship_type": "causal_chain"
+            }
+          ],
+          "analysis_method": "5 Why Analysis + Causal Chain"
+        },
+        "status": "investigation_complete"
+      }
+    }
+  ]
+}
