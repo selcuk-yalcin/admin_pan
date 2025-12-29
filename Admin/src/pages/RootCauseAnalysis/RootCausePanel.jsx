@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { analyzeRootCause, checkHealth } from "../services/agentApi";
+import { analyzeRootCause, checkHealth } from "../../services/agentApi";
 
 /**
  * Root Cause Analysis Panel
