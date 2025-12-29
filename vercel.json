@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd Admin && npm install && npm run build",
+  "outputDirectory": "Admin/dist",
+  "framework": null,
+  "installCommand": "echo 'Skipping root install'",
+  "devCommand": "cd Admin && npm run dev"
+}
