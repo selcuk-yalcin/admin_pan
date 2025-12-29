@@ -262,9 +262,12 @@ const SidebarContent = (props) => {
                 <li>
                   <Link to="/form-wizard">{props.t("Form Wizard")}</Link>
                 </li>
+                <li>
+                  <Link to="/rootcause-form">{props.t("HSG245 Smart Report")}</Link>
+                </li>
               </ul>
             </li>
-
+            
 
             {/*<li>
               <Link to="/email-panel">

@@ -8,7 +8,7 @@ import AIAgentTest from "../pages/AIAgentTest/index";
 import VisualLook from "../pages/VisualLook/index";
 import EmailPanel from "../pages/EmailPanel";
 import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
-
+import Rootcauseform from "../pages/RootCauseAnalysis/Rootcauseform";
 // // File Manager
 import FileManager from "../pages/FileManager/index";
 
@@ -204,6 +204,7 @@ const authProtectedRoutes = [
   { path: "/visual-look", component: <VisualLook /> },
   { path: "/email-panel", component: <EmailPanel /> },
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
+  { path: "/rootcause-form", component: <Rootcauseform /> },
 
   //File Manager
   { path: "/apps-filemanager", component: <FileManager /> },
