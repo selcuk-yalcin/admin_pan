@@ -7,7 +7,7 @@ import Chatbot from "../pages/Chatbot/index";
 import AIAgentTest from "../pages/AIAgentTest/index";
 import VisualLook from "../pages/VisualLook/index";
 import EmailPanel from "../pages/EmailPanel";
-import RootCausePanel from "../pages/RootCausePanel";
+import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
 
 // // File Manager
 import FileManager from "../pages/FileManager/index";
