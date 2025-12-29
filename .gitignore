@@ -49,3 +49,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+# Vercel Configuration - Use Dashboard only
+vercel.json
+.vercel
