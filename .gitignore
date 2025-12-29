@@ -21,7 +21,7 @@ Starterkit/
 
 # Outputs
 outputs/
-src/
+/src/
 
 # Node modules
 node_modules/
