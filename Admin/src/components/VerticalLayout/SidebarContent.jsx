@@ -259,9 +259,6 @@ const SidebarContent = (props) => {
                 <li>
                   <Link to="/root-cause-analysis">{props.t("Form")}</Link>
                 </li>
-                <li>
-                  <Link to="/form-wizard">{props.t("Form Wizard")}</Link>
-                </li>
               </ul>
             </li>
 
@@ -722,9 +719,6 @@ const SidebarContent = (props) => {
                 </li>
                 <li>
                   <Link to="/form-repeater">{props.t("Form Repeater")}</Link>
-                </li>
-                <li>
-                  <Link to="/form-wizard">{props.t("Form Wizard")}</Link>
                 </li>
                 <li>
                   <Link to="/form-mask">{props.t("Form Mask")}</Link>
