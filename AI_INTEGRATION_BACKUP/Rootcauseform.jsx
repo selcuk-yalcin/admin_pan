@@ -106,57 +106,37 @@ const HSG245WizardAI = () => {
 
     setIsAnalyzing(true);
     setAiError("");
-    setAiResult(null); // Clear previous results
 
     try {
-        console.log("🔍 Starting AI Analysis...");
-        
         // B. Call Vercel Serverless API
         const result = await analyzeRootCause({
             incident_description: formData.description,
             location: formData.location || "Not specified",
             date_time: formData.dateTime || new Date().toISOString(),
-            witnesses: formData.injuredPerson || "Not specified"
+            witnesses: formData.injuryDetails || "Not specified"
         });
 
-        console.log("✅ AI Analysis Result:", result);
-
-        // C. Store full AI Result
+        // C. Store AI Result
         setAiResult(result);
 
-        // D. Map Part 3 Investigation to Form Fields
+        // D. Map AI Response to Form Fields
         if (result.part3_investigation) {
-            const inv = result.part3_investigation;
-            
+            const investigation = result.part3_investigation;
             setFormData(prev => ({
                 ...prev,
-                immediateCauses: Array.isArray(inv.immediate_causes) 
-                    ? "• " + inv.immediate_causes.join("\n• ") 
-                    : "Not determined",
-                    
-                underlyingCauses: Array.isArray(inv.underlying_causes) 
-                    ? "• " + inv.underlying_causes.join("\n• ") 
-                    : "Not determined",
-                    
-                rootCauses: Array.isArray(inv.root_causes) 
-                    ? "• " + inv.root_causes.join("\n• ") 
-                    : "Not determined"
+                immediateCauses: investigation.immediate_causes?.join("\n") || "Not determined",
+                underlyingCauses: investigation.underlying_causes?.join("\n") || "Not determined",
+                rootCauses: investigation.root_causes?.join("\n") || "Not determined"
             }));
         }
 
         // E. Success: Move to Part 4
         toggleTab(4);
-        
-        alert("✅ AI Analysis completed successfully!");
 
     } catch (error) {
-        console.error("❌ AI Analysis Failed:", error);
-        
-        const errorMessage = error.message || "Unknown error occurred";
-        setAiError(errorMessage);
-        
-        alert(`Failed to generate analysis.\n\nDetails: ${errorMessage}\n\nPlease check:\n1. Internet connection\n2. Vercel deployment\n3. OpenAI API key in Vercel`);
-        
+        console.error("Agentic AI Failed:", error);
+        setAiError(error.message || "Failed to analyze incident");
+        alert("Failed to generate analysis. Please check your backend connection or try again later.\n\nDetails: " + error.message);
     } finally {
         setIsAnalyzing(false);
     }
@@ -509,37 +489,7 @@ const HSG245WizardAI = () => {
                                                  <i className="bx bx-file-find me-2"></i>
                                                  Part 1: Overview
                                              </h6>
-                                             <Row>
-                                                 <Col md="6" className="mb-2">
-                                                     <strong>Incident Type:</strong> {aiResult.part1_overview.incident_type}
-                                                 </Col>
-                                                 <Col md="6" className="mb-2">
-                                                     <strong>Date/Time:</strong> {aiResult.part1_overview.date_time}
-                                                 </Col>
-                                                 <Col md="12" className="mb-2">
-                                                     <strong>Location:</strong> {aiResult.part1_overview.location}
-                                                 </Col>
-                                                 {aiResult.part1_overview.brief_details && (
-                                                     <Col md="12" className="mt-2">
-                                                         <strong>Details:</strong>
-                                                         <ul className="mb-0 mt-1">
-                                                             <li><strong>What:</strong> {aiResult.part1_overview.brief_details.what}</li>
-                                                             <li><strong>Where:</strong> {aiResult.part1_overview.brief_details.where}</li>
-                                                             <li><strong>Who:</strong> {aiResult.part1_overview.brief_details.who}</li>
-                                                         </ul>
-                                                     </Col>
-                                                 )}
-                                                 {aiResult.part1_overview.immediate_actions_taken && aiResult.part1_overview.immediate_actions_taken.length > 0 && (
-                                                     <Col md="12" className="mt-2">
-                                                         <strong>Immediate Actions:</strong>
-                                                         <ul className="mb-0 mt-1">
-                                                             {aiResult.part1_overview.immediate_actions_taken.map((action, idx) => (
-                                                                 <li key={idx}>{action}</li>
-                                                             ))}
-                                                         </ul>
-                                                     </Col>
-                                                 )}
-                                             </Row>
+                                             <p className="mb-0" style={{whiteSpace: 'pre-wrap'}}>{aiResult.part1_overview}</p>
                                          </div>
                                      )}
 
@@ -552,39 +502,17 @@ const HSG245WizardAI = () => {
                                              </h6>
                                              <Row>
                                                  <Col md="6" className="mb-2">
-                                                     <strong>Event Type:</strong> {aiResult.part2_assessment.type_of_event}
+                                                     <strong>Event Type:</strong> {aiResult.part2_assessment.event_type}
                                                  </Col>
                                                  <Col md="6" className="mb-2">
-                                                     <strong>Severity:</strong>{" "}
-                                                     <Badge color="warning">
-                                                         {aiResult.part2_assessment.actual_potential_harm}
-                                                     </Badge>
+                                                     <strong>Severity:</strong> <Badge color="warning">{aiResult.part2_assessment.severity}</Badge>
                                                  </Col>
                                                  <Col md="6" className="mb-2">
-                                                     <strong>RIDDOR:</strong> {aiResult.part2_assessment.riddor_reportable}
+                                                     <strong>RIDDOR Reportable:</strong> {aiResult.part2_assessment.riddor_reportable}
                                                  </Col>
                                                  <Col md="6" className="mb-2">
-                                                     <strong>Priority:</strong>{" "}
-                                                     <Badge color={
-                                                         aiResult.part2_assessment.priority === 'High' ? 'danger' :
-                                                         aiResult.part2_assessment.priority === 'Medium' ? 'warning' : 'info'
-                                                     }>
-                                                         {aiResult.part2_assessment.priority}
-                                                     </Badge>
+                                                     <strong>Investigation Priority:</strong> <Badge color="danger">{aiResult.part2_assessment.investigation_priority}</Badge>
                                                  </Col>
-                                                 <Col md="12" className="mt-2">
-                                                     <strong>Investigation Level:</strong>{" "}
-                                                     <Badge color="primary">
-                                                         {aiResult.part2_assessment.investigation_level}
-                                                     </Badge>
-                                                 </Col>
-                                                 {aiResult.part2_assessment.riddor_reasoning && (
-                                                     <Col md="12" className="mt-3">
-                                                         <Alert color="light" className="mb-0 small">
-                                                             <strong>RIDDOR Reasoning:</strong> {aiResult.part2_assessment.riddor_reasoning}
-                                                         </Alert>
-                                                     </Col>
-                                                 )}
                                              </Row>
                                          </div>
                                      )}
