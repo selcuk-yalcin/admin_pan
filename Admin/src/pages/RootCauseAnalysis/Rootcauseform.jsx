@@ -19,6 +19,7 @@ import {
   Badge
 } from "reactstrap"
 import classnames from "classnames"
+import { analyzeRootCause } from "../../services/agentApi"
 
 const HSG245WizardAI = () => {
   document.title = "HSG245 Smart Report | Agentic AI Integration";
@@ -26,6 +27,10 @@ const HSG245WizardAI = () => {
   const [activeTab, setactiveTab] = useState(1)
   const [passedSteps, setPassedSteps] = useState([1])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  
+  // AI Analysis States
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState("")
 
   // --- 1. CENTRAL FORM STATE ---
   const [formData, setFormData] = useState({
@@ -100,55 +105,37 @@ const HSG245WizardAI = () => {
     }
 
     setIsAnalyzing(true);
+    setAiError("");
 
     try {
-        // B. API Configuration (CHANGE THIS URL)
-        const API_URL = "https://api.your-backend-domain.com/analyze-accident"; 
-        
-        // C. Send Data to Backend
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // 'Authorization': 'Bearer YOUR_TOKEN' // Uncomment if needed
-            },
-            body: JSON.stringify({
-                // The Prompt inputs for the LLM/Agent
-                incident_description: formData.description,
-                incident_location: formData.location,
-                injury_details: formData.injuryDetails,
-                // Context for better accuracy
-                meta_data: {
-                    event_type: formData.eventType,
-                    harm_potential: formData.harmPotential
-                }
-            })
+        // B. Call Vercel Serverless API
+        const result = await analyzeRootCause({
+            incident_description: formData.description,
+            location: formData.location || "Not specified",
+            date_time: formData.dateTime || new Date().toISOString(),
+            witnesses: formData.injuryDetails || "Not specified"
         });
 
-        if (!response.ok) {
-            throw new Error(`API Connection Error: ${response.statusText}`);
+        // C. Store AI Result
+        setAiResult(result);
+
+        // D. Map AI Response to Form Fields
+        if (result.part3_investigation) {
+            const investigation = result.part3_investigation;
+            setFormData(prev => ({
+                ...prev,
+                immediateCauses: investigation.immediate_causes?.join("\n") || "Not determined",
+                underlyingCauses: investigation.underlying_causes?.join("\n") || "Not determined",
+                rootCauses: investigation.root_causes?.join("\n") || "Not determined"
+            }));
         }
-
-        const data = await response.json();
-
-        // D. Map API Response to Form State
-        // Expected JSON structure from backend: 
-        // { immediate_causes: "...", root_causes: "...", recommended_actions: [{measure, date, person}] }
-        setFormData(prev => ({
-            ...prev,
-            immediateCauses: data.immediate_causes || "Analysis could not determine immediate causes.",
-            underlyingCauses: data.underlying_causes || "",
-            rootCauses: data.root_causes || "Analysis could not determine root causes.",
-            actionPlan: data.recommended_actions && data.recommended_actions.length > 0 
-                ? data.recommended_actions 
-                : prev.actionPlan
-        }));
 
         // E. Success: Move to Part 4
         toggleTab(4);
 
     } catch (error) {
         console.error("Agentic AI Failed:", error);
+        setAiError(error.message || "Failed to analyze incident");
         alert("Failed to generate analysis. Please check your backend connection or try again later.\n\nDetails: " + error.message);
     } finally {
         setIsAnalyzing(false);
@@ -439,6 +426,39 @@ const HSG245WizardAI = () => {
                                 <Label className="fw-bold">7 What injuries or ill health effects, if any, were caused?</Label>
                                 <Input type="textarea" rows="2" name="injuryDetails" className="form-control" onChange={handleInputChange} />
                             </div>
+
+                            {/* AI Analysis Button */}
+                            <div className="text-center mt-4 mb-3">
+                                <Button 
+                                    color="success" 
+                                    size="lg" 
+                                    onClick={handleAIAnalysis} 
+                                    disabled={isAnalyzing}
+                                    className="px-5"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <i className="bx bx-loader-alt bx-spin me-2"></i>
+                                            Analyzing with AI...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="bx bx-brain me-2"></i>
+                                            Generate AI Analysis
+                                        </>
+                                    )}
+                                </Button>
+                                <p className="text-muted small mt-2 mb-0">
+                                    Click to analyze the incident and auto-fill Part 4
+                                </p>
+                            </div>
+
+                            {aiError && (
+                                <Alert color="danger" className="mt-3">
+                                    <i className="bx bx-error-circle me-2"></i>
+                                    {aiError}
+                                </Alert>
+                            )}
                           </Form>
                         </TabPane>
 
@@ -454,10 +474,56 @@ const HSG245WizardAI = () => {
                                  </Button>
                              </div>
                              
-                             [cite_start]{/* AI Analysis Result Section [cite: 209-221] */}
+                             {/* AI Complete Results Display */}
+                             {aiResult && (
+                                 <div className="mb-4">
+                                     <Alert color="success" className="mb-3">
+                                         <i className="bx bx-check-circle me-2"></i>
+                                         AI Analysis completed successfully!
+                                     </Alert>
+
+                                     {/* Part 1: Overview */}
+                                     {aiResult.part1_overview && (
+                                         <div className="mb-4 p-3 border rounded bg-light">
+                                             <h6 className="text-primary mb-3">
+                                                 <i className="bx bx-file-find me-2"></i>
+                                                 Part 1: Overview
+                                             </h6>
+                                             <p className="mb-0" style={{whiteSpace: 'pre-wrap'}}>{aiResult.part1_overview}</p>
+                                         </div>
+                                     )}
+
+                                     {/* Part 2: Assessment */}
+                                     {aiResult.part2_assessment && (
+                                         <div className="mb-4 p-3 border rounded bg-light">
+                                             <h6 className="text-info mb-3">
+                                                 <i className="bx bx-analyse me-2"></i>
+                                                 Part 2: Assessment
+                                             </h6>
+                                             <Row>
+                                                 <Col md="6" className="mb-2">
+                                                     <strong>Event Type:</strong> {aiResult.part2_assessment.event_type}
+                                                 </Col>
+                                                 <Col md="6" className="mb-2">
+                                                     <strong>Severity:</strong> <Badge color="warning">{aiResult.part2_assessment.severity}</Badge>
+                                                 </Col>
+                                                 <Col md="6" className="mb-2">
+                                                     <strong>RIDDOR Reportable:</strong> {aiResult.part2_assessment.riddor_reportable}
+                                                 </Col>
+                                                 <Col md="6" className="mb-2">
+                                                     <strong>Investigation Priority:</strong> <Badge color="danger">{aiResult.part2_assessment.investigation_priority}</Badge>
+                                                 </Col>
+                                             </Row>
+                                         </div>
+                                     )}
+                                 </div>
+                             )}
+
+                             {/* AI Analysis Result Section */}
                              <div className="mb-4 p-3 bg-light border rounded shadow-sm">
                                  <Label className="fw-bold text-primary mb-3 h6">
-                                     <i className="bx bx-analyse"></i> AI Generated Analysis (Root Causes)
+                                     <i className="bx bx-analyse me-2"></i> 
+                                     AI Generated Analysis (Root Causes)
                                  </Label>
                                  
                                  <Row>
