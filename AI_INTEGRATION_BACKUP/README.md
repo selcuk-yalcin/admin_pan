@@ -30,6 +30,36 @@
   - Location: `/Admin/src/pages/RootCauseAnalysis/FormRCA.jsx`
   - Features: Alternative form layout
 
+### 4. **Configuration Files**
+- `index.jsx` - React Router configuration
+  - Location: `/Admin/src/routes/index.jsx`
+  - Routes: `/root-cause-analysis`, `/rootcause-form`
+
+- `package.json` - Dependencies and scripts
+  - Location: `/Admin/package.json`
+  - React, Vite, Reactstrap, etc.
+
+- `vercel.json` - Vercel deployment config
+  - Location: `/Admin/vercel.json`
+  - SPA routing configuration
+
+### 5. **Python Agents (Agentic AI Backend)**
+- `rootcause_report/` - Multi-agent system
+  - `agents/orchestrator.py` - Main workflow coordinator
+  - `agents/overview_agent.py` - Part 1 generator
+  - `agents/assessment_agent.py` - Part 2 generator
+  - `agents/rootcause_agent.py` - Part 3 generator
+  - `agents/report_generator.py` - Part 4 generator
+  - `config.py` - OpenAI configuration
+  - `requirements.txt` - Python dependencies
+
+### 6. **Testing & Documentation**
+- `test.sh` - Automated test suite
+- `TESTING_GUIDE.md` - Complete testing procedures
+- `CHANGES.md` - Change log and improvements
+- `INVENTORY.md` - File inventory and details
+- `README.md` - This file
+
 ## 🔧 **How It Works:**
 
 ```
