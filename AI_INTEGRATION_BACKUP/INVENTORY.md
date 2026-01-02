@@ -7,8 +7,8 @@
 
 ## 📦 **Backup Contents**
 
-### **Total Files:** 6 files  
-**Total Size:** ~83 KB
+### **Total Files:** 11 files  
+**Total Size:** ~130 KB
 
 | # | File | Size | Type | Purpose |
 |---|------|------|------|---------|
@@ -17,8 +17,13 @@
 | 3 | `Rootcauseform.jsx` | 36.1 KB | React JSX | HSG245 Wizard Form (4 tabs) |
 | 4 | `RootCausePanel.jsx` | 15.9 KB | React JSX | Simple Root Cause Form |
 | 5 | `FormRCA.jsx` | 11.7 KB | React JSX | Alternative RCA Form Template |
-| 6 | `README.md` | 2.6 KB | Markdown | Documentation |
-| 7 | `CHANGES.md` | 6.1 KB | Markdown | Change Log |
+| 6 | `index.jsx` | 17 KB | React JSX | Routes Configuration |
+| 7 | `package.json` | 3.1 KB | JSON | Dependencies & Scripts |
+| 8 | `vercel.json` | 96 B | JSON | Vercel Deployment Config |
+| 9 | `README.md` | 2.7 KB | Markdown | Documentation |
+| 10 | `CHANGES.md` | 6.0 KB | Markdown | Change Log |
+| 11 | `INVENTORY.md` | 6.2 KB | Markdown | File Inventory |
+| 12 | `test.sh` | 5.0 KB | Bash | Test Suite Script |
 
 ---
 
@@ -142,6 +147,94 @@ const API_BASE = "/api";  // Relative path for Vercel
 - Template for future RCA forms
 - Alternative design reference
 - Component library example
+
+---
+
+### **6. index.jsx** - Routes Configuration
+
+**Original Path:** `/Admin/src/routes/index.jsx`
+
+**Purpose:** React Router configuration for all pages
+
+**AI-Related Routes:**
+```javascript
+{ path: "/root-cause-analysis", component: <RootCausePanel /> },
+{ path: "/rootcause-form", component: <Rootcauseform /> }
+```
+
+**Import Statements:**
+```javascript
+import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
+import Rootcauseform from "../pages/RootCauseAnalysis/Rootcauseform";
+```
+
+**Total Routes:** ~200+ routes defined
+
+---
+
+### **7. package.json** - Project Dependencies
+
+**Original Path:** `/Admin/package.json`
+
+**Key Dependencies:**
+- `react`: ^18.2.0
+- `react-router-dom`: Routing
+- `reactstrap`: Bootstrap UI components
+- `apexcharts`: Charts for visualization
+
+**Scripts:**
+```json
+{
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview"
+}
+```
+
+---
+
+### **8. vercel.json** - Deployment Configuration
+
+**Original Path:** `/Admin/vercel.json`
+
+**Content:**
+```json
+{
+  "rewrites": [
+    {"source": "/(.*)", "destination": "/index.html"}
+  ]
+}
+```
+
+**Purpose:**
+- SPA routing support
+- Redirects all routes to index.html
+- Enables client-side routing
+
+---
+
+### **9. test.sh** - Automated Test Suite
+
+**Original Path:** `/AI_INTEGRATION_BACKUP/test.sh`
+
+**Tests Performed:**
+1. ✅ API Health Check
+2. ✅ AI Analysis Request
+3. ✅ Frontend Page Accessibility
+4. ✅ Vercel Deployment Status
+
+**Usage:**
+```bash
+chmod +x test.sh
+./test.sh
+```
+
+**Features:**
+- Color-coded output
+- HTTP status validation
+- JSON response parsing
+- Detailed error messages
+- Summary report
 
 ---
 
