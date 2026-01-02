@@ -26,6 +26,10 @@
   - Location: `/Admin/src/pages/RootCauseAnalysis/RootCausePanel.jsx`
   - Features: Single-page form with AI analysis
 
+- `FormRCA.jsx` - Root Cause Analysis Form Template
+  - Location: `/Admin/src/pages/RootCauseAnalysis/FormRCA.jsx`
+  - Features: Alternative form layout
+
 ## 🔧 **How It Works:**
 
 ```
