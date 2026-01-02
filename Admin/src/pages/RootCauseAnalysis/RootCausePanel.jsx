@@ -13,6 +13,8 @@ export default function RootCausePanel() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [serverStatus, setServerStatus] = useState("checking");
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [error, setError] = useState("");
 
   // Sunucu durumunu kontrol et
   useEffect(() => {
@@ -30,29 +32,37 @@ export default function RootCausePanel() {
     e.preventDefault();
 
     if (!incidentDescription || !location || !dateTime) {
-      alert("Lütfen en az Olay Açıklaması, Konum ve Tarih/Saat alanlarını doldurunuz!");
+      alert("Please fill at least Incident Description, Location and Date/Time fields!");
       return;
     }
 
     setLoading(true);
     setResult(null);
+    setAnalysisResult(null);
+    setError("");
 
-    const data = await analyzeRootCause({
-      incident_description: incidentDescription,
-      location,
-      date_time: dateTime,
-      witnesses,
-    });
+    try {
+      const data = await analyzeRootCause({
+        incident_description: incidentDescription,
+        location,
+        date_time: dateTime,
+        witnesses,
+      });
 
-    setResult(data);
-    setLoading(false);
+      setAnalysisResult(data);
+      setResult(data);
+      setLoading(false);
 
-    // Başarılıysa formu temizle
-    if (data.status === "success") {
-      setIncidentDescription("");
-      setLocation("");
-      setDateTime("");
-      setWitnesses("");
+      // Clear form if successful
+      if (data.status === "success") {
+        setIncidentDescription("");
+        setLocation("");
+        setDateTime("");
+        setWitnesses("");
+      }
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
     }
   };
 
@@ -134,8 +144,137 @@ export default function RootCausePanel() {
         </button>
       </form>
 
-      {/* Sonuç Mesajı */}
-      {result && (
+      {/* Error Message */}
+      {error && (
+        <div style={styles.errorMessage}>
+          <h3>❌ Error</h3>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* Analysis Results */}
+      {analysisResult && analysisResult.status === "success" && (
+        <div style={styles.resultsContainer}>
+          <h3 style={styles.resultsTitle}>📊 HSG245 Analysis Results</h3>
+          
+          {/* Part 1: Overview */}
+          <div style={styles.resultSection}>
+            <h4 style={styles.sectionTitle}>🔍 Part 1: Initial Overview</h4>
+            <div style={styles.resultContent}>
+              <p><strong>Incident Type:</strong> {analysisResult.part1_overview?.incident_type || 'N/A'}</p>
+              <p><strong>Date/Time:</strong> {analysisResult.part1_overview?.date_time || 'N/A'}</p>
+              <p><strong>Location:</strong> {analysisResult.part1_overview?.location || 'N/A'}</p>
+              {analysisResult.part1_overview?.brief_details && (
+                <div>
+                  <p><strong>What:</strong> {analysisResult.part1_overview.brief_details.what}</p>
+                  <p><strong>Where:</strong> {analysisResult.part1_overview.brief_details.where}</p>
+                  <p><strong>Who:</strong> {analysisResult.part1_overview.brief_details.who}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Part 2: Assessment */}
+          <div style={styles.resultSection}>
+            <h4 style={styles.sectionTitle}>📊 Part 2: Assessment</h4>
+            <div style={styles.resultContent}>
+              <p><strong>Event Type:</strong> {analysisResult.part2_assessment?.type_of_event || 'N/A'}</p>
+              <p><strong>Severity:</strong> {analysisResult.part2_assessment?.actual_potential_harm || 'N/A'}</p>
+              <p><strong>RIDDOR Reportable:</strong> {analysisResult.part2_assessment?.riddor_reportable || 'N/A'}</p>
+              <p><strong>Investigation Level:</strong> {analysisResult.part2_assessment?.investigation_level || 'N/A'}</p>
+              <p><strong>Priority:</strong> {analysisResult.part2_assessment?.priority || 'N/A'}</p>
+              {analysisResult.part2_assessment?.riddor_reasoning && (
+                <p><strong>RIDDOR Reasoning:</strong> {analysisResult.part2_assessment.riddor_reasoning}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Part 3: Investigation */}
+          {analysisResult.part3_investigation && (
+            <div style={styles.resultSection}>
+              <h4 style={styles.sectionTitle}>🔬 Part 3: Root Cause Investigation</h4>
+              <div style={styles.resultContent}>
+                {analysisResult.part3_investigation.immediate_causes && (
+                  <div style={styles.causesList}>
+                    <strong>Immediate Causes:</strong>
+                    <ul>
+                      {analysisResult.part3_investigation.immediate_causes.map((cause, i) => (
+                        <li key={i}>{cause}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {analysisResult.part3_investigation.underlying_causes && (
+                  <div style={styles.causesList}>
+                    <strong>Underlying Causes:</strong>
+                    <ul>
+                      {analysisResult.part3_investigation.underlying_causes.map((cause, i) => (
+                        <li key={i}>{cause}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {analysisResult.part3_investigation.root_causes && (
+                  <div style={styles.causesList}>
+                    <strong>Root Causes:</strong>
+                    <ul>
+                      {analysisResult.part3_investigation.root_causes.map((cause, i) => (
+                        <li key={i}>{cause}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Part 4: Recommendations */}
+          {analysisResult.part4_recommendations && (
+            <div style={styles.resultSection}>
+              <h4 style={styles.sectionTitle}>💡 Part 4: Recommendations</h4>
+              <div style={styles.resultContent}>
+                {analysisResult.part4_recommendations.immediate_actions && (
+                  <div style={styles.actionsList}>
+                    <strong>⚡ Immediate Actions:</strong>
+                    <ul>
+                      {analysisResult.part4_recommendations.immediate_actions.map((action, i) => (
+                        <li key={i}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {analysisResult.part4_recommendations.short_term_actions && (
+                  <div style={styles.actionsList}>
+                    <strong>📅 Short-term Actions:</strong>
+                    <ul>
+                      {analysisResult.part4_recommendations.short_term_actions.map((action, i) => (
+                        <li key={i}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {analysisResult.part4_recommendations.long_term_actions && (
+                  <div style={styles.actionsList}>
+                    <strong>🎯 Long-term Actions:</strong>
+                    <ul>
+                      {analysisResult.part4_recommendations.long_term_actions.map((action, i) => (
+                        <li key={i}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <p style={styles.timestamp}>
+            <small>Analysis completed: {new Date(analysisResult.timestamp).toLocaleString()}</small>
+          </p>
+        </div>
+      )}
+
+      {/* Sonuç Mesajı (Legacy - eski format için) */}
+      {result && !analysisResult && (
         <div
           style={styles[result.status === "success" ? "successMessage" : "errorMessage"]}
         >
@@ -318,5 +457,41 @@ const styles = {
     fontFamily: "monospace",
     fontSize: "12px",
     overflow: "auto",
+  },
+  // New styles for HSG245 results
+  resultsContainer: {
+    marginTop: "30px",
+    padding: "20px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "8px",
+    border: "1px solid #dee2e6",
+  },
+  resultsTitle: {
+    color: "#2c3e50",
+    marginBottom: "20px",
+    paddingBottom: "10px",
+    borderBottom: "2px solid #3498db",
+  },
+  resultSection: {
+    marginBottom: "20px",
+    padding: "15px",
+    backgroundColor: "white",
+    borderRadius: "6px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  sectionTitle: {
+    color: "#34495e",
+    marginBottom: "12px",
+    fontSize: "16px",
+  },
+  resultContent: {
+    fontSize: "14px",
+    lineHeight: "1.6",
+  },
+  causesList: {
+    marginBottom: "15px",
+  },
+  actionsList: {
+    marginBottom: "15px",
   },
 };
