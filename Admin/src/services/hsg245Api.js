@@ -1,15 +1,20 @@
 /**
  * HSG245 Investigation API Service
  * 
- * Bu dosya admin panel ile backend API arasındaki tüm iletişimi yönetir.
- * Her fonksiyon bir API endpoint'ini temsil eder.
+ * ⚠️ UPDATED: Now uses Vercel API Route as proxy to Railway backend
  * 
- * Backend URL: http://localhost:8000 (development)
- *             https://your-vps-ip:8000 (production)
+ * Architecture:
+ * Admin Panel → Vercel API Route (/api/hsg245) → Railway Backend → AI Agents
+ * 
+ * Benefits:
+ * - No CORS issues
+ * - Backend URL stays private
+ * - Better security
  */
 
-// API Base URL - environment variable'dan gelir
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ⚠️ IMPORTANT: Use Vercel API route (NOT direct Railway URL)
+// This routes through /app/api/hsg245/route.ts which proxies to Railway
+const API_BASE_URL = '/api/hsg245';
 
 /**
  * API çağrılarında hata yönetimi için yardımcı fonksiyon
