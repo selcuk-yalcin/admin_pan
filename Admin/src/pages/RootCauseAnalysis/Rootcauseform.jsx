@@ -130,20 +130,44 @@ const HSG245WizardAI = () => {
         if (result.part3_investigation) {
             const inv = result.part3_investigation;
             
+            console.log("🔍 Investigation data:", inv);
+            
             setFormData(prev => ({
                 ...prev,
-                immediateCauses: Array.isArray(inv.immediate_causes) 
+                immediateCauses: Array.isArray(inv.immediate_causes) && inv.immediate_causes.length > 0
                     ? "• " + inv.immediate_causes.join("\n• ") 
-                    : "Not determined",
+                    : "AI analysis in progress or no causes identified",
                     
-                underlyingCauses: Array.isArray(inv.underlying_causes) 
+                underlyingCauses: Array.isArray(inv.underlying_causes) && inv.underlying_causes.length > 0
                     ? "• " + inv.underlying_causes.join("\n• ") 
-                    : "Not determined",
+                    : "AI analysis in progress or no causes identified",
                     
-                rootCauses: Array.isArray(inv.root_causes) 
+                rootCauses: Array.isArray(inv.root_causes) && inv.root_causes.length > 0
                     ? "• " + inv.root_causes.join("\n• ") 
-                    : "Not determined"
+                    : "AI analysis in progress or no root causes identified"
             }));
+        }
+
+        // E. Map Part 4 Action Plan if available
+        if (result.part4_recommendations && result.part4_recommendations.action_plan) {
+            const actions = result.part4_recommendations.action_plan;
+            
+            console.log("📋 Action plan data:", actions);
+            
+            if (Array.isArray(actions) && actions.length > 0) {
+                const mappedActions = actions.slice(0, 3).map((action, idx) => ({
+                    measure: action.measure || action.action || "",
+                    date: action.completion_date || action.date || "",
+                    person: action.responsible_person || action.person || ""
+                }));
+                
+                // Fill remaining rows if less than 3
+                while (mappedActions.length < 3) {
+                    mappedActions.push({ measure: "", date: "", person: "" });
+                }
+                
+                setFormData(prev => ({ ...prev, actionPlan: mappedActions }));
+            }
         }
 
         // E. Success: Move to Part 4
