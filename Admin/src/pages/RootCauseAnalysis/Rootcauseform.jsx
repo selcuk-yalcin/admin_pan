@@ -691,29 +691,50 @@ const HSG245WizardAI = () => {
                                  <Row>
                                      <Col lg="12" className="mb-3">
                                          <Label className="fw-bold small text-muted">Immediate Causes</Label>
-                                         <Input type="textarea" rows="2" 
+                                         <Input 
+                                            type="textarea" 
+                                            rows="6" 
                                             name="immediateCauses"
                                             value={formData.immediateCauses} 
                                             onChange={handleInputChange}
                                             className="form-control bg-white fw-bold" 
+                                            style={{
+                                              minHeight: '120px',
+                                              resize: 'vertical',
+                                              overflow: 'auto'
+                                            }}
                                          />
                                      </Col>
                                      <Col lg="12" className="mb-3">
                                          <Label className="fw-bold small text-muted">Underlying Causes</Label>
-                                         <Input type="textarea" rows="2" 
+                                         <Input 
+                                            type="textarea" 
+                                            rows="8" 
                                             name="underlyingCauses"
                                             value={formData.underlyingCauses} 
                                             onChange={handleInputChange}
                                             className="form-control bg-white" 
+                                            style={{
+                                              minHeight: '150px',
+                                              resize: 'vertical',
+                                              overflow: 'auto'
+                                            }}
                                          />
                                      </Col>
                                      <Col lg="12">
                                          <Label className="fw-bold small text-muted">Root Causes</Label>
-                                         <Input type="textarea" rows="2" 
+                                         <Input 
+                                            type="textarea" 
+                                            rows="6" 
                                             name="rootCauses"
                                             value={formData.rootCauses} 
                                             onChange={handleInputChange}
-                                            className="form-control bg-white text-danger" 
+                                            className="form-control bg-white text-danger fw-bold" 
+                                            style={{
+                                              minHeight: '120px',
+                                              resize: 'vertical',
+                                              overflow: 'auto'
+                                            }}
                                          />
                                      </Col>
                                  </Row>
