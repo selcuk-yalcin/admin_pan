@@ -132,7 +132,14 @@ export const analyzeRootCause = async (incidentData) => {
     const incident = await createResponse.json();
     console.log('✅ Incident created:', incident);
     
-    const incidentId = incident.incident_id;
+    // Railway response format: {success: true, data: {incident_id: "..."}}
+    const incidentId = incident.data?.incident_id || incident.incident_id;
+    
+    if (!incidentId) {
+      throw new Error('No incident_id received from backend');
+    }
+    
+    console.log('📋 Incident ID:', incidentId);
 
     // Step 2: Add assessment (Assessment Agent)
     const assessmentResponse = await fetch(`/api/hsg245`, {
@@ -177,6 +184,9 @@ export const analyzeRootCause = async (incidentData) => {
 
     const investigation = await investigateResponse.json();
     console.log('✅ Investigation completed:', investigation);
+    
+    // Extract data from Railway response format
+    const investigationData = investigation.data || investigation;
 
     // Step 4: Generate action plan (ActionPlan Agent)
     const actionPlanResponse = await fetch(`/api/hsg245`, {
@@ -194,13 +204,17 @@ export const analyzeRootCause = async (incidentData) => {
 
     const actionPlan = await actionPlanResponse.json();
     console.log('✅ Action plan generated:', actionPlan);
+    
+    // Extract data from Railway response format
+    const actionPlanData = actionPlan.data || actionPlan;
+    const assessmentData = assessment.data || assessment;
 
     // Return combined results in HSG245 format
     return {
       status: 'success',
       incident_id: incidentId,
       part1_overview: {
-        incident_type: incident.incident_type || "Incident",
+        incident_type: incident.data?.part1?.incident_type || incident.incident_type || "Incident",
         date_time: incidentData.date_time,
         location: incidentData.location,
         brief_details: {
@@ -210,18 +224,18 @@ export const analyzeRootCause = async (incidentData) => {
         }
       },
       part2_assessment: {
-        type_of_event: assessment.event_type || "Accident",
-        actual_potential_harm: assessment.severity_level || incidentData.severity,
+        type_of_event: assessmentData.type_of_event || "Accident",
+        actual_potential_harm: assessmentData.actual_potential_harm || incidentData.severity,
         riddor_reportable: "N",
-        investigation_level: "Medium level"
+        investigation_level: assessmentData.investigation_level || "Medium level"
       },
       part3_investigation: {
-        immediate_causes: investigation.immediate_causes || [],
-        underlying_causes: investigation.underlying_causes || [],
-        root_causes: investigation.root_causes || []
+        immediate_causes: investigationData.immediate_causes || [],
+        underlying_causes: investigationData.underlying_causes || [],
+        root_causes: investigationData.root_causes || []
       },
       part4_recommendations: {
-        action_plan: actionPlan.action_plan || []
+        action_plan: actionPlanData.action_plan || []
       }
     };
     
