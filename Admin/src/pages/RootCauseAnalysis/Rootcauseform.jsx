@@ -31,6 +31,7 @@ const HSG245WizardAI = () => {
   // AI Analysis States
   const [aiResult, setAiResult] = useState(null)
   const [aiError, setAiError] = useState("")
+  const [incidentId, setIncidentId] = useState(null) // Store incident_id for PDF generation
 
   // --- 1. CENTRAL FORM STATE ---
   const [formData, setFormData] = useState({
@@ -121,8 +122,9 @@ const HSG245WizardAI = () => {
 
         console.log("✅ AI Analysis Result:", result);
 
-        // C. Store full AI Result
+        // C. Store full AI Result AND incident_id
         setAiResult(result);
+        setIncidentId(result.incident_id); // Save incident_id for PDF generation
 
         // D. Map Part 3 Investigation to Form Fields
         if (result.part3_investigation) {
@@ -162,7 +164,58 @@ const HSG245WizardAI = () => {
     }
   }
 
-  // --- 4. RENDER ---
+  // --- 4. PDF GENERATION ---
+  const handleGeneratePDF = async () => {
+    if (!incidentId) {
+      alert("⚠️ Please complete AI Analysis first before generating PDF!");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    try {
+      console.log(`📄 Generating PDF for incident: ${incidentId}...`);
+      
+      const response = await fetch(`/api/hsg245`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: 'generate_pdf',
+          data: { incident_id: incidentId }
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'PDF generation failed' }));
+        throw new Error(error.error || error.detail || 'Failed to generate PDF');
+      }
+
+      // Download PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `HSG245_Report_${incidentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      alert("✅ PDF report downloaded successfully!");
+      
+    } catch (error) {
+      console.error("❌ PDF generation error:", error);
+      alert(`Failed to generate PDF.\n\nDetails: ${error.message}\n\nPlease ensure all 4 parts are completed.`);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
+  // --- 5. RENDER ---
   return (
     <React.Fragment>
       <div className="page-content">
@@ -708,8 +761,20 @@ const HSG245WizardAI = () => {
                              </li>
                         ) : activeTab === 4 ? (
                             <li className="next list-inline-item">
-                                <Button color="success">
-                                    <i className="bx bx-file me-1"></i> Generate PDF
+                                <Button 
+                                  color="success" 
+                                  onClick={handleGeneratePDF}
+                                  disabled={!incidentId || isAnalyzing}
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <Spinner size="sm" className="me-2" /> Generating PDF...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="bx bx-file me-1"></i> Generate PDF
+                                        </>
+                                    )}
                                 </Button>
                             </li>
                         ) : (
