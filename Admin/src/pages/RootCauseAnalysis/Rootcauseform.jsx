@@ -132,19 +132,32 @@ const HSG245WizardAI = () => {
             
             console.log("🔍 Investigation data:", inv);
             
+            // Helper function to extract causes from Railway format
+            const formatCauses = (causes) => {
+                if (!Array.isArray(causes) || causes.length === 0) {
+                    return "AI analysis in progress or no causes identified";
+                }
+                
+                // Check if causes are objects (Railway format) or strings
+                const formatted = causes.map(cause => {
+                    if (typeof cause === 'object' && cause.cause) {
+                        // Railway format: {cause: "...", description: "..."}
+                        return `${cause.cause}: ${cause.description || ''}`;
+                    } else if (typeof cause === 'string') {
+                        // Simple string format
+                        return cause;
+                    }
+                    return String(cause);
+                });
+                
+                return "• " + formatted.join("\n• ");
+            };
+            
             setFormData(prev => ({
                 ...prev,
-                immediateCauses: Array.isArray(inv.immediate_causes) && inv.immediate_causes.length > 0
-                    ? "• " + inv.immediate_causes.join("\n• ") 
-                    : "AI analysis in progress or no causes identified",
-                    
-                underlyingCauses: Array.isArray(inv.underlying_causes) && inv.underlying_causes.length > 0
-                    ? "• " + inv.underlying_causes.join("\n• ") 
-                    : "AI analysis in progress or no causes identified",
-                    
-                rootCauses: Array.isArray(inv.root_causes) && inv.root_causes.length > 0
-                    ? "• " + inv.root_causes.join("\n• ") 
-                    : "AI analysis in progress or no root causes identified"
+                immediateCauses: formatCauses(inv.immediate_causes),
+                underlyingCauses: formatCauses(inv.underlying_causes),
+                rootCauses: formatCauses(inv.root_causes)
             }));
         }
 
