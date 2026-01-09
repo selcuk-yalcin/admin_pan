@@ -85,7 +85,10 @@ export const testAPI = async (message) => {
 
 /**
  * Root Cause Analysis - HSG245
- * Performs comprehensive incident investigation using AI
+ * ⚠️ UPDATED: Now uses Railway backend via Vercel proxy
+ * 
+ * Architecture:
+ * Form → /api/hsg245 (Vercel) → Railway Backend → AI Agents
  * 
  * @param {Object} incidentData - Incident information from form
  * @param {string} incidentData.incident_description - What happened
@@ -96,62 +99,159 @@ export const testAPI = async (message) => {
  * @param {string} incidentData.witnesses - Witness information (optional)
  * @param {string} incidentData.immediate_actions - Actions taken (optional)
  * 
- * @returns {Promise<Object>} HSG245 analysis results
- * @returns {string} return.status - 'success' or 'error'
- * @returns {Object} return.part1_overview - Initial overview
- * @returns {Object} return.part2_assessment - Risk assessment
- * @returns {Object} return.part3_investigation - Root cause analysis
- * @returns {Object} return.part4_recommendations - Action plan
+ * @returns {Promise<Object>} HSG245 analysis results from Railway AI agents
  */
 export const analyzeRootCause = async (incidentData) => {
   try {
-    console.log('📤 Sending incident data to AI:', incidentData);
+    console.log('📤 Sending incident data to Railway AI agents:', incidentData);
     
-    const response = await fetch(`${API_BASE}/analyze`, {
+    // Step 1: Create incident (Overview Agent)
+    const createResponse = await fetch(`/api/hsg245`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(incidentData),
+      body: JSON.stringify({
+        action: 'create_incident',
+        data: {
+          reported_by: incidentData.injured_person || "User",
+          date_time: incidentData.date_time || new Date().toISOString(),
+          event_category: "Incident",
+          description: incidentData.incident_description,
+          injury_description: incidentData.severity || "",
+          forwarded_to: ""
+        }
+      }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    if (!createResponse.ok) {
+      const errorData = await createResponse.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to create incident: ${createResponse.status}`);
     }
 
-    const result = await response.json();
-    console.log('✅ Analysis completed:', result);
+    const incident = await createResponse.json();
+    console.log('✅ Incident created:', incident);
     
-    return result;
+    const incidentId = incident.incident_id;
+
+    // Step 2: Add assessment (Assessment Agent)
+    const assessmentResponse = await fetch(`/api/hsg245`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: 'add_assessment',
+        data: {
+          incident_id: incidentId,
+          event_type: "Accident",
+          actual_harm: incidentData.severity || "Minor",
+          riddor_reportable: "No"
+        }
+      }),
+    });
+
+    const assessment = await assessmentResponse.json();
+    console.log('✅ Assessment completed:', assessment);
+
+    // Step 3: Investigate (RootCause Agent)
+    const investigateResponse = await fetch(`/api/hsg245`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: 'investigate',
+        data: {
+          incident_id: incidentId,
+          location: incidentData.location || "Not specified",
+          who_involved: incidentData.injured_person || "Not specified",
+          how_happened: incidentData.incident_description,
+          activities: incidentData.witnesses || "",
+          working_conditions: "",
+          safety_procedures: "",
+          injuries: incidentData.severity || ""
+        }
+      }),
+    });
+
+    const investigation = await investigateResponse.json();
+    console.log('✅ Investigation completed:', investigation);
+
+    // Step 4: Generate action plan (ActionPlan Agent)
+    const actionPlanResponse = await fetch(`/api/hsg245`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: 'generate_action_plan',
+        data: {
+          incident_id: incidentId
+        }
+      }),
+    });
+
+    const actionPlan = await actionPlanResponse.json();
+    console.log('✅ Action plan generated:', actionPlan);
+
+    // Return combined results in HSG245 format
+    return {
+      status: 'success',
+      incident_id: incidentId,
+      part1_overview: {
+        incident_type: incident.incident_type || "Incident",
+        date_time: incidentData.date_time,
+        location: incidentData.location,
+        brief_details: {
+          what: incidentData.incident_description,
+          where: incidentData.location,
+          who: incidentData.injured_person
+        }
+      },
+      part2_assessment: {
+        type_of_event: assessment.event_type || "Accident",
+        actual_potential_harm: assessment.severity_level || incidentData.severity,
+        riddor_reportable: "N",
+        investigation_level: "Medium level"
+      },
+      part3_investigation: {
+        immediate_causes: investigation.immediate_causes || [],
+        underlying_causes: investigation.underlying_causes || [],
+        root_causes: investigation.root_causes || []
+      },
+      part4_recommendations: {
+        action_plan: actionPlan.action_plan || []
+      }
+    };
     
   } catch (error) {
-    console.error("❌ Root cause analysis error:", error);
-    throw new Error(error.message || "Failed to perform analysis");
+    console.error("❌ Railway AI analysis error:", error);
+    throw new Error(error.message || "Failed to perform analysis via Railway");
   }
 };
 
 /**
- * Health Check - Check if API is running
- * @returns {Promise<Object>} API health status
+ * Health Check - Check if Railway backend is running
+ * @returns {Promise<Object>} Railway backend health status
  */
 export const checkAPIHealth = async () => {
   try {
-    const response = await fetch(`${API_BASE}/analyze`, {
+    const response = await fetch(`/api/hsg245`, {
       method: "GET",
     });
 
     if (!response.ok) {
-      throw new Error('API not responding');
+      throw new Error('Railway backend not responding');
     }
 
     const result = await response.json();
-    console.log('✅ API Health:', result);
+    console.log('✅ Railway Backend Health:', result);
     
     return result;
     
   } catch (error) {
-    console.error("❌ API health check failed:", error);
+    console.error("❌ Railway backend health check failed:", error);
     return { 
       status: "offline",
       message: error.message 
