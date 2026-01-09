@@ -25,11 +25,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ⚠️ IMPORTANT: Get backend URL from environment variable
-    // Set this in Vercel Dashboard → Settings → Environment Variables
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000'
+    // ⚠️ BACKEND URL: Railway production backend
+    // You can also set this in Vercel Dashboard → Settings → Environment Variables
+    // Variable name: NEXT_PUBLIC_BACKEND_API_URL
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'https://hsercanalysisagenticai-production.up.railway.app'
 
     console.log('📥 Request:', req.method, req.url)
+    console.log('🔗 Backend URL:', BACKEND_URL)
 
     // Handle GET request (health check)
     if (req.method === 'GET') {
