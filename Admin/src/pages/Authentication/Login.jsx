@@ -1,20 +1,12 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { SignIn, useAuth } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 const Login = () => {
   const { isSignedIn, isLoaded } = useAuth();
-  const navigate = useNavigate();
 
   //meta title
   document.title = "Login | HSE AgenticAI Admin Panel";
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      console.log('✅ User is already signed in, redirecting to dashboard...');
-      navigate("/dashboard", { replace: true });
-    }
-  }, [isSignedIn, isLoaded, navigate]);
 
   // Don't render SignIn if user is already logged in
   if (!isLoaded) {
@@ -32,17 +24,7 @@ const Login = () => {
   }
 
   if (isSignedIn) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div>Redirecting to dashboard...</div>
-      </div>
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
