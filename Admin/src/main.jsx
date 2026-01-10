@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from "react-dom/client"
 import App from './App.jsx'
 import * as serviceWorker from "./serviceWorker"
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, useNavigate } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/clerk-react'
 import "./i18n"
 import { Provider } from 'react-redux'
@@ -21,16 +21,27 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key. Add VITE_CLERK_PUBLISHABLE_KEY to .env.local")
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <Provider store={store}>
+// Wrapper component to use React Router's navigation with Clerk
+function ClerkProviderWithRoutes({ children }) {
+  const navigate = useNavigate();
+  
+  return (
     <ClerkProvider 
       publishableKey={PUBLISHABLE_KEY}
-      navigate={(to) => window.location.href = to}
+      navigate={(to) => navigate(to)}
     >
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      {children}
     </ClerkProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <Provider store={store}>
+    <BrowserRouter>
+      <ClerkProviderWithRoutes>
+        <App />
+      </ClerkProviderWithRoutes>
+    </BrowserRouter>
   </Provider>
 );
 
