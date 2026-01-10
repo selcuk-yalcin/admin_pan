@@ -1,9 +1,9 @@
 import PropTypes from "prop-types";
 import React from "react";
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { connect } from "react-redux";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
 import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
@@ -95,7 +95,7 @@ const App = (props) => {
                   </Authmiddleware>
                 </SignedIn>
                 <SignedOut>
-                  <RedirectToSignIn />
+                  <Navigate to="/login" replace />
                 </SignedOut>
               </>
             }
