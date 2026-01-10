@@ -3,6 +3,7 @@ import React from "react";
 
 import { Routes, Route } from "react-router-dom";
 import { connect } from "react-redux";
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 
 import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
@@ -72,6 +73,7 @@ const App = (props) => {
   return (
     <React.Fragment>
       <Routes>
+        {/* Public routes - accessible without authentication */}
         {publicRoutes.map((route, idx) => (
           <Route
             path={route.path}
@@ -81,13 +83,21 @@ const App = (props) => {
           />
         ))}
 
+        {/* Protected routes - require Clerk authentication */}
         {authProtectedRoutes.map((route, idx) => (
           <Route
             path={route.path}
             element={
-              <Authmiddleware>
-                <Layout>{route.component}</Layout>
-              </Authmiddleware>
+              <>
+                <SignedIn>
+                  <Authmiddleware>
+                    <Layout>{route.component}</Layout>
+                  </Authmiddleware>
+                </SignedIn>
+                <SignedOut>
+                  <RedirectToSignIn />
+                </SignedOut>
+              </>
             }
             key={idx}
             exact={true}

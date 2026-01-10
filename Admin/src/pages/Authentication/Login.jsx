@@ -1,53 +1,52 @@
 import React from "react";
-import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
-import withRouter from "../../components/Common/withRouter";
+import { SignIn } from "@clerk/clerk-react";
+import { Container } from "reactstrap";
 
-//redux
-import { useSelector, useDispatch } from "react-redux";
-import { createSelector } from "reselect";
-
-// Formik validation
-import * as Yup from "yup";
-import { useFormik } from "formik";
-
-import {
-  Row,
-  Col,
-  CardBody,
-  Card,
-  Alert,
-  Container,
-  Form,
-  Input,
-  FormFeedback,
-  Label,
-} from "reactstrap";
-
-// actions
-import { loginUser, socialLogin } from "/src/store/actions";
-
-// import images
-import profile from "../../assets/images/profile-img.png";
-import logo from "../../assets/images/logo.svg";
-import lightlogo from "../../assets/images/logo-light.svg";
-
-const Login = (props) => {
+const Login = () => {
   //meta title
-  document.title = "Login | Skote - Vite React Admin & Dashboard Template";
-  const dispatch = useDispatch();
+  document.title = "Login | HSE AgenticAI Admin Panel";
 
-  const validation = useFormik({
-    // enableReinitialize : use this flag when initial values needs to be changed
-    enableReinitialize: true,
+  return (
+    <React.Fragment>
+      <div className="auth-page" style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '20px'
+      }}>
+        <Container>
+          <div className="d-flex justify-content-center">
+            <SignIn 
+              appearance={{
+                elements: {
+                  rootBox: "mx-auto shadow-xl",
+                  card: "rounded-lg",
+                  headerTitle: "text-2xl font-bold",
+                  headerSubtitle: "text-gray-600",
+                  socialButtonsBlockButton: "border-2",
+                  formButtonPrimary: "bg-primary hover:bg-primary-dark",
+                  footerActionLink: "text-primary hover:text-primary-dark"
+                },
+                layout: {
+                  socialButtonsPlacement: "top",
+                  socialButtonsVariant: "iconButton"
+                }
+              }}
+              routing="path"
+              path="/sign-in"
+              signUpUrl="/sign-up"
+              redirectUrl="/dashboard"
+            />
+          </div>
+        </Container>
+      </div>
+    </React.Fragment>
+  );
+};
 
-    initialValues: {
-      email: "admin@themesbrand.com" || "",
-      password: "123456" || "",
-    },
-    validationSchema: Yup.object({
-      email: Yup.string().required("Please Enter Your Email"),
-      password: Yup.string().required("Please Enter Your Password"),
+export default Login;
     }),
     onSubmit: (values) => {
       dispatch(loginUser(values, props.router.navigate));

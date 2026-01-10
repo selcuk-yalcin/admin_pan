@@ -1,53 +1,51 @@
-import React, { useEffect } from "react";
-import { Row, Col, CardBody, Card, Alert, Container, Input, Label, Form, FormFeedback } from "reactstrap";
-
-// Formik Validation
-import * as Yup from "yup";
-import { useFormik } from "formik";
-
-// action
-import { registerUser, apiError } from "/src/store/actions";
-
-//redux
-import { useSelector, useDispatch } from "react-redux";
-import { createSelector } from "reselect";
-
-import { Link } from "react-router-dom";
-
-// import images
-import profileImg from "../../assets/images/profile-img.png";
-import logo from "../../assets/images/logo.svg";
-import lightlogo from "../../assets/images/logo-light.svg";
+import React from "react";
+import { SignUp } from "@clerk/clerk-react";
+import { Container } from "reactstrap";
 
 const Register = () => {
-  document.title = "Register | Skote - Vite React Admin & Dashboard Template";
+  document.title = "Register | HSE AgenticAI Admin Panel";
 
-  const dispatch = useDispatch();
+  return (
+    <React.Fragment>
+      <div className="auth-page" style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '20px'
+      }}>
+        <Container>
+          <div className="d-flex justify-content-center">
+            <SignUp 
+              appearance={{
+                elements: {
+                  rootBox: "mx-auto shadow-xl",
+                  card: "rounded-lg",
+                  headerTitle: "text-2xl font-bold",
+                  headerSubtitle: "text-gray-600",
+                  socialButtonsBlockButton: "border-2",
+                  formButtonPrimary: "bg-primary hover:bg-primary-dark",
+                  footerActionLink: "text-primary hover:text-primary-dark"
+                },
+                layout: {
+                  socialButtonsPlacement: "top",
+                  socialButtonsVariant: "iconButton"
+                }
+              }}
+              routing="path"
+              path="/sign-up"
+              signInUrl="/sign-in"
+              redirectUrl="/dashboard"
+            />
+          </div>
+        </Container>
+      </div>
+    </React.Fragment>
+  );
+};
 
-  const validation = useFormik({
-    // enableReinitialize : use this flag when initial values needs to be changed
-    enableReinitialize: true,
-
-    initialValues: {
-      email: '',
-      username: '',
-      password: '',
-    },
-    validationSchema: Yup.object({
-      email: Yup.string().required("Please Enter Your Email"),
-      username: Yup.string().required("Please Enter Your Username"),
-      password: Yup.string().required("Please Enter Your Password"),
-    }),
-    onSubmit: (values) => {
-      dispatch(registerUser(values));
-    }
-  });
-
-  const AccountProperties = createSelector(
-    (state) => state.Account,
-    (account) => ({
-      user: account.user,
-      registrationError: account.registrationError,
+export default Register;
       // loading: account.loading,
     })
   );
