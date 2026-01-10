@@ -11,6 +11,12 @@ import store from './store/index.js'
 // Get Clerk Publishable Key from environment variables
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
+console.log('🔑 CLERK KEY CHECK:', {
+  keyExists: !!PUBLISHABLE_KEY,
+  keyPreview: PUBLISHABLE_KEY ? PUBLISHABLE_KEY.substring(0, 15) + '...' : 'MISSING',
+  allEnvVars: Object.keys(import.meta.env)
+});
+
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key. Add VITE_CLERK_PUBLISHABLE_KEY to .env.local")
 }
