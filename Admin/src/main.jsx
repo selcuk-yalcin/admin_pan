@@ -18,7 +18,13 @@ if (!PUBLISHABLE_KEY) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.Fragment>
     <Provider store={store}>
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <ClerkProvider 
+        publishableKey={PUBLISHABLE_KEY}
+        signInUrl="/login"
+        signUpUrl="/register"
+        afterSignInUrl="/dashboard"
+        afterSignUpUrl="/dashboard"
+      >
         <BrowserRouter>
           <App />
         </BrowserRouter>
