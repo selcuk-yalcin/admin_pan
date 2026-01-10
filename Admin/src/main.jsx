@@ -22,18 +22,16 @@ if (!PUBLISHABLE_KEY) {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.Fragment>
-    <Provider store={store}>
-      <ClerkProvider 
-        publishableKey={PUBLISHABLE_KEY}
-        navigate={(to) => window.location.href = to}
-      >
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ClerkProvider>
-    </Provider>
-  </React.Fragment>,
+  <Provider store={store}>
+    <ClerkProvider 
+      publishableKey={PUBLISHABLE_KEY}
+      navigate={(to) => window.location.href = to}
+    >
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ClerkProvider>
+  </Provider>
 );
 
 serviceWorker.unregister()
