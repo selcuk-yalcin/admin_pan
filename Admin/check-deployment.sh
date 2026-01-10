@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "🔍 Vercel Deployment Check"
+echo "=========================="
+echo ""
+echo "STEP 1: Check if Vercel deployed new code"
+echo "Go to: https://vercel.com/dashboard"
+echo "Check latest deployment timestamp"
+echo ""
+echo "Our GitHub push time: $(git log -1 --format=%cd)"
+echo ""
+echo "If Vercel deployment is OLDER → Manual redeploy needed!"
+echo ""
+echo "STEP 2: Manual Redeploy"
+echo "Vercel Dashboard → Deployments → Latest → Redeploy"
+echo ""
