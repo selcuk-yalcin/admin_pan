@@ -20,10 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <Provider store={store}>
       <ClerkProvider 
         publishableKey={PUBLISHABLE_KEY}
-        signInUrl="/login"
-        signUpUrl="/register"
-        afterSignInUrl="/dashboard"
-        afterSignUpUrl="/dashboard"
+        navigate={(to) => window.location.href = to}
       >
         <BrowserRouter>
           <App />

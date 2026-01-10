@@ -3,7 +3,7 @@ import React from "react";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { connect } from "react-redux";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
 
 import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
@@ -29,20 +29,6 @@ import fakeBackend from "./helpers/AuthType/fakeBackend"
 // Activating fake backend
 fakeBackend();
 
-// const firebaseConfig = {
-//   apiKey: import.meta.env.VITE_APP_APIKEY,
-//   authDomain: import.meta.env.VITE_APP_AUTHDOMAIN,
-//   databaseURL: import.meta.env.VITE_APP_DATABASEURL,
-//   projectId: import.meta.env.VITE_APP_PROJECTID,
-//   storageBucket: import.meta.env.VITE_APP_STORAGEBUCKET,
-//   messagingSenderId: import.meta.env.VITE_APP_MESSAGINGSENDERID,
-//   appId: import.meta.env.VITE_APP_APPID,
-//   measurementId: import.meta.env.VITE_APP_MEASUREMENTID,
-// };
-
-// init firebase backend
-// initFirebaseBackend(firebaseConfig)
-
 const App = (props) => {
   const LayoutProperties = createSelector(
     (state) => state.Layout,
@@ -54,6 +40,8 @@ const App = (props) => {
   const {
     layoutType
   } = useSelector(LayoutProperties);
+
+  const { isSignedIn, isLoaded } = useAuth();
 
   function getLayout(layoutType) {
     let layoutCls = VerticalLayout;
@@ -69,6 +57,28 @@ const App = (props) => {
   }
 
   const Layout = getLayout(layoutType);
+
+  // Protected Route wrapper
+  const ProtectedRoute = ({ children }) => {
+    if (!isLoaded) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div>Loading...</div>
+        </div>
+      );
+    }
+    
+    if (!isSignedIn) {
+      return <Navigate to="/login" replace />;
+    }
+    
+    return children;
+  };
 
   return (
     <React.Fragment>
@@ -88,16 +98,11 @@ const App = (props) => {
           <Route
             path={route.path}
             element={
-              <>
-                <SignedIn>
-                  <Authmiddleware>
-                    <Layout>{route.component}</Layout>
-                  </Authmiddleware>
-                </SignedIn>
-                <SignedOut>
-                  <Navigate to="/login" replace />
-                </SignedOut>
-              </>
+              <ProtectedRoute>
+                <Authmiddleware>
+                  <Layout>{route.component}</Layout>
+                </Authmiddleware>
+              </ProtectedRoute>
             }
             key={idx}
             exact={true}

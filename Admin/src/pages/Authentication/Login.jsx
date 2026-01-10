@@ -1,9 +1,19 @@
-import React from "react";
-import { SignIn } from "@clerk/clerk-react";
+import React, { useEffect } from "react";
+import { SignIn, useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
+
   //meta title
   document.title = "Login | HSE AgenticAI Admin Panel";
+
+  useEffect(() => {
+    if (isSignedIn) {
+      navigate("/dashboard");
+    }
+  }, [isSignedIn, navigate]);
 
   return (
     <div style={{
