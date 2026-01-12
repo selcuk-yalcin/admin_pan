@@ -9,6 +9,8 @@ import VisualLook from "../pages/VisualLook/index";
 import EmailPanel from "../pages/EmailPanel";
 import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
 import Rootcauseform from "../pages/RootCauseAnalysis/Rootcauseform";
+import RiskAssessmentPanel from "../pages/RiskAssessment/RiskAssessmentPanel";
+import RiskAssessmentForm from "../pages/RiskAssessment/RiskAssessmentForm";
 // // File Manager
 import FileManager from "../pages/FileManager/index";
 
@@ -205,6 +207,9 @@ const authProtectedRoutes = [
   { path: "/email-panel", component: <EmailPanel /> },
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
   { path: "/rootcause-form", component: <Rootcauseform /> },
+  { path: "/risk-assessment", component: <RiskAssessmentPanel /> },
+  { path: "/risk-assessment-form", component: <RiskAssessmentForm /> },
+  { path: "/risk-assessment-form/:id", component: <RiskAssessmentForm /> },
 
   //File Manager
   { path: "/apps-filemanager", component: <FileManager /> },
