@@ -43,6 +43,10 @@ const AIAssistantPanel = () => {
   ];
 
   const handleSendMessage = () => {
+    // Mesaj gönderme devre dışı - sadece welcome screen gösteriliyor
+    return;
+    
+    /*
     if (!inputMessage.trim()) return;
 
     // Add user message
@@ -72,6 +76,7 @@ const AIAssistantPanel = () => {
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
     }, 2000);
+    */
   };
 
   const handleQuestionClick = (question) => {
@@ -251,6 +256,20 @@ const AIAssistantPanel = () => {
               </div>
               <div>
                 <Button 
+                  color="primary" 
+                  className="me-2"
+                  style={{ 
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    border: "none",
+                    padding: "8px 16px"
+                  }}
+                  onClick={() => window.location.reload()}
+                >
+                  <i className="bx bx-refresh me-1"></i>
+                  Yenile
+                </Button>
+                <Button 
                   color="light" 
                   className="me-2"
                   style={{ 
@@ -271,16 +290,15 @@ const AIAssistantPanel = () => {
               style={{ 
                 flex: 1, 
                 overflowY: "auto", 
-                padding: messages.length === 1 ? "60px 80px" : "24px 32px",
+                padding: "60px 80px",
                 background: "#f8f9fa",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: messages.length === 1 ? "center" : "flex-start"
+                justifyContent: "center"
               }}
             >
-              {/* Welcome Screen */}
-              {messages.length === 1 && (
-                <div className="text-center mb-5">
+              {/* Welcome Screen - Always visible */}
+              <div className="text-center mb-5">
                   <div 
                     className="mx-auto mb-4"
                     style={{
@@ -469,9 +487,9 @@ const AIAssistantPanel = () => {
                     </Col>
                   </Row>
                 </div>
-              )}
 
-              {/* Chat Messages */}
+              {/* Chat Messages - Hidden for now, welcome screen always shows */}
+              <div style={{ display: "none" }}>
               {messages.length > 1 && messages.slice(1).map((message) => (
                 <div
                   key={message.id}
@@ -590,6 +608,7 @@ const AIAssistantPanel = () => {
               )}
               
               <div ref={messagesEndRef} />
+              </div>
             </div>
 
             {/* Input Area */}
