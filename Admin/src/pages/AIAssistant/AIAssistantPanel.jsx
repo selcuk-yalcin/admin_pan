@@ -43,10 +43,6 @@ const AIAssistantPanel = () => {
   ];
 
   const handleSendMessage = () => {
-    // Mesaj gönderme devre dışı - sadece welcome screen gösteriliyor
-    return;
-    
-    /*
     if (!inputMessage.trim()) return;
 
     // Add user message
@@ -76,7 +72,6 @@ const AIAssistantPanel = () => {
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
     }, 2000);
-    */
   };
 
   const handleQuestionClick = (question) => {
@@ -488,9 +483,10 @@ const AIAssistantPanel = () => {
                   </Row>
                 </div>
 
-              {/* Chat Messages - Hidden for now, welcome screen always shows */}
-              <div style={{ display: "none" }}>
-              {messages.length > 1 && messages.slice(1).map((message) => (
+              {/* Chat Messages */}
+              {messages.length > 1 && (
+                <div className="mt-5">
+                  {messages.slice(1).map((message) => (
                 <div
                   key={message.id}
                   className={`d-flex mb-4 ${message.type === "user" ? "justify-content-end" : "justify-content-start"}`}
@@ -609,6 +605,7 @@ const AIAssistantPanel = () => {
               
               <div ref={messagesEndRef} />
               </div>
+              )}
             </div>
 
             {/* Input Area */}
