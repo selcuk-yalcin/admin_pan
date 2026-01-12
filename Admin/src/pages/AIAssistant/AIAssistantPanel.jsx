@@ -242,8 +242,11 @@ const AIAssistantPanel = () => {
                     BETA
                   </Badge>
                 </h4>
-                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
-                  Resmi Gazete ve İSG Yönetmelikleri ile eğitilmiştir.
+                <p className="mb-0" style={{ fontSize: "13px" }}>
+                  <i className="bx bx-book-content text-primary me-1"></i>
+                  <span className="text-muted">Bot, </span>
+                  <strong className="text-primary">Resmi Gazete ve İSG Mevzuatları</strong>
+                  <span className="text-muted"> ile eğitilmiştir.</span>
                 </p>
               </div>
               <div>
@@ -677,13 +680,10 @@ const AIAssistantPanel = () => {
               </div>
 
               <div className="d-flex justify-content-between align-items-start" style={{ fontSize: "12px" }}>
-                <div className="text-muted" style={{ lineHeight: "1.5", flex: 1 }}>
-                  <div className="mb-1">
-                    <i className="bx bx-info-circle me-1"></i>
-                    <strong>AI Asistan</strong> - Resmi Gazete ve İSG mevzuatları ile eğitilmiştir.
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#adb5bd" }}>
-                    Yapay zeka bazen hata yapabilir. Kritik kararlar için mutlaka mevzuatı kontrol ediniz.
+                <div className="text-muted" style={{ lineHeight: "1.6", flex: 1 }}>
+                  <div style={{ fontSize: "11px", color: "#6c757d" }}>
+                    <i className="bx bx-error-circle me-1" style={{ color: "#f39c12" }}></i>
+                    <strong>Önemli:</strong> Bot hata yapabilir. Lütfen bilgileri teyit etmenizi öneririz. Kritik kararlar için resmi mevzuatı kontrol ediniz.
                   </div>
                 </div>
                 <div className="text-end text-muted" style={{ whiteSpace: "nowrap", marginLeft: "16px" }}>
