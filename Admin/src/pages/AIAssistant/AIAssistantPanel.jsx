@@ -695,7 +695,17 @@ const AIAssistantPanel = () => {
                 </div>
               </div>
 
-              <div className="text-center text-muted" style={{ fontSize: "12px", padding: "8px 0" }}>
+              {/* Warning Message */}
+              <div 
+                className="text-center text-muted" 
+                style={{ 
+                  fontSize: "12px", 
+                  padding: "16px 24px",
+                  marginTop: "12px",
+                  backgroundColor: "#f8f9fa",
+                  borderRadius: "8px"
+                }}
+              >
                 Yapay zeka mevzuatı yanlış yorumlayabilir. Lütfen kritik kararlarda Resmi Gazete'yi kontrol ediniz.
               </div>
             </div>
