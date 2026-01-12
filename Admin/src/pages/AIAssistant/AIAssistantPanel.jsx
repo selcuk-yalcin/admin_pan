@@ -695,19 +695,8 @@ const AIAssistantPanel = () => {
                 </div>
               </div>
 
-              <div className="d-flex justify-content-between align-items-start" style={{ fontSize: "12px" }}>
-                <div className="text-muted" style={{ lineHeight: "1.6", flex: 1 }}>
-                  <div style={{ fontSize: "11px", color: "#6c757d" }}>
-                    <i className="bx bx-error-circle me-1" style={{ color: "#f39c12" }}></i>
-                    <strong>Önemli:</strong> Bot hata yapabilir. Lütfen bilgileri teyit etmenizi öneririz. Kritik kararlar için resmi mevzuatı kontrol ediniz.
-                  </div>
-                </div>
-                <div className="text-end text-muted" style={{ whiteSpace: "nowrap", marginLeft: "16px" }}>
-                  <i className="bx bx-circle text-success me-1" style={{ fontSize: "8px" }}></i>
-                  <small>
-                    Model: <strong>İSG-Pro v4.2</strong>
-                  </small>
-                </div>
+              <div className="text-center text-muted" style={{ fontSize: "12px", padding: "8px 0" }}>
+                Yapay zeka mevzuatı yanlış yorumlayabilir. Lütfen kritik kararlarda Resmi Gazete'yi kontrol ediniz.
               </div>
             </div>
           </Col>
