@@ -7,6 +7,7 @@ import Chatbot from "../pages/Chatbot/index";
 import AIAgentTest from "../pages/AIAgentTest/index";
 import VisualLook from "../pages/VisualLook/index";
 import EmailPanel from "../pages/EmailPanel";
+import AIAssistantPanel from "../pages/AIAssistant/AIAssistantPanel";
 import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
 import Rootcauseform from "../pages/RootCauseAnalysis/Rootcauseform";
 import RiskAssessmentPanel from "../pages/RiskAssessment/RiskAssessmentPanel";
@@ -205,6 +206,7 @@ const authProtectedRoutes = [
   { path: "/ai-agent-test", component: <AIAgentTest /> },
   { path: "/visual-look", component: <VisualLook /> },
   { path: "/email-panel", component: <EmailPanel /> },
+  { path: "/ai-assistant", component: <AIAssistantPanel /> },
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
   { path: "/rootcause-form", component: <Rootcauseform /> },
   { path: "/risk-assessment", component: <RiskAssessmentPanel /> },
