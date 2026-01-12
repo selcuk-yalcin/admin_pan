@@ -268,11 +268,208 @@ const AIAssistantPanel = () => {
               style={{ 
                 flex: 1, 
                 overflowY: "auto", 
-                padding: "24px 32px",
-                background: "#f8f9fa"
+                padding: messages.length === 1 ? "60px 80px" : "24px 32px",
+                background: "#f8f9fa",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: messages.length === 1 ? "center" : "flex-start"
               }}
             >
-              {messages.map((message) => (
+              {/* Welcome Screen */}
+              {messages.length === 1 && (
+                <div className="text-center mb-5">
+                  <div 
+                    className="mx-auto mb-4"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      background: "linear-gradient(135deg, #e8e3fc 0%, #f3f0ff 100%)",
+                      borderRadius: "20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <i className="bx bx-search" style={{ fontSize: "36px", color: "#7b68ee" }}></i>
+                  </div>
+                  <h3 className="mb-3" style={{ fontWeight: "600", color: "#1a1d29" }}>
+                    Size Nasıl Yardımcı Olabilirim?
+                  </h3>
+                  <p className="text-muted mb-5" style={{ fontSize: "15px", maxWidth: "600px", margin: "0 auto" }}>
+                    İSG kanunları, yönetmelikler, standartlar veya ceza puanları hakkında her şeyi sorabilirsiniz.
+                  </p>
+
+                  {/* Category Cards */}
+                  <Row className="g-3">
+                    <Col md={6}>
+                      <Card 
+                        className="border-0 h-100"
+                        style={{ 
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-4px)";
+                          e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
+                        }}
+                        onClick={() => handleQuestionClick("Yüksekte çalışma talimatı")}
+                      >
+                        <CardBody className="p-4 text-start">
+                          <div 
+                            className="mb-3"
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "12px",
+                              background: "linear-gradient(135deg, #e8e3fc 0%, #f3f0ff 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <i className="bx bx-circle" style={{ fontSize: "24px", color: "#7b68ee" }}></i>
+                          </div>
+                          <h5 className="mb-2" style={{ fontWeight: "600", color: "#1a1d29" }}>KKD Kullanımı</h5>
+                          <p className="text-muted mb-0" style={{ fontSize: "14px" }}>
+                            Baret takma zorunluluğu hangi yönetmelikte?
+                          </p>
+                        </CardBody>
+                      </Card>
+                    </Col>
+
+                    <Col md={6}>
+                      <Card 
+                        className="border-0 h-100"
+                        style={{ 
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-4px)";
+                          e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
+                        }}
+                        onClick={() => handleQuestionClick("6331 sayılı kanun ceza...")}
+                      >
+                        <CardBody className="p-4 text-start">
+                          <div 
+                            className="mb-3"
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "12px",
+                              background: "linear-gradient(135deg, #d4edff 0%, #e8f5ff 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <i className="bx bx-group" style={{ fontSize: "24px", color: "#4A90E2" }}></i>
+                          </div>
+                          <h5 className="mb-2" style={{ fontWeight: "600", color: "#1a1d29" }}>Çalışan Temsilcisi</h5>
+                          <p className="text-muted mb-0" style={{ fontSize: "14px" }}>
+                            Sayı belirleme kriterleri nelerdir?
+                          </p>
+                        </CardBody>
+                      </Card>
+                    </Col>
+
+                    <Col md={6}>
+                      <Card 
+                        className="border-0 h-100"
+                        style={{ 
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-4px)";
+                          e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
+                        }}
+                        onClick={() => handleQuestionClick("Yüksekte çalışma korkulu...")}
+                      >
+                        <CardBody className="p-4 text-start">
+                          <div 
+                            className="mb-3"
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "12px",
+                              background: "linear-gradient(135deg, #ffe8e8 0%, #fff3f3 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <i className="bx bx-error" style={{ fontSize: "24px", color: "#E74C3C" }}></i>
+                          </div>
+                          <h5 className="mb-2" style={{ fontWeight: "600", color: "#1a1d29" }}>Acil Durumlar</h5>
+                          <p className="text-muted mb-0" style={{ fontSize: "14px" }}>
+                            Plan yenileme periyotları nedir?
+                          </p>
+                        </CardBody>
+                      </Card>
+                    </Col>
+
+                    <Col md={6}>
+                      <Card 
+                        className="border-0 h-100"
+                        style={{ 
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-4px)";
+                          e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
+                        }}
+                        onClick={() => handleQuestionClick("Patlamadan korunma dök...")}
+                      >
+                        <CardBody className="p-4 text-start">
+                          <div 
+                            className="mb-3"
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "12px",
+                              background: "linear-gradient(135deg, #fff4e6 0%, #fff9f0 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <i className="bx bx-flask" style={{ fontSize: "24px", color: "#F39C12" }}></i>
+                          </div>
+                          <h5 className="mb-2" style={{ fontWeight: "600", color: "#1a1d29" }}>Kimyasal Maddeler</h5>
+                          <p className="text-muted mb-0" style={{ fontSize: "14px" }}>
+                            Maruziyet sınır değerleri hakkında bilgi.
+                          </p>
+                        </CardBody>
+                      </Card>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+
+              {/* Chat Messages */}
+              {messages.length > 1 && messages.slice(1).map((message) => (
                 <div
                   key={message.id}
                   className={`d-flex mb-4 ${message.type === "user" ? "justify-content-end" : "justify-content-start"}`}
@@ -395,63 +592,104 @@ const AIAssistantPanel = () => {
             {/* Input Area */}
             <div 
               style={{
-                padding: "20px 32px",
+                padding: "24px 32px 20px 32px",
                 borderTop: "1px solid #e9ecef",
                 background: "white"
               }}
             >
-              <div className="d-flex align-items-center">
-                <Button 
-                  color="light" 
-                  className="me-2"
+              <div className="mb-3">
+                <div 
+                  className="d-flex align-items-end"
                   style={{
-                    borderRadius: "8px",
-                    border: "1px solid #e9ecef"
+                    background: "#ffffff",
+                    borderRadius: "16px",
+                    border: "2px solid #e9ecef",
+                    padding: "4px",
+                    transition: "all 0.2s"
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#7b68ee";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(123, 104, 238, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#e9ecef";
+                    e.currentTarget.style.boxShadow = "none";
                   }}
                 >
-                  <i className="bx bx-paperclip"></i>
-                </Button>
-                
-                <Input
-                  type="textarea"
-                  rows="1"
-                  placeholder="Yönetmelik sorusu sorun veya bir madde arayın..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  style={{ 
-                    resize: "none",
-                    borderRadius: "8px",
-                    border: "1px solid #e9ecef",
-                    fontSize: "14px"
-                  }}
-                />
-                
-                <Button
-                  className="ms-2"
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim()}
-                  style={{ 
-                    minWidth: "100px",
-                    borderRadius: "8px",
-                    background: inputMessage.trim() 
-                      ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                      : "#6c757d",
-                    border: "none"
-                  }}
-                >
-                  <i className="bx bx-send me-1"></i>
-                  Gönder
-                </Button>
+                  <Button 
+                    color="light" 
+                    className="me-2"
+                    style={{
+                      borderRadius: "12px",
+                      border: "none",
+                      background: "transparent"
+                    }}
+                  >
+                    <i className="bx bx-paperclip" style={{ fontSize: "20px", color: "#6c757d" }}></i>
+                  </Button>
+                  
+                  <Input
+                    type="textarea"
+                    rows="2"
+                    placeholder="Yönetmelik sorusu sorun veya bir madde arayın..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    style={{ 
+                      resize: "none",
+                      border: "none",
+                      fontSize: "15px",
+                      padding: "12px 8px",
+                      background: "transparent",
+                      boxShadow: "none",
+                      outline: "none"
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.parentElement.style.borderColor = "#7b68ee";
+                      e.currentTarget.parentElement.style.boxShadow = "0 0 0 3px rgba(123, 104, 238, 0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.parentElement.style.borderColor = "#e9ecef";
+                      e.currentTarget.parentElement.style.boxShadow = "none";
+                    }}
+                  />
+                  
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim()}
+                    style={{ 
+                      borderRadius: "12px",
+                      background: inputMessage.trim() 
+                        ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                        : "#e9ecef",
+                      border: "none",
+                      padding: "10px 20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "50px",
+                      height: "48px"
+                    }}
+                  >
+                    <i className="bx bx-send" style={{ fontSize: "20px" }}></i>
+                  </Button>
+                </div>
               </div>
-              <div className="mt-2">
-                <small className="text-muted" style={{ fontSize: "11px" }}>
-                  Yapay zeka mevzuatı yanlış yorumlayabilir. Lütfen kritik kararlarda Resmi Gazete'yi kontrol ediniz.
-                </small>
-                <div className="float-end">
-                  <small className="text-muted" style={{ fontSize: "11px" }}>
-                    <i className="bx bx-circle text-success me-1"></i>
-                    AI Model: <strong>İSG-Pro v4.2</strong>
+
+              <div className="d-flex justify-content-between align-items-start" style={{ fontSize: "12px" }}>
+                <div className="text-muted" style={{ lineHeight: "1.5", flex: 1 }}>
+                  <div className="mb-1">
+                    <i className="bx bx-info-circle me-1"></i>
+                    <strong>AI Asistan</strong> - Resmi Gazete ve İSG mevzuatları ile eğitilmiştir.
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#adb5bd" }}>
+                    Yapay zeka bazen hata yapabilir. Kritik kararlar için mutlaka mevzuatı kontrol ediniz.
+                  </div>
+                </div>
+                <div className="text-end text-muted" style={{ whiteSpace: "nowrap", marginLeft: "16px" }}>
+                  <i className="bx bx-circle text-success me-1" style={{ fontSize: "8px" }}></i>
+                  <small>
+                    Model: <strong>İSG-Pro v4.2</strong>
                   </small>
                 </div>
               </div>
