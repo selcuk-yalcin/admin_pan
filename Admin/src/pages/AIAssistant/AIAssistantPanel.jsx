@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Container,
   Row,
   Col,
   Card,
@@ -24,6 +23,7 @@ const AIAssistantPanel = () => {
 
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [activeSection, setActiveSection] = useState("chat");
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -35,11 +35,11 @@ const AIAssistantPanel = () => {
   }, [messages]);
 
   const sampleQuestions = [
-    "Yapı işlerinde baret takma zorunluluğu hangi yönetmelikte geçer?",
-    "6331 sayılı kanun ceza hükümleri nelerdir?",
-    "Yüksekte çalışma talimatı nasıl hazırlanır?",
-    "İş güvenliği uzmanı çalışma süreleri nedir?",
-    "Patlamadan korunma dökümanı (ATEX) nasıl hazırlanır?"
+    "Yüksekte çalışma talimatı",
+    "6331 sayılı kanun ceza...",
+    "Yüksekte çalışma korkulu...",
+    "İş güvenliği uzmanı çalış...",
+    "Patlamadan korunma dök..."
   ];
 
   const handleSendMessage = () => {
@@ -75,7 +75,15 @@ const AIAssistantPanel = () => {
   };
 
   const handleQuestionClick = (question) => {
-    setInputMessage(question);
+    const fullQuestions = [
+      "Yüksekte çalışma talimatı nasıl hazırlanır?",
+      "6331 sayılı kanun ceza hükümleri nelerdir?",
+      "Yüksekte çalışma korkuluk yüksekliği ne olmalı?",
+      "İş güvenliği uzmanı çalışma süreleri nedir?",
+      "Patlamadan korunma dökümanı (ATEX) nasıl hazırlanır?"
+    ];
+    const index = sampleQuestions.findIndex(q => question.includes(q.split('...')[0]));
+    setInputMessage(fullQuestions[index] || question);
   };
 
   const handleKeyPress = (e) => {
@@ -87,192 +95,372 @@ const AIAssistantPanel = () => {
 
   return (
     <React.Fragment>
-      <div className="page-content">
-        <Container fluid>
-          <Row>
-            <Col lg={12}>
-              {/* Header */}
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                  <h4 className="mb-1">
-                    Mevzuat Asistanı 
-                    <Badge color="primary" className="ms-2">BETA</Badge>
-                  </h4>
-                  <p className="text-muted mb-0">Resmi Gazete ve İSG Yönetmelikleri ile eğitilmiştir.</p>
+      <div className="page-content" style={{ padding: 0, height: "100vh" }}>
+        <Row style={{ margin: 0, height: "100%" }}>
+          {/* Left Sidebar - Dark */}
+          <Col 
+            lg={3} 
+            style={{ 
+              background: "linear-gradient(180deg, #1a1d29 0%, #232738 100%)",
+              padding: "24px",
+              height: "100vh",
+              overflowY: "auto",
+              borderRight: "1px solid #2d3142"
+            }}
+          >
+            {/* Logo/Header */}
+            <div className="mb-4">
+              <div className="d-flex align-items-center mb-2">
+                <div 
+                  className="rounded me-2"
+                  style={{
+                    background: "linear-gradient(135deg, #7b68ee 0%, #9b59b6 100%)",
+                    width: "48px",
+                    height: "48px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "24px",
+                    fontWeight: "bold",
+                    color: "white"
+                  }}
+                >
+                  M
                 </div>
-                <div>
-                  <Button color="light" className="me-2">
-                    <i className="bx bx-cog"></i>
-                  </Button>
-                  <Button color="light">
-                    <i className="bx bx-time"></i> Sohbet Geçmişi
-                  </Button>
-                </div>
+                <h4 className="mb-0 text-white">Mevzuat AI</h4>
+              </div>
+            </div>
+
+            {/* Ana Menü */}
+            <div className="mb-4">
+              <h6 className="text-uppercase text-muted mb-3" style={{ fontSize: "11px", letterSpacing: "1px" }}>
+                Ana Menü
+              </h6>
+              
+              <div className="mb-2">
+                <Button
+                  color="primary"
+                  block
+                  className="text-start d-flex align-items-center"
+                  style={{
+                    background: "linear-gradient(135deg, #7b68ee 0%, #9b59b6 100%)",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "12px 16px"
+                  }}
+                  onClick={() => setActiveSection("chat")}
+                >
+                  <i className="bx bx-conversation me-2" style={{ fontSize: "20px" }}></i>
+                  Mevzuat Sohbeti
+                </Button>
               </div>
 
-              {/* Chat Container */}
-              <Card style={{ height: "calc(100vh - 280px)", display: "flex", flexDirection: "column" }}>
-                <CardBody style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-                  {/* Messages */}
-                  <div style={{ flex: 1 }}>
-                    {messages.map((message) => (
+              <div className="mb-2">
+                <Button
+                  color="link"
+                  block
+                  className="text-start d-flex align-items-center text-white-50"
+                  style={{
+                    textDecoration: "none",
+                    padding: "12px 16px",
+                    borderRadius: "8px"
+                  }}
+                  onClick={() => setActiveSection("archive")}
+                >
+                  <i className="bx bx-file me-2" style={{ fontSize: "20px" }}></i>
+                  Yönetmelik Arşivi
+                </Button>
+              </div>
+
+              <div className="mb-2">
+                <Button
+                  color="link"
+                  block
+                  className="text-start d-flex align-items-center text-white-50"
+                  style={{
+                    textDecoration: "none",
+                    padding: "12px 16px",
+                    borderRadius: "8px"
+                  }}
+                >
+                  <i className="bx bx-history me-2" style={{ fontSize: "20px" }}></i>
+                  Son Değişiklikler
+                  <Badge color="danger" pill className="ms-auto">Yeni</Badge>
+                </Button>
+              </div>
+            </div>
+
+            {/* Geçmiş Sorgular */}
+            <div>
+              <h6 className="text-uppercase text-muted mb-3" style={{ fontSize: "11px", letterSpacing: "1px" }}>
+                Geçmiş Sorgular
+              </h6>
+              
+              {sampleQuestions.map((question, idx) => (
+                <Button
+                  key={idx}
+                  color="link"
+                  block
+                  className="text-start d-flex align-items-center text-white-50 mb-2"
+                  style={{
+                    textDecoration: "none",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    transition: "all 0.2s"
+                  }}
+                  onClick={() => handleQuestionClick(question)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <i className="bx bx-time-five me-2"></i>
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </Col>
+
+          {/* Right Chat Area */}
+          <Col lg={9} style={{ padding: 0, display: "flex", flexDirection: "column", height: "100vh" }}>
+            {/* Header */}
+            <div 
+              className="d-flex justify-content-between align-items-center"
+              style={{
+                padding: "20px 32px",
+                borderBottom: "1px solid #e9ecef",
+                background: "white"
+              }}
+            >
+              <div>
+                <h4 className="mb-1">
+                  Mevzuat Asistanı 
+                  <Badge color="primary" className="ms-2" style={{ fontSize: "10px", padding: "4px 8px" }}>
+                    BETA
+                  </Badge>
+                </h4>
+                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
+                  Resmi Gazete ve İSG Yönetmelikleri ile eğitilmiştir.
+                </p>
+              </div>
+              <div>
+                <Button 
+                  color="light" 
+                  className="me-2"
+                  style={{ 
+                    borderRadius: "8px",
+                    border: "1px solid #e9ecef"
+                  }}
+                >
+                  <i className="bx bx-cog"></i>
+                </Button>
+                <span className="text-muted" style={{ fontSize: "13px" }}>
+                  <i className="bx bx-time"></i> Sohbet Geçmişi
+                </span>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div 
+              style={{ 
+                flex: 1, 
+                overflowY: "auto", 
+                padding: "24px 32px",
+                background: "#f8f9fa"
+              }}
+            >
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`d-flex mb-4 ${message.type === "user" ? "justify-content-end" : "justify-content-start"}`}
+                >
+                  {message.type === "assistant" && (
+                    <div className="me-3">
                       <div
-                        key={message.id}
-                        className={`d-flex mb-4 ${message.type === "user" ? "justify-content-end" : "justify-content-start"}`}
+                        className="rounded-circle d-flex align-items-center justify-content-center"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                        }}
                       >
-                        {message.type === "assistant" && (
-                          <div className="me-3">
-                            <div
-                              className="avatar-sm rounded-circle bg-primary d-flex align-items-center justify-content-center"
-                              style={{ width: "40px", height: "40px" }}
-                            >
-                              <i className="bx bx-bot text-white" style={{ fontSize: "20px" }}></i>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div style={{ maxWidth: "70%" }}>
-                          <div
-                            className={`p-3 rounded ${
-                              message.type === "user"
-                                ? "bg-primary text-white"
-                                : "bg-light text-dark"
-                            }`}
-                          >
-                            <p className="mb-0" style={{ whiteSpace: "pre-wrap" }}>{message.text}</p>
-                          </div>
-                          
-                          {message.references && (
-                            <div className="mt-2">
-                              <small className="text-muted">REFERANS KAYNAKLAR</small>
-                              <div className="d-flex gap-2 mt-1">
-                                {message.references.map((ref, idx) => (
-                                  <Button
-                                    key={idx}
-                                    color="light"
-                                    size="sm"
-                                    className="d-flex align-items-center"
-                                  >
-                                    <i className={`bx ${ref.icon} me-1`}></i>
-                                    {ref.title}
-                                    <i className="bx bx-chevron-right ms-1"></i>
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          <small className="text-muted">
-                            {message.timestamp.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                          </small>
-                        </div>
-
-                        {message.type === "user" && (
-                          <div className="ms-3">
-                            <div
-                              className="avatar-sm rounded-circle bg-info d-flex align-items-center justify-content-center"
-                              style={{ width: "40px", height: "40px" }}
-                            >
-                              <span className="text-white fw-bold">AU</span>
-                            </div>
-                          </div>
-                        )}
+                        <i className="bx bx-bot text-white" style={{ fontSize: "20px" }}></i>
                       </div>
-                    ))}
-
-                    {isTyping && (
-                      <div className="d-flex mb-4">
-                        <div className="me-3">
-                          <div
-                            className="avatar-sm rounded-circle bg-primary d-flex align-items-center justify-content-center"
-                            style={{ width: "40px", height: "40px" }}
-                          >
-                            <i className="bx bx-bot text-white" style={{ fontSize: "20px" }}></i>
-                          </div>
-                        </div>
-                        <div className="bg-light p-3 rounded">
-                          <div className="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                          </div>
+                    </div>
+                  )}
+                  
+                  <div style={{ maxWidth: "70%" }}>
+                    <div
+                      style={{
+                        padding: "16px 20px",
+                        borderRadius: "12px",
+                        background: message.type === "user" 
+                          ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                          : "white",
+                        color: message.type === "user" ? "white" : "#1a1d29",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                      }}
+                    >
+                      <p className="mb-0" style={{ whiteSpace: "pre-wrap", fontSize: "14px", lineHeight: "1.6" }}>
+                        {message.text}
+                      </p>
+                    </div>
+                    
+                    {message.references && (
+                      <div className="mt-2">
+                        <small className="text-muted fw-bold" style={{ fontSize: "11px", letterSpacing: "0.5px" }}>
+                          REFERANS KAYNAKLAR
+                        </small>
+                        <div className="d-flex gap-2 mt-2">
+                          {message.references.map((ref, idx) => (
+                            <Button
+                              key={idx}
+                              color="light"
+                              size="sm"
+                              className="d-flex align-items-center"
+                              style={{
+                                borderRadius: "6px",
+                                border: "1px solid #e9ecef",
+                                fontSize: "12px"
+                              }}
+                            >
+                              <i className={`bx ${ref.icon} me-1`}></i>
+                              {ref.title}
+                              <i className="bx bx-chevron-right ms-1"></i>
+                            </Button>
+                          ))}
                         </div>
                       </div>
                     )}
                     
-                    <div ref={messagesEndRef} />
+                    <small className="text-muted d-block mt-1" style={{ fontSize: "11px" }}>
+                      {message.timestamp.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                    </small>
                   </div>
 
-                  {/* Sample Questions */}
-                  {messages.length === 1 && (
-                    <div className="mt-4">
-                      <h6 className="mb-3">Geçmiş Sorgular</h6>
-                      <div className="d-flex flex-wrap gap-2">
-                        {sampleQuestions.map((question, idx) => (
-                          <Button
-                            key={idx}
-                            color="light"
-                            size="sm"
-                            className="text-start"
-                            onClick={() => handleQuestionClick(question)}
-                            style={{ maxWidth: "300px" }}
-                          >
-                            <i className="bx bx-time-five me-1"></i>
-                            {question.substring(0, 50)}...
-                          </Button>
-                        ))}
+                  {message.type === "user" && (
+                    <div className="ms-3">
+                      <div
+                        className="rounded-circle d-flex align-items-center justify-content-center"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                        }}
+                      >
+                        <span className="text-white fw-bold">AU</span>
                       </div>
                     </div>
                   )}
-                </CardBody>
+                </div>
+              ))}
 
-                {/* Input Area */}
-                <div className="border-top p-3 bg-light">
-                  <div className="d-flex align-items-center">
-                    <Button color="light" className="me-2">
-                      <i className="bx bx-paperclip"></i>
-                    </Button>
-                    
-                    <Input
-                      type="textarea"
-                      rows="1"
-                      placeholder="Yönetmelik sorusu sorun veya bir madde arayın..."
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      style={{ resize: "none" }}
-                    />
-                    
-                    <Button
-                      color="primary"
-                      className="ms-2"
-                      onClick={handleSendMessage}
-                      disabled={!inputMessage.trim()}
-                      style={{ minWidth: "100px" }}
+              {isTyping && (
+                <div className="d-flex mb-4">
+                  <div className="me-3">
+                    <div
+                      className="rounded-circle d-flex align-items-center justify-content-center"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                      }}
                     >
-                      <i className="bx bx-send me-1"></i>
-                      Gönder
-                    </Button>
+                      <i className="bx bx-bot text-white" style={{ fontSize: "20px" }}></i>
+                    </div>
                   </div>
-                  <small className="text-muted mt-2 d-block">
-                    Yapay zeka mevzuatı yanlış yorumlayabilir. Lütfen kritik kararlarda Resmi Gazete'yi kontrol ediniz.
+                  <div 
+                    style={{
+                      background: "white",
+                      padding: "16px 20px",
+                      borderRadius: "12px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                    }}
+                  >
+                    <div className="typing-indicator">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div 
+              style={{
+                padding: "20px 32px",
+                borderTop: "1px solid #e9ecef",
+                background: "white"
+              }}
+            >
+              <div className="d-flex align-items-center">
+                <Button 
+                  color="light" 
+                  className="me-2"
+                  style={{
+                    borderRadius: "8px",
+                    border: "1px solid #e9ecef"
+                  }}
+                >
+                  <i className="bx bx-paperclip"></i>
+                </Button>
+                
+                <Input
+                  type="textarea"
+                  rows="1"
+                  placeholder="Yönetmelik sorusu sorun veya bir madde arayın..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  style={{ 
+                    resize: "none",
+                    borderRadius: "8px",
+                    border: "1px solid #e9ecef",
+                    fontSize: "14px"
+                  }}
+                />
+                
+                <Button
+                  className="ms-2"
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim()}
+                  style={{ 
+                    minWidth: "100px",
+                    borderRadius: "8px",
+                    background: inputMessage.trim() 
+                      ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                      : "#6c757d",
+                    border: "none"
+                  }}
+                >
+                  <i className="bx bx-send me-1"></i>
+                  Gönder
+                </Button>
+              </div>
+              <div className="mt-2">
+                <small className="text-muted" style={{ fontSize: "11px" }}>
+                  Yapay zeka mevzuatı yanlış yorumlayabilir. Lütfen kritik kararlarda Resmi Gazete'yi kontrol ediniz.
+                </small>
+                <div className="float-end">
+                  <small className="text-muted" style={{ fontSize: "11px" }}>
+                    <i className="bx bx-circle text-success me-1"></i>
+                    AI Model: <strong>İSG-Pro v4.2</strong>
                   </small>
                 </div>
-              </Card>
-
-              {/* AI Model Info */}
-              <div className="mt-3 d-flex justify-content-between align-items-center">
-                <small className="text-muted">
-                  <i className="bx bx-circle text-success me-1"></i>
-                  AI Model: <strong>ISG-Pro v4.2</strong>
-                </small>
               </div>
-            </Col>
-          </Row>
-        </Container>
+            </div>
+          </Col>
+        </Row>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .typing-indicator {
           display: flex;
           gap: 4px;
