@@ -267,6 +267,22 @@ const SidebarContent = (props) => {
                 </li>
               </ul>
             </li>
+
+            <li>
+              <Link to="/#" className="has-arrow">
+                <i className="bx bx-shield"></i>
+                <span>{props.t("Risk Değerlendirme")}</span>
+                <span className="badge rounded-pill bg-warning float-end">New</span>
+              </Link>
+              <ul className="sub-menu" aria-expanded="false">
+                <li>
+                  <Link to="/risk-assessment">{props.t("Risk Assessment List")}</Link>
+                </li>
+                <li>
+                  <Link to="/risk-assessment-form">{props.t("New Assessment")}</Link>
+                </li>
+              </ul>
+            </li>
             
 
             {/*<li>
