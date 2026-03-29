@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vite Test</title>
+</head>
+<body>
+    <h1>Test Page</h1>
+    <div id="root"></div>
+    <script type="module">
+        console.log('Test script loaded');
+        console.log('VITE_CLERK_PUBLISHABLE_KEY:', import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+        
+        // Test React
+        import React from 'react';
+        import ReactDOM from 'react-dom/client';
+        
+        console.log('React loaded:', React);
+        console.log('ReactDOM loaded:', ReactDOM);
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement('div', {}, 'React is working!'));
+    </script>
+</body>
+</html>
