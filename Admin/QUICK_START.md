@@ -21,7 +21,7 @@
 ### 1. Development Server'ı Başlatın
 
 ```bash
-cd /Users/selcuk/Desktop/admin_pan/Admin
+cd Admin
 npm run dev
 ```
 

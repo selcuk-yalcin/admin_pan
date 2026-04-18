@@ -30,7 +30,7 @@ pages_to_remove = [
     'Ui'
 ]
 
-base_path = '/Users/selcuk/Desktop/admin_pan/Admin/src/pages'
+base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src', 'pages')
 
 removed = []
 not_found = []
