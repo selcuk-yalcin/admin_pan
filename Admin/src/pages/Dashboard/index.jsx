@@ -144,7 +144,7 @@ const Dashboard = (props) => {
 
   return (
     <React.Fragment>
-      <div className="page-content">
+      <div className="page-content dashboard-page">
         <Container fluid>
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">

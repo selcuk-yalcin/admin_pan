@@ -138,6 +138,18 @@
   background-color: #f5f6fa;
 }
 
+/* Full width inside main shell (no extra side gutters) */
+.dashboard-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  > .container-fluid {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .stat-value {

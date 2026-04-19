@@ -56,8 +56,8 @@ $display-block:                                       block;
 // Brand 
 $navbar-brand-box-width:                             250px;
 
-// Boxed layout width
-$boxed-layout-width:                                 1300px;
+// Boxed layout width (100% = full viewport width; avoids large side gutters on wide screens)
+$boxed-layout-width:                                 100%;
 $boxed-body-bg:                                     #ebebf4;
 
 // apex charts
