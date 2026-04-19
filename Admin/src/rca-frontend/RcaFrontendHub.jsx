@@ -13,7 +13,7 @@ const TAB_KEYS = ["form", "chat"];
  * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat).
  * Eski ?tab=smart bağlantıları form sekmesine yönlendirilir.
  */
-export default function RcaFrontendHub() {
+export default function RcaFrontendHub({ showAdminReturn = false }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("form");
@@ -94,6 +94,16 @@ export default function RcaFrontendHub() {
           <ChatInterface language={selectedLanguage} />
         )}
       </main>
+
+      {showAdminReturn && (
+        <button
+          type="button"
+          className="rca-admin-return-btn"
+          onClick={() => navigate("/dashboard")}
+        >
+          Admin Panel
+        </button>
+      )}
     </div>
   );
 }

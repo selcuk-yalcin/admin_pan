@@ -194,7 +194,7 @@ const SidebarContent = (props) => {
                   <Link to="/root-cause-smart">{props.t("Akıllı form")}</Link>
                 </li>
                 <li>
-                  <Link to="/root-cause-tools?tab=form">{props.t("Manuel olay formu")}</Link>
+                  <Link to="/root-cause-manual">{props.t("Manuel olay formu")}</Link>
                 </li>
                 <li>
                   <Link to="/root-cause-tools?tab=chat">{props.t("Etkileşimli analiz")}</Link>

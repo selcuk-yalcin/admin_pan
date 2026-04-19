@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import LegislationChatbot from "../pages/Chatbot/LegislationChatbot";
 import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
 import RcaFrontendPage from "../pages/RootCauseAnalysis/RcaFrontendPage";
+import ManualFormFullscreenPage from "../pages/RootCauseAnalysis/ManualFormFullscreenPage";
 import RiskAssessmentPanel from "../pages/RiskAssessment/RiskAssessmentPanel";
 import RiskAssessmentForm from "../pages/RiskAssessment/RiskAssessmentForm";
 
@@ -48,7 +49,7 @@ const authProtectedRoutes = [
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
   { path: "/root-cause-smart", component: <Navigate to="/legislation-chatbot" replace /> },
   { path: "/root-cause-tools", component: <RcaFrontendPage /> },
-  { path: "/rootcause-form", component: <Navigate to="/root-cause-tools?tab=form" replace /> },
+  { path: "/rootcause-form", component: <Navigate to="/root-cause-manual" replace /> },
   
   // Risk Assessment
   { path: "/risk-assessment", component: <RiskAssessmentPanel /> },
@@ -71,6 +72,7 @@ const authProtectedRoutes = [
 // Full-screen routes - auth protected but NO admin layout (no sidebar, header, footer)
 const fullScreenRoutes = [
   { path: "/legislation-chatbot", component: <LegislationChatbot /> },
+  { path: "/root-cause-manual", component: <ManualFormFullscreenPage /> },
 ];
 
 const publicRoutes = [
