@@ -16,6 +16,23 @@
   --info: #3b82f6;
 }
 
+.rca-frontend-hub.light-mode {
+  --primary: #4f46e5;
+  --primary-dark: #4338ca;
+  --secondary: #7c3aed;
+  --background: #f3f6fb;
+  --surface: #ffffff;
+  --surface-hover: #eef2ff;
+  --border: #d6dcee;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+}
+
 .app.rca-frontend-hub {
   min-height: calc(100vh - 140px);
   display: flex;

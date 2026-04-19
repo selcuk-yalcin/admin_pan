@@ -18,6 +18,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("form");
   const [selectedLanguage, setSelectedLanguage] = useState("tr");
+  const [isLightMode, setIsLightMode] = useState(false);
 
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
@@ -36,7 +37,15 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     syncTabFromUrl();
   }, [syncTabFromUrl]);
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("rca-theme");
+    if (savedTheme === "light") {
+      setIsLightMode(true);
+    }
+  }, []);
+
   const translate = (key) => getTranslation(selectedLanguage, key);
+  const subtitleText = translate("subtitle").replace(/^HSG245 v2\.0\s*-\s*/i, "");
 
   const setTab = (tab) => {
     if (!TAB_KEYS.includes(tab)) return;
@@ -49,7 +58,15 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setTab("chat");
   };
 
-  const hubClassName = `app rca-frontend-hub${showAdminReturn ? " fullscreen-mode" : ""}`;
+  const handleThemeToggle = () => {
+    setIsLightMode((prev) => {
+      const next = !prev;
+      localStorage.setItem("rca-theme", next ? "light" : "dark");
+      return next;
+    });
+  };
+
+  const hubClassName = `app rca-frontend-hub${showAdminReturn ? " fullscreen-mode" : ""}${isLightMode ? " light-mode" : ""}`;
 
   return (
     <div className={hubClassName}>
@@ -58,6 +75,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         onLanguageChange={setSelectedLanguage}
         showAdminReturn={showAdminReturn}
         onAdminReturn={() => navigate("/dashboard")}
+        isLightMode={isLightMode}
+        onThemeToggle={handleThemeToggle}
       />
 
       <div className="tab-navigation">
@@ -87,7 +106,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         <div className="info-banner-icon">RCA</div>
         <div className="info-banner-content">
           <h2>{translate("root_cause_analysis")}</h2>
-          <p>{translate("subtitle")}</p>
+          <p>
+            <strong>DeepWhy</strong>
+            {subtitleText ? ` - ${subtitleText}` : ""}
+          </p>
         </div>
       </div>
 

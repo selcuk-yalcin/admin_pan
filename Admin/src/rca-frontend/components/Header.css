@@ -90,6 +90,27 @@
   gap: 12px;
 }
 
+.theme-toggle-btn {
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .admin-return-top-btn {
   height: 36px;
   border: 1px solid var(--border);
@@ -148,6 +169,11 @@
   }
 
   .admin-return-top-btn {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .theme-toggle-btn {
     padding: 0 10px;
     font-size: 12px;
   }

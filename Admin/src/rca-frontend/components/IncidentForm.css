@@ -204,6 +204,16 @@ html {
   border-bottom: 1px solid var(--border);
 }
 
+.section-header-between {
+  justify-content: space-between;
+}
+
+.section-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .section-header h2 {
   margin: 0;
   font-size: 1.25rem;
@@ -213,6 +223,48 @@ html {
 
 .section-header svg {
   color: var(--primary);
+}
+
+.timeline-add-btn {
+  border: 1px solid var(--primary);
+  background: rgba(102, 126, 234, 0.14);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.timeline-add-btn:hover {
+  background: rgba(102, 126, 234, 0.24);
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: end;
+}
+
+.timeline-time,
+.timeline-event {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.timeline-time label,
+.timeline-event label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 /* Form Rows & Fields */
@@ -397,6 +449,10 @@ html {
 
   .form-header h1 {
     font-size: 1.5rem;
+  }
+
+  .timeline-row {
+    grid-template-columns: 1fr;
   }
 
   .form-section {

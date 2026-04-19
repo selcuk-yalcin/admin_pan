@@ -4,6 +4,12 @@ import { getTranslation } from '../utils/translations';
 import { getTestScenarioList, loadTestScenario } from '../utils/testScenarios';
 import './IncidentForm.css';
 
+const createDefaultTimeline = () => ([
+  { time: '', event: '' },
+  { time: '', event: '' },
+  { time: '', event: '' },
+]);
+
 const IncidentForm = ({ language, onSubmit }) => {
   const testScenarios = getTestScenarioList(language);
   const [activeSection, setActiveSection] = useState(0);
@@ -25,6 +31,9 @@ const IncidentForm = ({ language, onSubmit }) => {
     // Incident Description
     incidentDescription: '',
     emergencyMeasures: '',
+
+    // Incident Timeline (Chronology)
+    timeline: createDefaultTimeline(),
     
     // Safety Equipment
     fallProtection: '',
@@ -81,8 +90,48 @@ const IncidentForm = ({ language, onSubmit }) => {
   const handleLoadTestScenario = (scenarioId) => {
     const scenarioData = loadTestScenario(scenarioId);
     if (scenarioData) {
-      setFormData(scenarioData);
+      setFormData(prev => ({
+        ...prev,
+        ...scenarioData,
+        timeline:
+          Array.isArray(scenarioData.timeline) && scenarioData.timeline.length > 0
+            ? scenarioData.timeline
+            : createDefaultTimeline(),
+      }));
     }
+  };
+
+  const parseTimeToMinutes = (value) => {
+    if (!value || !value.includes(':')) return null;
+    const [h, m] = value.split(':').map((v) => Number(v));
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return (h * 60 + m) % (24 * 60);
+  };
+
+  const minutesToTime = (minutes) => {
+    const normalized = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+    const hh = String(Math.floor(normalized / 60)).padStart(2, '0');
+    const mm = String(normalized % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+  };
+
+  const handleTimelineChange = (index, field, value) => {
+    setFormData((prev) => {
+      const timeline = [...prev.timeline];
+      timeline[index] = { ...timeline[index], [field]: value };
+      return { ...prev, timeline };
+    });
+  };
+
+  const handleAddTimelineRow = () => {
+    setFormData((prev) => {
+      const timeline = [...prev.timeline];
+      const lastTime = timeline[timeline.length - 1]?.time;
+      const lastMinutes = parseTimeToMinutes(lastTime);
+      const nextTime = lastMinutes === null ? '' : minutesToTime(lastMinutes + 60);
+      timeline.push({ time: nextTime, event: '' });
+      return { ...prev, timeline };
+    });
   };
 
   const handleClearForm = () => {
@@ -97,6 +146,7 @@ const IncidentForm = ({ language, onSubmit }) => {
       eventCategory: 'incident',
       incidentDescription: '',
       emergencyMeasures: '',
+        timeline: createDefaultTimeline(),
       fallProtection: '',
       safetyHarness: '',
       safetyTraining: '',
@@ -147,6 +197,7 @@ const IncidentForm = ({ language, onSubmit }) => {
     { id: 'reporter', title: t('section_reporter'), icon: User },
     { id: 'incident', title: t('section_incident_details'), icon: AlertTriangle },
     { id: 'description', title: t('section_description'), icon: FileText },
+    { id: 'timeline', title: 'Olay Kronolojisi', icon: Clock },
     { id: 'safety', title: t('section_safety_equipment'), icon: Shield },
     { id: 'witnesses', title: t('section_witnesses'), icon: Users },
     { id: 'environment', title: t('section_environment'), icon: Cloud },
@@ -374,8 +425,45 @@ const IncidentForm = ({ language, onSubmit }) => {
           </div>
         </div>
 
-        {/* SECTION 4: SAFETY EQUIPMENT */}
+        {/* SECTION 4: INCIDENT CHRONOLOGY */}
         <div className="form-section" ref={(el) => (sectionRefs.current[3] = el)}>
+          <div className="section-header section-header-between">
+            <div className="section-title-wrap">
+              <Clock size={20} />
+              <h2>Olay Kronolojisi</h2>
+            </div>
+            <button type="button" className="timeline-add-btn" onClick={handleAddTimelineRow}>
+              + Olay Ekle
+            </button>
+          </div>
+
+          <div className="timeline-list">
+            {formData.timeline.map((item, index) => (
+              <div className="timeline-row" key={`timeline-${index}`}>
+                <div className="timeline-time">
+                  <label>Saat {index + 1}</label>
+                  <input
+                    type="time"
+                    value={item.time}
+                    onChange={(e) => handleTimelineChange(index, 'time', e.target.value)}
+                  />
+                </div>
+                <div className="timeline-event">
+                  <label>Olay</label>
+                  <input
+                    type="text"
+                    value={item.event}
+                    onChange={(e) => handleTimelineChange(index, 'event', e.target.value)}
+                    placeholder="Olay açıklaması"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION 5: SAFETY EQUIPMENT */}
+        <div className="form-section" ref={(el) => (sectionRefs.current[4] = el)}>
           <div className="section-header">
             <h2>{t('section_safety_equipment')}</h2>
           </div>
@@ -435,8 +523,8 @@ const IncidentForm = ({ language, onSubmit }) => {
           </div>
         </div>
 
-        {/* SECTION 5: WITNESSES */}
-        <div className="form-section" ref={(el) => (sectionRefs.current[4] = el)}>
+        {/* SECTION 6: WITNESSES */}
+        <div className="form-section" ref={(el) => (sectionRefs.current[5] = el)}>
           <div className="section-header">
             <Users size={20} />
             <h2>{t('section_witnesses')}</h2>
@@ -480,8 +568,8 @@ const IncidentForm = ({ language, onSubmit }) => {
           )}
         </div>
 
-        {/* SECTION 6: ENVIRONMENTAL CONDITIONS */}
-        <div className="form-section" ref={(el) => (sectionRefs.current[5] = el)}>
+        {/* SECTION 7: ENVIRONMENTAL CONDITIONS */}
+        <div className="form-section" ref={(el) => (sectionRefs.current[6] = el)}>
           <div className="section-header">
             <Cloud size={20} />
             <h2>{t('section_environment')}</h2>
@@ -554,8 +642,8 @@ const IncidentForm = ({ language, onSubmit }) => {
           </div>
         </div>
 
-        {/* SECTION 7: WORK CONDITIONS */}
-        <div className="form-section" ref={(el) => (sectionRefs.current[6] = el)}>
+        {/* SECTION 8: WORK CONDITIONS */}
+        <div className="form-section" ref={(el) => (sectionRefs.current[7] = el)}>
           <div className="section-header">
             <Briefcase size={20} />
             <h2>{t('section_work_conditions')}</h2>
@@ -634,8 +722,8 @@ const IncidentForm = ({ language, onSubmit }) => {
           </div>
         </div>
 
-        {/* SECTION 8: INJURIES/DAMAGES */}
-        <div className="form-section" ref={(el) => (sectionRefs.current[7] = el)}>
+        {/* SECTION 9: INJURIES/DAMAGES */}
+        <div className="form-section" ref={(el) => (sectionRefs.current[8] = el)}>
           <div className="section-header">
             <h2>{t('section_injuries')}</h2>
           </div>
@@ -689,8 +777,8 @@ const IncidentForm = ({ language, onSubmit }) => {
           </div>
         </div>
 
-        {/* SECTION 9: ROOT CAUSE & CORRECTIVE ACTIONS */}
-        <div className="form-section" ref={(el) => (sectionRefs.current[8] = el)}>
+        {/* SECTION 10: ROOT CAUSE & CORRECTIVE ACTIONS */}
+        <div className="form-section" ref={(el) => (sectionRefs.current[9] = el)}>
           <div className="section-header">
             <h2>{t('section_root_cause')}</h2>
           </div>
