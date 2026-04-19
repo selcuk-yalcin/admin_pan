@@ -156,7 +156,7 @@ const SidebarContent = (props) => {
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">{props.t("Ana Menü")} </li>
 
-            <li>
+            <li style={{ display: "none" }}>
               <Link to="/legislation-chatbot">
                 <i className="bx bx-book-bookmark"></i>
                 <span>{props.t("Mevzuat Asistanı")}</span>
@@ -164,7 +164,7 @@ const SidebarContent = (props) => {
               </Link>
             </li>
 
-            <li>
+            <li style={{ display: "none" }}>
               <Link to="/#" className="has-arrow">
                 <i className="bx bx-shield"></i>
                 <span>{props.t("Risk Değerlendirme")}</span>

@@ -95,6 +95,10 @@
   flex-shrink: 0;
 }
 
+.tab-lock-icon {
+  opacity: 0.9;
+}
+
 .tab-btn:hover {
   background: var(--surface-hover);
   color: var(--text-primary);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Lock } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
 import Header from "./components/Header";
@@ -37,13 +38,6 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     syncTabFromUrl();
   }, [syncTabFromUrl]);
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("rca-theme");
-    if (savedTheme === "light") {
-      setIsLightMode(true);
-    }
-  }, []);
-
   const translate = (key) => getTranslation(selectedLanguage, key);
   const subtitleText = translate("subtitle").replace(/^HSG245 v2\.0\s*-\s*/i, "");
 
@@ -59,11 +53,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   };
 
   const handleThemeToggle = () => {
-    setIsLightMode((prev) => {
-      const next = !prev;
-      localStorage.setItem("rca-theme", next ? "light" : "dark");
-      return next;
-    });
+    setIsLightMode((prev) => !prev);
   };
 
   const hubClassName = `app rca-frontend-hub${showAdminReturn ? " fullscreen-mode" : ""}${isLightMode ? " light-mode" : ""}`;
@@ -98,6 +88,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
+          <Lock size={14} className="tab-lock-icon" />
           <span>{translate("interactive_analysis")}</span>
         </button>
       </div>
