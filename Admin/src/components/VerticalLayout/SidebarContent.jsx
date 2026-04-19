@@ -181,25 +181,11 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
-              <Link to="/#" className="has-arrow">
+              <Link to="/root-cause-manual">
                 <i className="bx bx-search-alt"></i>
-                <span>{props.t("Kök Neden Analizi")}</span>
-                <span className="badge rounded-pill bg-info float-end">RCA</span>
+                <span>{props.t("DeepWhy")}</span>
+                <span className="badge rounded-pill bg-warning float-end">AI</span>
               </Link>
-              <ul className="sub-menu" aria-expanded="false">
-                <li>
-                  <Link to="/root-cause-analysis">{props.t("Hızlı analiz")}</Link>
-                </li>
-                <li>
-                  <Link to="/root-cause-smart">{props.t("Akıllı form")}</Link>
-                </li>
-                <li>
-                  <Link to="/root-cause-manual">{props.t("Manuel olay formu")}</Link>
-                </li>
-                <li>
-                  <Link to="/root-cause-tools?tab=chat">{props.t("Etkileşimli analiz")}</Link>
-                </li>
-              </ul>
             </li>
 
             <li>

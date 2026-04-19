@@ -248,7 +248,7 @@ html {
 
 .timeline-row {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 180px minmax(0, 1fr) auto;
   gap: 0.9rem;
   align-items: end;
 }
@@ -265,6 +265,32 @@ html {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.timeline-actions {
+  display: flex;
+  align-items: end;
+}
+
+.timeline-remove-btn {
+  border: 1px solid #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 58px;
+}
+
+.timeline-remove-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+.timeline-remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Form Rows & Fields */
@@ -453,6 +479,10 @@ html {
 
   .timeline-row {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-actions {
+    justify-content: flex-end;
   }
 
   .form-section {

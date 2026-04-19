@@ -134,6 +134,14 @@ const IncidentForm = ({ language, onSubmit }) => {
     });
   };
 
+  const handleRemoveTimelineRow = (index) => {
+    setFormData((prev) => {
+      if (prev.timeline.length <= 1) return prev;
+      const timeline = prev.timeline.filter((_, i) => i !== index);
+      return { ...prev, timeline };
+    });
+  };
+
   const handleClearForm = () => {
     setFormData({
       reportedBy: '',
@@ -456,6 +464,16 @@ const IncidentForm = ({ language, onSubmit }) => {
                     onChange={(e) => handleTimelineChange(index, 'event', e.target.value)}
                     placeholder="Olay açıklaması"
                   />
+                </div>
+                <div className="timeline-actions">
+                  <button
+                    type="button"
+                    className="timeline-remove-btn"
+                    onClick={() => handleRemoveTimelineRow(index)}
+                    disabled={formData.timeline.length <= 1}
+                  >
+                    Sil
+                  </button>
                 </div>
               </div>
             ))}
