@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 // Pages Component
 import LegislationChatbot from "../pages/Chatbot/LegislationChatbot";
 import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
-import Rootcauseform from "../pages/RootCauseAnalysis/Rootcauseform";
+import RcaFrontendPage from "../pages/RootCauseAnalysis/RcaFrontendPage";
 import RiskAssessmentPanel from "../pages/RiskAssessment/RiskAssessmentPanel";
 import RiskAssessmentForm from "../pages/RiskAssessment/RiskAssessmentForm";
 
@@ -46,7 +46,8 @@ const authProtectedRoutes = [
   
   // Root Cause Analysis
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
-  { path: "/rootcause-form", component: <Rootcauseform /> },
+  { path: "/root-cause-tools", component: <RcaFrontendPage /> },
+  { path: "/rootcause-form", component: <Navigate to="/root-cause-tools?tab=form" replace /> },
   
   // Risk Assessment
   { path: "/risk-assessment", component: <RiskAssessmentPanel /> },
