@@ -2,28 +2,35 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
-import SmartQuestionnaire_V2 from "./components/SmartQuestionnaire_V2";
 import Header from "./components/Header";
 import { getTranslation } from "./utils/translations";
 import "./RcaFrontendHub.css";
+import "./rcaEmbedLayout.css";
 
-const TAB_KEYS = ["chat", "form", "smart"];
+const TAB_KEYS = ["form", "chat"];
 
 /**
- * Vite frontend (App.jsx) ile aynı sekme yapısı — Kök Neden menüsünden açılır.
- * ?tab=chat|form|smart
+ * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat).
+ * Eski ?tab=smart bağlantıları form sekmesine yönlendirilir.
  */
 export default function RcaFrontendHub() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState("chat");
+  const [activeTab, setActiveTab] = useState("form");
   const [selectedLanguage, setSelectedLanguage] = useState("tr");
 
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
+    if (raw === "smart") {
+      setActiveTab("form");
+      setSearchParams({ tab: "form" }, { replace: true });
+      return;
+    }
     if (raw && TAB_KEYS.includes(raw)) {
       setActiveTab(raw);
+    } else {
+      setActiveTab("form");
     }
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     syncTabFromUrl();
@@ -42,11 +49,6 @@ export default function RcaFrontendHub() {
     setTab("chat");
   };
 
-  const handleSmartQuestionnaireComplete = (data) => {
-    console.log("Smart Questionnaire completed:", data);
-    setTab("chat");
-  };
-
   return (
     <div className="app rca-frontend-hub">
       <Header
@@ -55,16 +57,6 @@ export default function RcaFrontendHub() {
       />
 
       <div className="tab-navigation">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "smart" ? "active" : ""}`}
-          onClick={() => setTab("smart")}
-        >
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>{translate("smart_form_v2")}</span>
-        </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === "form" ? "active" : ""}`}
@@ -96,12 +88,7 @@ export default function RcaFrontendHub() {
       </div>
 
       <main className="main-content">
-        {activeTab === "smart" ? (
-          <SmartQuestionnaire_V2
-            language={selectedLanguage}
-            onComplete={handleSmartQuestionnaireComplete}
-          />
-        ) : activeTab === "form" ? (
+        {activeTab === "form" ? (
           <IncidentForm language={selectedLanguage} onSubmit={handleFormSubmit} />
         ) : (
           <ChatInterface language={selectedLanguage} />

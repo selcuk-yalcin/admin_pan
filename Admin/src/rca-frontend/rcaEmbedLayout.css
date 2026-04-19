@@ -1,0 +1,67 @@
+/* Bu sayfada admin page-content yatay padding’i içeriği daraltmasın */
+.page-content.rca-tools-page {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/**
+ * Standalone Vite uygulaması için yazılmış formlar (fixed left:0, 100vw)
+ * admin şablonu içindeyken dar sütun / taşma yapmasın diye hub içinde geçersiz kılınır.
+ */
+.rca-frontend-hub {
+  width: 100%;
+  max-width: 100%;
+  align-self: stretch;
+}
+
+.rca-frontend-hub .tab-navigation {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.rca-frontend-hub .info-banner {
+  width: 100%;
+}
+
+.rca-frontend-hub .main-content {
+  width: 100%;
+  min-width: 0;
+}
+
+/* IncidentForm: sol panel viewport’a yapışmasın, flex satırında kalsın */
+.rca-frontend-hub .incident-form-wrapper {
+  width: 100%;
+  max-width: 100%;
+  min-height: min(70vh, calc(100vh - 280px));
+  height: auto;
+  overflow: visible;
+  align-items: stretch;
+}
+
+.rca-frontend-hub .form-nav-panel {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  height: auto !important;
+  min-height: min(65vh, 560px);
+  align-self: stretch;
+}
+
+.rca-frontend-hub .form-main-content {
+  margin-left: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem 1.5rem !important;
+  box-sizing: border-box;
+}
+
+/* Chat: tam genişlik */
+.rca-frontend-hub .chat-interface {
+  width: 100%;
+  max-width: 100%;
+  min-height: min(65vh, 560px);
+  height: auto;
+}
