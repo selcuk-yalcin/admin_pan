@@ -40,6 +40,7 @@ const authProtectedRoutes = [
   
   // Root Cause Analysis
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
+  { path: "/root-cause-smart", component: <Navigate to="/legislation-chatbot" replace /> },
   { path: "/root-cause-tools", component: <RcaFrontendPage /> },
   { path: "/rootcause-form", component: <Navigate to="/root-cause-tools?tab=form" replace /> },
   

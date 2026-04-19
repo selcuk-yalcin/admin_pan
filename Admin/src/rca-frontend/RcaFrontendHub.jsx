@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
 import Header from "./components/Header";
@@ -14,6 +14,7 @@ const TAB_KEYS = ["form", "chat"];
  * Eski ?tab=smart bağlantıları form sekmesine yönlendirilir.
  */
 export default function RcaFrontendHub() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("form");
   const [selectedLanguage, setSelectedLanguage] = useState("tr");
@@ -21,8 +22,7 @@ export default function RcaFrontendHub() {
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
     if (raw === "smart") {
-      setActiveTab("form");
-      setSearchParams({ tab: "form" }, { replace: true });
+      navigate("/legislation-chatbot", { replace: true });
       return;
     }
     if (raw && TAB_KEYS.includes(raw)) {
@@ -30,7 +30,7 @@ export default function RcaFrontendHub() {
     } else {
       setActiveTab("form");
     }
-  }, [searchParams, setSearchParams]);
+  }, [navigate, searchParams, setSearchParams]);
 
   useEffect(() => {
     syncTabFromUrl();
