@@ -56,6 +56,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       <Header
         selectedLanguage={selectedLanguage}
         onLanguageChange={setSelectedLanguage}
+        showAdminReturn={showAdminReturn}
+        onAdminReturn={() => navigate("/dashboard")}
       />
 
       <div className="tab-navigation">
@@ -97,15 +99,6 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         )}
       </main>
 
-      {showAdminReturn && (
-        <button
-          type="button"
-          className="rca-admin-return-btn"
-          onClick={() => navigate("/dashboard")}
-        >
-          Admin Panel
-        </button>
-      )}
     </div>
   );
 }
