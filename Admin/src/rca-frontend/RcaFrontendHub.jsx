@@ -49,8 +49,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setTab("chat");
   };
 
+  const hubClassName = `app rca-frontend-hub${showAdminReturn ? " fullscreen-mode" : ""}`;
+
   return (
-    <div className="app rca-frontend-hub">
+    <div className={hubClassName}>
       <Header
         selectedLanguage={selectedLanguage}
         onLanguageChange={setSelectedLanguage}

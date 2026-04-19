@@ -31,6 +31,13 @@
   overflow-x: hidden;
 }
 
+/* Full-screen mod: sekmeler arası geçişte kayma olmasın, içerik viewport'a sabitlensin */
+.rca-frontend-hub.fullscreen-mode .main-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* IncidentForm: sol panel viewport’a yapışmasın, flex satırında kalsın */
 .rca-frontend-hub .incident-form-wrapper {
   display: grid;
@@ -41,6 +48,11 @@
   height: auto;
   overflow-x: hidden;
   align-items: stretch;
+}
+
+.rca-frontend-hub.fullscreen-mode .incident-form-wrapper {
+  height: 100%;
+  min-height: 0;
 }
 
 .rca-frontend-hub .form-nav-panel {
@@ -55,6 +67,10 @@
   max-width: 240px;
 }
 
+.rca-frontend-hub.fullscreen-mode .form-nav-panel {
+  overflow-y: auto;
+}
+
 .rca-frontend-hub .form-main-content {
   margin-left: 0 !important;
   width: 100% !important;
@@ -64,6 +80,12 @@
   padding: 1rem 1.25rem !important;
   box-sizing: border-box;
   overflow-x: hidden;
+}
+
+.rca-frontend-hub.fullscreen-mode .form-main-content {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .rca-frontend-hub .incident-form-container,
@@ -111,4 +133,14 @@
   max-width: 100%;
   min-height: min(65vh, 560px);
   height: auto;
+}
+
+.rca-frontend-hub.fullscreen-mode .chat-interface {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.rca-frontend-hub.fullscreen-mode .chat-main,
+.rca-frontend-hub.fullscreen-mode .chat-messages {
+  min-height: 0;
 }

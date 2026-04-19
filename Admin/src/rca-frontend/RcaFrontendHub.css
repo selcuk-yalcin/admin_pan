@@ -27,6 +27,13 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
+/* Full-screen route (/root-cause-manual): bot sayfası gibi viewport'u tamamen kapla */
+.app.rca-frontend-hub.fullscreen-mode {
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
 /* Tab Navigation */
 .tab-navigation {
   display: flex;
