@@ -36,6 +36,8 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  width: 100vw;
+  max-width: 100vw;
 }
 
 /* IncidentForm: sol panel viewport’a yapışmasın, flex satırında kalsın */
@@ -138,6 +140,8 @@
 .rca-frontend-hub.fullscreen-mode .chat-interface {
   height: 100% !important;
   min-height: 0 !important;
+  width: 100%;
+  max-width: 100%;
 }
 
 .rca-frontend-hub.fullscreen-mode .chat-main,
