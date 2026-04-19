@@ -13,6 +13,7 @@
   width: 100%;
   max-width: 100%;
   align-self: stretch;
+  overflow-x: hidden;
 }
 
 .rca-frontend-hub .tab-navigation {
@@ -27,15 +28,18 @@
 .rca-frontend-hub .main-content {
   width: 100%;
   min-width: 0;
+  overflow-x: hidden;
 }
 
 /* IncidentForm: sol panel viewport’a yapışmasın, flex satırında kalsın */
 .rca-frontend-hub .incident-form-wrapper {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
   width: 100%;
   max-width: 100%;
   min-height: min(70vh, calc(100vh - 280px));
   height: auto;
-  overflow: visible;
+  overflow-x: hidden;
   align-items: stretch;
 }
 
@@ -46,16 +50,59 @@
   height: auto !important;
   min-height: min(65vh, 560px);
   align-self: stretch;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
 }
 
 .rca-frontend-hub .form-main-content {
   margin-left: 0 !important;
-  width: auto !important;
+  width: 100% !important;
   max-width: none !important;
   flex: 1;
   min-width: 0;
-  padding: 1.25rem 1.5rem !important;
+  padding: 1rem 1.25rem !important;
   box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.rca-frontend-hub .incident-form-container,
+.rca-frontend-hub .incident-form,
+.rca-frontend-hub .form-section,
+.rca-frontend-hub .form-row {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .rca-frontend-hub .incident-form-wrapper {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .rca-frontend-hub .form-nav-panel {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 992px) {
+  .rca-frontend-hub .incident-form-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rca-frontend-hub .form-nav-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: auto;
+    max-height: 40vh;
+  }
+
+  .rca-frontend-hub .form-main-content {
+    padding: 0.75rem !important;
+  }
 }
 
 /* Chat: tam genişlik */
