@@ -5,8 +5,7 @@
 
 // Use relative path for Vercel serverless functions
 // In production: /api/analyze
-// In devel    const investigation = await investigationResponse.json();
-    console.log('[INVESTIGATION COMPLETED]', investigation);ment: http://localhost:5173/api/analyze (Vite proxy)
+// In development: http://localhost:5173/api/analyze (Vite proxy)
 const API_BASE = "/api";
 
 /**
