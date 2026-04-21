@@ -12,9 +12,9 @@
  * - Better security
  */
 
-// IMPORTANT: Use Vercel API route (NOT direct Railway URL)
-// This routes through /app/api/hsg245/route.ts which proxies to Railway
-const API_BASE_URL = '/api/hsg245';
+// IMPORTANT: Use Vercel serverless gateway endpoint.
+// Admin/api/hsg245.js expects { action, data } payload on POST.
+const API_GATEWAY_URL = '/api/hsg245';
 
 /**
  * API çağrılarında hata yönetimi için yardımcı fonksiyon
@@ -36,7 +36,7 @@ async function handleResponse(response) {
  */
 export async function checkHealth() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/health`);
+    const response = await fetch(`${API_GATEWAY_URL}`, { method: 'GET' });
     const data = await handleResponse(response);
     
     console.log('[SUCCESS] Backend bağlantısı başarılı:', data);
@@ -71,18 +71,21 @@ export async function createIncident(data) {
   console.log('[INFO] Creating incident...', data);
   
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/incidents/create`, {
+    const response = await fetch(`${API_GATEWAY_URL}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        reported_by: data.reported_by,
-        description: data.description,
-        injury_description: data.injury_description || '',
-        forwarded_to: data.forwarded_to || '',
-        event_category: data.event_category || '',
-        date_time: data.date_time || new Date().toISOString()
+        action: 'create_incident',
+        data: {
+          reported_by: data.reported_by,
+          description: data.description,
+          injury_description: data.injury_description || '',
+          forwarded_to: data.forwarded_to || '',
+          event_category: data.event_category || '',
+          date_time: data.date_time || new Date().toISOString()
+        }
       })
     });
     
@@ -115,21 +118,21 @@ export async function addAssessment(incidentId, data) {
   console.log(`[INFO] Adding assessment for ${incidentId}...`);
   
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/incidents/${incidentId}/assessment`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'add_assessment',
+        data: {
           incident_id: incidentId,
           event_type: data.event_type,
           actual_harm: data.actual_harm,
           riddor_reportable: data.riddor_reportable
-        })
-      }
-    );
+        }
+      })
+    });
     
     const result = await handleResponse(response);
     console.log('[SUCCESS] Assessment completed');
@@ -165,14 +168,14 @@ export async function investigateIncident(incidentId, data) {
   console.log('⏳ This may take 10-20 seconds (AI analysis running)...');
   
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/incidents/${incidentId}/investigate`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'investigate',
+        data: {
           incident_id: incidentId,
           location: data.location,
           who_involved: data.who_involved,
@@ -181,9 +184,9 @@ export async function investigateIncident(incidentId, data) {
           working_conditions: data.working_conditions || '',
           safety_procedures: data.safety_procedures || '',
           injuries: data.injuries || ''
-        })
-      }
-    );
+        }
+      })
+    });
     
     const result = await handleResponse(response);
     console.log('[SUCCESS] Investigation completed');
@@ -213,15 +216,16 @@ export async function generateActionPlan(incidentId) {
   console.log(`💡 Generating action plan for ${incidentId}...`);
   
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/incidents/${incidentId}/actionplan`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    );
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate_action_plan',
+        data: { incident_id: incidentId }
+      })
+    });
     
     const result = await handleResponse(response);
     console.log('[SUCCESS] Action plan generated');
@@ -251,9 +255,16 @@ export async function getIncident(incidentId) {
   console.log(`📖 Fetching incident ${incidentId}...`);
   
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/incidents/${incidentId}`
-    );
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'get_incident',
+        data: { incident_id: incidentId }
+      })
+    });
     
     const result = await handleResponse(response);
     console.log('[SUCCESS] Incident data retrieved');
@@ -278,7 +289,16 @@ export async function listIncidents() {
   console.log('[INFO] Fetching all incidents...');
   
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/incidents`);
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'list_incidents',
+        data: {}
+      })
+    });
     const result = await handleResponse(response);
     
     console.log(`✅ Retrieved ${result.count} incidents`);
@@ -304,16 +324,16 @@ export async function generatePDFReport(incidentId) {
   console.log(`📄 Generating PDF report for ${incidentId}...`);
   
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/reports/generate`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ incident_id: incidentId })
-      }
-    );
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate_pdf',
+        data: { incident_id: incidentId }
+      })
+    });
     
     if (!response.ok) {
       const error = await response.json();
@@ -376,7 +396,7 @@ export function getPriorityColor(priority) {
  * API URL'ini kontrol et
  */
 export function getApiUrl() {
-  return API_BASE_URL;
+  return API_GATEWAY_URL;
 }
 
 // Export all functions as default
