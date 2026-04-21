@@ -10,7 +10,7 @@ const createDefaultTimeline = () => ([
   { time: '', event: '' },
 ]);
 
-const IncidentForm = ({ language, onSubmit }) => {
+const IncidentForm = ({ language, onSubmit, isSubmitting = false }) => {
   const testScenarios = getTestScenarioList(language);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
@@ -834,11 +834,16 @@ const IncidentForm = ({ language, onSubmit }) => {
 
         {/* SUBMIT BUTTON */}
         <div className="form-actions">
-          <button type="button" className="btn-secondary" onClick={() => console.log('Draft saved')}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => console.log('Draft saved')}
+            disabled={isSubmitting}
+          >
             {t('save_draft')}
           </button>
-          <button type="submit" className="btn-primary">
-            {t('submit_for_analysis')}
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Agent pipeline calisiyor...' : t('submit_for_analysis')}
           </button>
         </div>
       </form>

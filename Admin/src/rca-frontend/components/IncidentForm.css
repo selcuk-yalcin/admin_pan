@@ -423,6 +423,14 @@ html {
   border-color: var(--primary);
 }
 
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Required field indicator */
 .form-field label::after {
   content: '';
