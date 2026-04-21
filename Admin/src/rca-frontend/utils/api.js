@@ -1,107 +1,147 @@
 import axios from 'axios';
 
-// API base URL (configured via Vite proxy)
-const API_BASE_URL = '/api';
-
-// Create axios instance
+// NOTE:
+// Interactive chat now uses the same Vercel gateway as the form flow:
+// /api/hsg245  ->  Admin/api/hsg245.js  ->  Railway backend
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 60000,
+  baseURL: '/api',
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Send a chat message
+async function callGateway(action, data) {
+  const response = await api.post('/hsg245', { action, data });
+  return response.data;
+}
+
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  return [String(value)];
+}
+
+function buildAssistantMessage({ incidentId, part3, part4, language }) {
+  const immediate = toArray(part3?.immediate_causes);
+  const root = toArray(part3?.root_causes);
+  const actions =
+    toArray(part4?.immediate_actions)
+      .concat(toArray(part4?.short_term_actions))
+      .concat(toArray(part4?.long_term_actions));
+
+  const tr = (language || 'tr').toLowerCase().startsWith('tr');
+  const topImmediate = immediate.slice(0, 3).map((x) => `- ${x}`).join('\n') || '- Veri yok';
+  const topRoot = root.slice(0, 3).map((x) => `- ${x}`).join('\n') || '- Veri yok';
+  const topActions = actions.slice(0, 3).map((x) => `- ${x}`).join('\n') || '- Veri yok';
+
+  if (tr) {
+    return [
+      `Analiz tamamlandi. Incident ID: ${incidentId}`,
+      '',
+      'Oncelikli dogrudan nedenler:',
+      topImmediate,
+      '',
+      'Kok nedenler:',
+      topRoot,
+      '',
+      'Onerilen aksiyonlar:',
+      topActions,
+    ].join('\n');
+  }
+
+  return [
+    `Analysis completed. Incident ID: ${incidentId}`,
+    '',
+    'Top immediate causes:',
+    topImmediate,
+    '',
+    'Root causes:',
+    topRoot,
+    '',
+    'Recommended actions:',
+    topActions,
+  ].join('\n');
+}
+
+// Send a chat message and run full RCA pipeline through /api/hsg245
 export const sendMessage = async ({ message, sessionId, language }) => {
   try {
-    const response = await api.post('/chat/message', {
-      message,
-      session_id: sessionId,
-      language,
+    const reporter = sessionId ? `Interactive user ${sessionId}` : 'Interactive user';
+
+    const created = await callGateway('create_incident', {
+      reported_by: reporter,
+      description: message,
+      injury_description: '',
+      forwarded_to: '',
+      event_category: 'incident',
+      date_time: new Date().toISOString(),
     });
-    return response.data;
-  } catch (error) {
-    console.error('Error sending message:', error);
-    throw error;
-  }
-};
 
-// Start batch analysis
-export const analyzeIncident = async ({ description, language }) => {
-  try {
-    const response = await api.post('/analyze', {
-      incident_description: description,
-      language,
-      mode: 'batch',
+    const incidentId = created?.data?.incident_id;
+    if (!incidentId) {
+      throw new Error('Incident ID not returned by gateway');
+    }
+
+    await callGateway('add_assessment', {
+      incident_id: incidentId,
+      event_type: 'Kaza',
+      actual_harm: 'Minor',
+      riddor_reportable: 'Unsure',
     });
-    return response.data;
-  } catch (error) {
-    console.error('Error analyzing incident:', error);
-    throw error;
-  }
-};
 
-// Get analysis status
-export const getAnalysisStatus = async (jobId) => {
-  try {
-    const response = await api.get(`/analysis/${jobId}/status`);
-    return response.data;
-  } catch (error) {
-    console.error('Error getting analysis status:', error);
-    throw error;
-  }
-};
-
-// Get analysis result
-export const getAnalysisResult = async (jobId) => {
-  try {
-    const response = await api.get(`/analysis/${jobId}/result`);
-    return response.data;
-  } catch (error) {
-    console.error('Error getting analysis result:', error);
-    throw error;
-  }
-};
-
-// Export report
-export const exportReport = async (jobId, format = 'html') => {
-  try {
-    const response = await api.get(`/analysis/${jobId}/export`, {
-      params: { format },
-      responseType: 'blob',
+    const investigated = await callGateway('investigate', {
+      incident_id: incidentId,
+      location: 'Interactive analysis',
+      who_involved: reporter,
+      how_happened: message,
+      activities: '',
+      working_conditions: '',
+      safety_procedures: '',
+      injuries: '',
     });
-    return response.data;
+
+    const actionPlan = await callGateway('generate_action_plan', {
+      incident_id: incidentId,
+    });
+
+    const part3 = investigated?.data || {};
+    const part4 = actionPlan?.data || {};
+
+    return {
+      message: buildAssistantMessage({
+        incidentId,
+        part3,
+        part4,
+        language,
+      }),
+      suggestions: toArray(part4?.immediate_actions).slice(0, 3),
+      startFlow: false,
+      flowType: null,
+    };
   } catch (error) {
-    console.error('Error exporting report:', error);
-    throw error;
+    const detail =
+      error?.response?.data?.details ||
+      error?.response?.data?.error ||
+      error?.message ||
+      'Unknown error';
+    console.error('Error sending message:', detail);
+    throw new Error(detail);
   }
 };
 
-// WebSocket connection for real-time updates
-export const createWebSocket = (jobId, onMessage, onError) => {
-  const wsUrl = `ws://localhost:8000/ws/analysis/${jobId}`;
-  const ws = new WebSocket(wsUrl);
+// Legacy compatibility wrappers
+export const analyzeIncident = async ({ description, language }) =>
+  sendMessage({ message: description, sessionId: `batch-${Date.now()}`, language });
 
-  ws.onopen = () => {
-    console.log('WebSocket connected');
-  };
+export const getAnalysisStatus = async () => ({ status: 'completed' });
 
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    onMessage(data);
-  };
+export const getAnalysisResult = async () => ({ status: 'completed' });
 
-  ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
-    onError(error);
-  };
-
-  ws.onclose = () => {
-    console.log('WebSocket disconnected');
-  };
-
-  return ws;
+export const exportReport = async () => {
+  throw new Error('Export from interactive analysis is not available in this mode.');
 };
+
+export const createWebSocket = () => null;
 
 export default api;
