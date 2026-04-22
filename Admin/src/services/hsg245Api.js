@@ -163,6 +163,31 @@ export async function addAssessment(incidentId, data) {
  * 
  * @returns {Promise<Object>} - { success, data: part3_data with root causes }
  */
+/**
+ * Dinamik HITL soru batch'i (backend: disambiguation + QuestionEngine / knowledge_base).
+ *
+ * @param {string} incidentId
+ * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, batch_size?: number }} body
+ */
+export async function fetchHitlQuestions(incidentId, body) {
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'hitl_questions',
+      data: {
+        incident_id: incidentId,
+        how_happened: body.how_happened || '',
+        root_cause_initial: body.root_cause_initial || '',
+        answered_ids: body.answered_ids || [],
+        immediate_causes: body.immediate_causes ?? null,
+        batch_size: body.batch_size ?? 1,
+      },
+    }),
+  });
+  return handleResponse(response);
+}
+
 export async function investigateIncident(incidentId, data) {
   console.log(`🔍 Investigating incident ${incidentId}...`);
   console.log('⏳ This may take 10-20 seconds (AI analysis running)...');
@@ -404,6 +429,7 @@ export default {
   checkHealth,
   createIncident,
   addAssessment,
+  fetchHitlQuestions,
   investigateIncident,
   generateActionPlan,
   getIncident,

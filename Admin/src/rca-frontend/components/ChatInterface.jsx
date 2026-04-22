@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Paperclip, RotateCcw, Download, AlertCircle } from 'lucide-react';
 import Message from './Message';
 import QuestionFlow from './QuestionFlow';
@@ -8,16 +8,14 @@ import {
   investigateIncident,
   generateActionPlan,
   generatePDFReport,
+  fetchHitlQuestions,
 } from '../../services/hsg245Api';
 import {
   buildInvestigationPayload,
   parseInitialImmediateCauses,
+  buildHowHappenedText,
 } from '../utils/investigationPayload';
-import {
-  getHitlQuestionSequence,
-  getQuestionLabel,
-  formatHitlAnswersBlock,
-} from '../utils/hitlKbQuestions';
+import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
 import './ChatInterface.css';
 
 /**
@@ -34,14 +32,15 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   const [sessionId, setSessionId] = useState(null);
   /** null | 'questions' | 'rca' | 'pdf_prompt' */
   const [hitlPhase, setHitlPhase] = useState(null);
-  const [hitlIndex, setHitlIndex] = useState(0);
   const [hitlAnswers, setHitlAnswers] = useState([]);
+  /** @type {import('react').MutableRefObject<string|null>} */
   const processedHitlIdRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
+  const [hitlAnsweredIds, setHitlAnsweredIds] = useState([]);
+  const [hitlQuestionsLoading, setHitlQuestionsLoading] = useState(false);
 
   const t = (key) => getTranslation(language, key);
-  const hitlSeq = getHitlQuestionSequence();
-  const currentHitlQuestion = hitlPhase === 'questions' ? hitlSeq[hitlIndex] : null;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,14 +48,56 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, hitlIndex, hitlPhase]);
+  }, [messages, hitlPhase, hitlApiQuestion?.id, hitlQuestionsLoading]);
+
+  const runRcaAfterHitl = useCallback(
+    async (answers) => {
+      if (!hitlSeed?.incidentId) return;
+      setHitlPhase('rca');
+      setHitlApiQuestion(null);
+      setIsLoading(true);
+      try {
+        const appendix = formatHitlAnswersBlock(answers);
+        const inv = buildInvestigationPayload(hitlSeed.formData, appendix);
+        await investigateIncident(hitlSeed.incidentId, inv);
+        await generateActionPlan(hitlSeed.incidentId);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `rca-done-${Date.now()}`,
+            type: 'assistant',
+            content: `${getTranslation(language, 'hitl_running_rca')} ✓\nIncident ID: ${hitlSeed.incidentId}`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHitlPhase('pdf_prompt');
+      } catch (error) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            type: 'error',
+            content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHitlPhase(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [hitlSeed, language],
+  );
 
   useEffect(() => {
     if (!hitlSeed?.incidentId) {
       processedHitlIdRef.current = null;
       setHitlPhase(null);
-      setHitlIndex(0);
       setHitlAnswers([]);
+      setHitlAnsweredIds([]);
+      setHitlApiQuestion(null);
+      setHitlQuestionsLoading(false);
       setMessages([
         {
           id: '1',
@@ -97,81 +138,127 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
       },
     ]);
     setHitlPhase('questions');
-    setHitlIndex(0);
     setHitlAnswers([]);
+    setHitlAnsweredIds([]);
+    setHitlApiQuestion(null);
+    setHitlQuestionsLoading(true);
     setSessionId(Date.now().toString());
-  }, [hitlSeed, language]);
 
-  const runRcaAfterHitl = async (answers) => {
-    if (!hitlSeed?.incidentId) return;
-    setHitlPhase('rca');
-    setIsLoading(true);
-    try {
-      const appendix = formatHitlAnswersBlock(answers);
-      const inv = buildInvestigationPayload(hitlSeed.formData, appendix);
-      await investigateIncident(hitlSeed.incidentId, inv);
-      await generateActionPlan(hitlSeed.incidentId);
+    const baseHow = buildHowHappenedText(hitlSeed.formData);
+    const rci = hitlSeed.formData?.rootCauseInitial || '';
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `rca-done-${Date.now()}`,
-          type: 'assistant',
-          content:
-            `${t('hitl_running_rca')} ✓\nIncident ID: ${hitlSeed.incidentId}`,
-          timestamp: new Date(),
-        },
-      ]);
-      setHitlPhase('pdf_prompt');
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          type: 'error',
-          content: `${t('error_occurred')}: ${error.message}`,
-          timestamp: new Date(),
-        },
-      ]);
-      setHitlPhase(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchHitlQuestions(hitlSeed.incidentId, {
+          how_happened: baseHow,
+          root_cause_initial: rci,
+          answered_ids: [],
+          batch_size: 1,
+        });
+        if (cancelled) return;
+        const payload = res.data || {};
+        const q = (payload.questions && payload.questions[0]) || null;
+        if (q) {
+          setHitlApiQuestion(q);
+          return;
+        }
+        if (payload.done) {
+          void runRcaAfterHitl([]);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `hitl-err-${Date.now()}`,
+            type: 'error',
+            content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHitlPhase(null);
+      } finally {
+        if (!cancelled) {
+          setHitlQuestionsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hitlSeed, language, runRcaAfterHitl]);
 
   const handleHitlAnswer = (value) => {
-    if (!currentHitlQuestion || isLoading) return;
+    if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
     const labels = {
       yes: t('yes'),
       no: t('no'),
       unknown: t('unknown'),
     };
     const label = labels[value] || value;
+    const qLabel = getHitlQuestionLabel(hitlApiQuestion, language);
     const entry = {
-      hsgHint: currentHitlQuestion.hsgHint,
-      question: getQuestionLabel(currentHitlQuestion, language),
+      questionId: hitlApiQuestion.id,
+      hsgHint: hitlApiQuestion.hsg_hint || '',
+      question: qLabel,
       label,
       value,
     };
     const nextAnswers = [...hitlAnswers, entry];
+    const newIds = [...hitlAnsweredIds, hitlApiQuestion.id];
     setHitlAnswers(nextAnswers);
+    setHitlAnsweredIds(newIds);
 
     setMessages((prev) => [
       ...prev,
       {
         id: `u-${Date.now()}`,
         type: 'user',
-        content: `${getQuestionLabel(currentHitlQuestion, language)}\n→ ${label}`,
+        content: `${qLabel}\n→ ${label}`,
         timestamp: new Date(),
       },
     ]);
 
-    const nextIndex = hitlIndex + 1;
-    if (nextIndex >= hitlSeq.length) {
-      void runRcaAfterHitl(nextAnswers);
-    } else {
-      setHitlIndex(nextIndex);
-    }
+    setHitlApiQuestion(null);
+    setHitlQuestionsLoading(true);
+
+    const baseHow = buildHowHappenedText(hitlSeed.formData);
+    const rci = hitlSeed.formData?.rootCauseInitial || '';
+    const appendix = formatHitlAnswersBlock(nextAnswers);
+    const howAugmented = appendix ? `${baseHow}\n\n--- HITL ---\n${appendix}` : baseHow;
+
+    (async () => {
+      try {
+        const res = await fetchHitlQuestions(hitlSeed.incidentId, {
+          how_happened: howAugmented,
+          root_cause_initial: rci,
+          answered_ids: newIds,
+          batch_size: 1,
+        });
+        const payload = res.data || {};
+        const nq = (payload.questions && payload.questions[0]) || null;
+        if (nq) {
+          setHitlApiQuestion(nq);
+          return;
+        }
+        void runRcaAfterHitl(nextAnswers);
+      } catch (error) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `hitl-err-${Date.now()}`,
+            type: 'error',
+            content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHitlPhase(null);
+      } finally {
+        setHitlQuestionsLoading(false);
+      }
+    })();
   };
 
   const handlePdfDownload = async () => {
@@ -276,8 +363,10 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     processedHitlIdRef.current = null;
     setCurrentFlow(null);
     setHitlPhase(null);
-    setHitlIndex(0);
     setHitlAnswers([]);
+    setHitlAnsweredIds([]);
+    setHitlApiQuestion(null);
+    setHitlQuestionsLoading(false);
     setMessages([
       {
         id: '1',
@@ -300,7 +389,13 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   };
 
   const inputLocked =
-    isLoading || hitlPhase === 'questions' || hitlPhase === 'rca' || hitlPhase === 'pdf_prompt';
+    isLoading ||
+    hitlQuestionsLoading ||
+    hitlPhase === 'questions' ||
+    hitlPhase === 'rca' ||
+    hitlPhase === 'pdf_prompt';
+
+  const showHitlPanel = hitlPhase === 'questions' && (hitlQuestionsLoading || hitlApiQuestion);
 
   return (
     <div className="chat-interface">
@@ -355,21 +450,27 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
             />
           )}
 
-          {hitlPhase === 'questions' && currentHitlQuestion && (
+          {showHitlPanel && (
             <div className="hitl-choice-panel">
-              <div className="hitl-hint">{currentHitlQuestion.hsgHint}</div>
-              <p className="hitl-q">{getQuestionLabel(currentHitlQuestion, language)}</p>
-              <div className="hitl-choices">
-                <button type="button" className="hitl-choice-btn" onClick={() => handleHitlAnswer('yes')}>
-                  {t('yes')}
-                </button>
-                <button type="button" className="hitl-choice-btn hitl-choice-no" onClick={() => handleHitlAnswer('no')}>
-                  {t('no')}
-                </button>
-                <button type="button" className="hitl-choice-btn hitl-choice-un" onClick={() => handleHitlAnswer('unknown')}>
-                  {t('unknown')}
-                </button>
-              </div>
+              {hitlQuestionsLoading && !hitlApiQuestion ? (
+                <p className="hitl-q">{t('hitl_loading_questions')}</p>
+              ) : hitlApiQuestion ? (
+                <>
+                  <div className="hitl-hint">{hitlApiQuestion.hsg_hint}</div>
+                  <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
+                  <div className="hitl-choices">
+                    <button type="button" className="hitl-choice-btn" onClick={() => handleHitlAnswer('yes')}>
+                      {t('yes')}
+                    </button>
+                    <button type="button" className="hitl-choice-btn hitl-choice-no" onClick={() => handleHitlAnswer('no')}>
+                      {t('no')}
+                    </button>
+                    <button type="button" className="hitl-choice-btn hitl-choice-un" onClick={() => handleHitlAnswer('unknown')}>
+                      {t('unknown')}
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           )}
 

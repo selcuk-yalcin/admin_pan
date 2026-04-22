@@ -110,6 +110,17 @@ export default async function handler(req, res) {
           }
           break
 
+        case 'hitl_questions':
+          endpoint = `/api/v1/incidents/${data.incident_id}/hitl/questions`
+          payload = {
+            how_happened: data.how_happened || '',
+            root_cause_initial: data.root_cause_initial || '',
+            answered_ids: data.answered_ids || [],
+            immediate_causes: data.immediate_causes ?? null,
+            batch_size: data.batch_size ?? 1,
+          }
+          break
+
         case 'generate_action_plan':
           endpoint = `/api/v1/incidents/${data.incident_id}/actionplan`
           method = 'POST'
