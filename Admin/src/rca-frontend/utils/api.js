@@ -19,16 +19,52 @@ async function callGateway(action, data) {
 function toArray(value) {
   if (Array.isArray(value)) return value;
   if (!value) return [];
-  return [String(value)];
+  return [value];
+}
+
+/** Backend immediate/root cause satirlari { code, category, description, ... } nesnesi olarak gelir. */
+function formatCauseOrActionLine(item) {
+  if (item == null) return '';
+  if (typeof item === 'string' || typeof item === 'number') return String(item).trim();
+  if (typeof item === 'object') {
+    const desc =
+      item.description ||
+      item.measure ||
+      item.text ||
+      item.title ||
+      item.cause ||
+      '';
+    const code = item.code ? String(item.code).trim() : '';
+    const cat = item.category ? String(item.category).trim() : '';
+    const line = [code, cat, desc].filter(Boolean).join(' — ');
+    if (line) return line;
+    if (item.question && item.answer) {
+      return `${item.question} → ${item.answer}`;
+    }
+    try {
+      return JSON.stringify(item);
+    } catch {
+      return String(item);
+    }
+  }
+  return String(item);
+}
+
+function toFormattedLines(value, max = 50) {
+  const arr = toArray(value);
+  return arr.map(formatCauseOrActionLine).filter(Boolean).slice(0, max);
 }
 
 function buildAssistantMessage({ incidentId, part3, part4, language }) {
-  const immediate = toArray(part3?.immediate_causes);
-  const root = toArray(part3?.root_causes);
-  const actions =
-    toArray(part4?.immediate_actions)
+  const immediate = toFormattedLines(part3?.immediate_causes, 10);
+  const root = toFormattedLines(part3?.root_causes, 10);
+  const actions = toFormattedLines(
+    []
+      .concat(toArray(part4?.immediate_actions))
       .concat(toArray(part4?.short_term_actions))
-      .concat(toArray(part4?.long_term_actions));
+      .concat(toArray(part4?.long_term_actions)),
+    20,
+  );
 
   const tr = (language || 'tr').toLowerCase().startsWith('tr');
   const topImmediate = immediate.slice(0, 3).map((x) => `- ${x}`).join('\n') || '- Veri yok';
@@ -115,7 +151,7 @@ export const sendMessage = async ({ message, sessionId, language }) => {
         part4,
         language,
       }),
-      suggestions: toArray(part4?.immediate_actions).slice(0, 3),
+      suggestions: toFormattedLines(part4?.immediate_actions, 10).slice(0, 3),
       startFlow: false,
       flowType: null,
     };
