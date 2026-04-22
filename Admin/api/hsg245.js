@@ -106,7 +106,8 @@ export default async function handler(req, res) {
             activities: data.activities,
             working_conditions: data.working_conditions,
             safety_procedures: data.safety_procedures,
-            injuries: data.injuries
+            injuries: data.injuries,
+            why_probe_answers: data.why_probe_answers || [],
           }
           break
 
@@ -117,6 +118,11 @@ export default async function handler(req, res) {
             root_cause_initial: data.root_cause_initial || '',
             answered_ids: data.answered_ids || [],
             immediate_causes: data.immediate_causes ?? null,
+            immediate_code: data.immediate_code || '',
+            why_level: data.why_level ?? 0,
+            current_why_question: data.current_why_question || '',
+            previous_why_answer: data.previous_why_answer || '',
+            mode: data.mode || 'global',
             batch_size: data.batch_size ?? 1,
           }
           break

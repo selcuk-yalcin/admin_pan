@@ -167,7 +167,7 @@ export async function addAssessment(incidentId, data) {
  * Dinamik HITL soru batch'i (backend: disambiguation + QuestionEngine / knowledge_base).
  *
  * @param {string} incidentId
- * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, batch_size?: number }} body
+ * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, immediate_code?: string, why_level?: number, current_why_question?: string, previous_why_answer?: string, mode?: 'global'|'why_probe', batch_size?: number }} body
  */
 export async function fetchHitlQuestions(incidentId, body) {
   const response = await fetch(`${API_GATEWAY_URL}`, {
@@ -181,6 +181,11 @@ export async function fetchHitlQuestions(incidentId, body) {
         root_cause_initial: body.root_cause_initial || '',
         answered_ids: body.answered_ids || [],
         immediate_causes: body.immediate_causes ?? null,
+        immediate_code: body.immediate_code || '',
+        why_level: body.why_level ?? 0,
+        current_why_question: body.current_why_question || '',
+        previous_why_answer: body.previous_why_answer || '',
+        mode: body.mode || 'global',
         batch_size: body.batch_size ?? 1,
       },
     }),
@@ -208,7 +213,8 @@ export async function investigateIncident(incidentId, data) {
           activities: data.activities || '',
           working_conditions: data.working_conditions || '',
           safety_procedures: data.safety_procedures || '',
-          injuries: data.injuries || ''
+          injuries: data.injuries || '',
+          why_probe_answers: data.why_probe_answers || [],
         }
       })
     });

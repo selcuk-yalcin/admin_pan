@@ -18,6 +18,19 @@ import {
 import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
 import './ChatInterface.css';
 
+const MAX_PROBE_CODES = 3;
+const MAX_WHY_LEVEL = 5;
+
+function extractHsgCodes(text) {
+  const matches = String(text || '').match(/[ABCD]\d+\.\d+/gi) || [];
+  const uniq = [];
+  for (const code of matches) {
+    const up = code.toUpperCase();
+    if (!uniq.includes(up)) uniq.push(up);
+  }
+  return uniq.slice(0, MAX_PROBE_CODES);
+}
+
 /**
  * @param {object} props
  * @param {string} props.language
@@ -39,8 +52,13 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
   const [hitlAnsweredIds, setHitlAnsweredIds] = useState([]);
   const [hitlQuestionsLoading, setHitlQuestionsLoading] = useState(false);
+  const [hitlMode, setHitlMode] = useState('global'); // global | why_probe
+  const [probeCodes, setProbeCodes] = useState([]);
+  const [probeBranchIdx, setProbeBranchIdx] = useState(0);
+  const [probeWhyLevel, setProbeWhyLevel] = useState(1);
 
   const t = (key) => getTranslation(language, key);
+  const currentProbeCode = probeCodes[probeBranchIdx] || '';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,6 +77,15 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
       try {
         const appendix = formatHitlAnswersBlock(answers);
         const inv = buildInvestigationPayload(hitlSeed.formData, appendix);
+        inv.why_probe_answers = answers.map((a) => ({
+          branch_number: a.branchNumber || 1,
+          why_level: a.whyLevel || 1,
+          immediate_code: a.immediateCode || '',
+          question_id: a.questionId || '',
+          question: a.question || '',
+          answer: a.label || '',
+          hsg_hint: a.hsgHint || '',
+        }));
         await investigateIncident(hitlSeed.incidentId, inv);
         await generateActionPlan(hitlSeed.incidentId);
 
@@ -90,6 +117,145 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     [hitlSeed, language],
   );
 
+  const fetchQuestionForState = useCallback(
+    async ({
+      mode,
+      answeredIds,
+      branchIdx,
+      whyLevel,
+      previousWhyAnswer,
+      answers,
+      codes,
+    }) => {
+      if (!hitlSeed?.incidentId) return { done: true, question: null };
+      const baseHow = buildHowHappenedText(hitlSeed.formData);
+      const rci = hitlSeed.formData?.rootCauseInitial || '';
+      const appendix = formatHitlAnswersBlock(answers || []);
+      const howAugmented = appendix ? `${baseHow}\n\n--- HITL ---\n${appendix}` : baseHow;
+      const currentCode = (codes || probeCodes)[branchIdx] || '';
+
+      const body =
+        mode === 'why_probe'
+          ? {
+              mode: 'why_probe',
+              how_happened: howAugmented,
+              root_cause_initial: rci,
+              answered_ids: answeredIds,
+              immediate_code: currentCode,
+              why_level: whyLevel,
+              current_why_question: `Why-${whyLevel} (${currentCode || 'GENERIC'})`,
+              previous_why_answer: previousWhyAnswer || '',
+              batch_size: 1,
+            }
+          : {
+              mode: 'global',
+              how_happened: howAugmented,
+              root_cause_initial: rci,
+              answered_ids: answeredIds,
+              batch_size: 1,
+            };
+
+      const res = await fetchHitlQuestions(hitlSeed.incidentId, body);
+      const payload = res.data || {};
+      const q = (payload.questions && payload.questions[0]) || null;
+      return { done: !!payload.done, question: q };
+    },
+    [hitlSeed, probeCodes],
+  );
+
+  const resolveNextQuestion = useCallback(
+    async ({
+      mode,
+      answers,
+      answeredIds,
+      branchIdx,
+      whyLevel,
+      previousWhyAnswer,
+      codes,
+    }) => {
+      const activeCodes = codes || probeCodes;
+      if (mode !== 'why_probe') {
+        const r = await fetchQuestionForState({
+          mode: 'global',
+          answers,
+          answeredIds,
+          branchIdx: 0,
+          whyLevel: 1,
+          previousWhyAnswer: '',
+          codes: activeCodes,
+        });
+        return {
+          done: !r.question,
+          question: r.question,
+          nextBranchIdx: 0,
+          nextWhyLevel: 1,
+          nextAnsweredIds: answeredIds,
+          nextPreviousWhyAnswer: '',
+        };
+      }
+
+      let b = branchIdx;
+      let w = whyLevel;
+      let ids = answeredIds;
+      let prevAns = previousWhyAnswer || '';
+      let guard = 0;
+
+      while (guard < 24) {
+        guard += 1;
+        const r = await fetchQuestionForState({
+          mode: 'why_probe',
+          answers,
+          answeredIds: ids,
+          branchIdx: b,
+          whyLevel: w,
+          previousWhyAnswer: prevAns,
+          codes: activeCodes,
+        });
+        if (r.question) {
+          return {
+            done: false,
+            question: r.question,
+            nextBranchIdx: b,
+            nextWhyLevel: w,
+            nextAnsweredIds: ids,
+            nextPreviousWhyAnswer: prevAns,
+          };
+        }
+
+        if (w < MAX_WHY_LEVEL) {
+          w += 1;
+          ids = [];
+          continue;
+        }
+        if (b < activeCodes.length - 1) {
+          b += 1;
+          w = 1;
+          ids = [];
+          prevAns = '';
+          continue;
+        }
+        return {
+          done: true,
+          question: null,
+          nextBranchIdx: b,
+          nextWhyLevel: w,
+          nextAnsweredIds: ids,
+          nextPreviousWhyAnswer: prevAns,
+        };
+      }
+
+      return {
+        done: true,
+        question: null,
+        nextBranchIdx: b,
+        nextWhyLevel: w,
+        nextAnsweredIds: ids,
+        nextPreviousWhyAnswer: prevAns,
+      };
+    },
+    [fetchQuestionForState, probeCodes],
+  );
+
   useEffect(() => {
     if (!hitlSeed?.incidentId) {
       processedHitlIdRef.current = null;
@@ -98,6 +264,10 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
       setHitlAnsweredIds([]);
       setHitlApiQuestion(null);
       setHitlQuestionsLoading(false);
+      setHitlMode('global');
+      setProbeCodes([]);
+      setProbeBranchIdx(0);
+      setProbeWhyLevel(1);
       setMessages([
         {
           id: '1',
@@ -142,28 +312,37 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setHitlAnsweredIds([]);
     setHitlApiQuestion(null);
     setHitlQuestionsLoading(true);
+    setProbeBranchIdx(0);
+    setProbeWhyLevel(1);
     setSessionId(Date.now().toString());
 
-    const baseHow = buildHowHappenedText(hitlSeed.formData);
     const rci = hitlSeed.formData?.rootCauseInitial || '';
+    const codes = extractHsgCodes(rci);
+    const mode = codes.length ? 'why_probe' : 'global';
+    setHitlMode(mode);
+    setProbeCodes(codes);
 
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetchHitlQuestions(hitlSeed.incidentId, {
-          how_happened: baseHow,
-          root_cause_initial: rci,
-          answered_ids: [],
-          batch_size: 1,
+        const next = await resolveNextQuestion({
+          mode,
+          answers: [],
+          answeredIds: [],
+          branchIdx: 0,
+          whyLevel: 1,
+          previousWhyAnswer: '',
+          codes,
         });
         if (cancelled) return;
-        const payload = res.data || {};
-        const q = (payload.questions && payload.questions[0]) || null;
-        if (q) {
-          setHitlApiQuestion(q);
+        if (next.question) {
+          setHitlApiQuestion(next.question);
+          setProbeBranchIdx(next.nextBranchIdx);
+          setProbeWhyLevel(next.nextWhyLevel);
+          setHitlAnsweredIds(next.nextAnsweredIds);
           return;
         }
-        if (payload.done) {
+        if (next.done) {
           void runRcaAfterHitl([]);
         }
       } catch (error) {
@@ -188,7 +367,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl]);
+  }, [hitlSeed, language, resolveNextQuestion, runRcaAfterHitl]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
@@ -205,6 +384,9 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
       question: qLabel,
       label,
       value,
+      branchNumber: hitlMode === 'why_probe' ? probeBranchIdx + 1 : 1,
+      whyLevel: hitlMode === 'why_probe' ? probeWhyLevel : hitlAnswers.length + 1,
+      immediateCode: hitlMode === 'why_probe' ? currentProbeCode : '',
     };
     const nextAnswers = [...hitlAnswers, entry];
     const newIds = [...hitlAnsweredIds, hitlApiQuestion.id];
@@ -224,26 +406,27 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setHitlApiQuestion(null);
     setHitlQuestionsLoading(true);
 
-    const baseHow = buildHowHappenedText(hitlSeed.formData);
-    const rci = hitlSeed.formData?.rootCauseInitial || '';
-    const appendix = formatHitlAnswersBlock(nextAnswers);
-    const howAugmented = appendix ? `${baseHow}\n\n--- HITL ---\n${appendix}` : baseHow;
-
     (async () => {
       try {
-        const res = await fetchHitlQuestions(hitlSeed.incidentId, {
-          how_happened: howAugmented,
-          root_cause_initial: rci,
-          answered_ids: newIds,
-          batch_size: 1,
+        const next = await resolveNextQuestion({
+          mode: hitlMode,
+          answers: nextAnswers,
+          answeredIds: newIds,
+          branchIdx: probeBranchIdx,
+          whyLevel: probeWhyLevel,
+          previousWhyAnswer: label,
+          codes: probeCodes,
         });
-        const payload = res.data || {};
-        const nq = (payload.questions && payload.questions[0]) || null;
-        if (nq) {
-          setHitlApiQuestion(nq);
+        if (next.question) {
+          setHitlApiQuestion(next.question);
+          setProbeBranchIdx(next.nextBranchIdx);
+          setProbeWhyLevel(next.nextWhyLevel);
+          setHitlAnsweredIds(next.nextAnsweredIds);
           return;
         }
-        void runRcaAfterHitl(nextAnswers);
+        if (next.done) {
+          void runRcaAfterHitl(nextAnswers);
+        }
       } catch (error) {
         setMessages((prev) => [
           ...prev,
@@ -367,6 +550,10 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setHitlAnsweredIds([]);
     setHitlApiQuestion(null);
     setHitlQuestionsLoading(false);
+    setHitlMode('global');
+    setProbeCodes([]);
+    setProbeBranchIdx(0);
+    setProbeWhyLevel(1);
     setMessages([
       {
         id: '1',
@@ -456,7 +643,11 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
                 <p className="hitl-q">{t('hitl_loading_questions')}</p>
               ) : hitlApiQuestion ? (
                 <>
-                  <div className="hitl-hint">{hitlApiQuestion.hsg_hint}</div>
+                  <div className="hitl-hint">
+                    {hitlMode === 'why_probe'
+                      ? `Branch ${probeBranchIdx + 1}/${Math.max(1, probeCodes.length)} • Why-${probeWhyLevel} • ${hitlApiQuestion.hsg_hint || currentProbeCode}`
+                      : hitlApiQuestion.hsg_hint}
+                  </div>
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
                   <div className="hitl-choices">
                     <button type="button" className="hitl-choice-btn" onClick={() => handleHitlAnswer('yes')}>
