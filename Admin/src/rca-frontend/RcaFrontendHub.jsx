@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Lock } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
@@ -34,6 +34,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [createdIncidentId, setCreatedIncidentId] = useState("");
   const [hitlSeed, setHitlSeed] = useState(null);
   const [activeSubmitMode, setActiveSubmitMode] = useState(null);
+  const submitAbortRef = useRef(null);
 
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
@@ -99,6 +100,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const handleFormSubmit = async (formData, mode = "report") => {
     if (isSubmittingForm) return;
 
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
     setIsSubmittingForm(true);
     setFormSubmitError("");
     setActiveSubmitMode(mode);
@@ -128,7 +131,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         forwarded_to: formData.department || "",
         event_category: formData.eventCategory || "incident",
         date_time: dateTime || new Date().toISOString(),
-      });
+      }, { signal: controller.signal });
 
       const incidentId = part1Result?.data?.incident_id;
       if (!incidentId) {
@@ -141,7 +144,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         event_type: mapEventCategoryToEventType(formData.eventCategory),
         actual_harm: mapInjurySeverityToActualHarm(formData.injurySeverity),
         riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
-      });
+      }, { signal: controller.signal });
 
       if (mode === "interactive") {
         setFormSubmitInfo(
@@ -154,24 +157,36 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
       setFormSubmitInfo("Assessment tamamlandi. Kök neden analizi calisiyor...");
 
-      await investigateIncident(incidentId, buildInvestigationPayload(formData, ""));
+      await investigateIncident(incidentId, buildInvestigationPayload(formData, ""), { signal: controller.signal });
 
       setFormSubmitInfo("Root cause analizi tamamlandi. Aksiyon plani uretiliyor...");
 
-      await generateActionPlan(incidentId);
+      await generateActionPlan(incidentId, { signal: controller.signal });
 
       setFormSubmitInfo("PDF rapor indiriliyor...");
-      await generatePDFReport(incidentId);
+      await generatePDFReport(incidentId, { signal: controller.signal });
 
       setFormSubmitInfo(
         `Tamamlandi. Incident ID: ${incidentId}. PDF indirildi. İsterseniz Etkilesimli Analiz sekmesinden ek soru-cevap yapabilirsiniz.`,
       );
     } catch (error) {
-      setFormSubmitError(error?.message || "Form gonderimi sirasinda bilinmeyen bir hata olustu.");
-      setFormSubmitInfo("");
+      if (error?.name === "AbortError") {
+        setFormSubmitInfo("Analiz islemi kullanici tarafindan iptal edildi.");
+        setFormSubmitError("");
+      } else {
+        setFormSubmitError(error?.message || "Form gonderimi sirasinda bilinmeyen bir hata olustu.");
+        setFormSubmitInfo("");
+      }
     } finally {
+      submitAbortRef.current = null;
       setIsSubmittingForm(false);
       setActiveSubmitMode(null);
+    }
+  };
+
+  const handleCancelSubmit = () => {
+    if (submitAbortRef.current) {
+      submitAbortRef.current.abort();
     }
   };
 
@@ -239,6 +254,25 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
               <h2>Agent Pipeline</h2>
               <p>{formSubmitInfo}</p>
               {createdIncidentId && <p><strong>Incident ID:</strong> {createdIncidentId}</p>}
+              {isSubmittingForm && (
+                <div style={{ marginTop: "10px" }}>
+                  <button
+                    type="button"
+                    onClick={handleCancelSubmit}
+                    style={{
+                      background: "#ef4444",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Analizi İptal Et
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

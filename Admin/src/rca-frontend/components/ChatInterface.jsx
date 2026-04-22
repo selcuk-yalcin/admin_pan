@@ -5,8 +5,7 @@ import QuestionFlow from './QuestionFlow';
 import { getTranslation } from '../utils/translations';
 import { sendMessage } from '../utils/api';
 import {
-  investigateIncident,
-  generateActionPlan,
+  runPipelineJobWithPolling,
   generatePDFReport,
   fetchHitlQuestions,
 } from '../../services/hsg245Api';
@@ -20,6 +19,7 @@ import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
 const MAX_WHY_LEVEL = 5;
+const PIPELINE_TIMEOUT_MS = 6 * 60 * 1000;
 
 function extractHsgCodes(text) {
   const matches = String(text || '').match(/[ABCD]\d+\.\d+/gi) || [];
@@ -29,6 +29,28 @@ function extractHsgCodes(text) {
     if (!uniq.includes(up)) uniq.push(up);
   }
   return uniq.slice(0, MAX_PROBE_CODES);
+}
+
+function getStageLabel(language, stage, progress) {
+  const isTr = String(language || '').toLowerCase().startsWith('tr');
+  const pctNum = Number(progress);
+  const pct = Number.isFinite(pctNum) ? ` (${Math.max(0, Math.min(100, pctNum))}%)` : '';
+  const tr = {
+    queued: `Kuyruga alindi${pct}`,
+    investigate: `Kok neden analizi calisiyor${pct}`,
+    actionplan: `Aksiyon plani olusturuluyor${pct}`,
+    completed: `Pipeline tamamlandi${pct}`,
+    failed: `Pipeline hata ile sonlandi${pct}`,
+  };
+  const en = {
+    queued: `Queued${pct}`,
+    investigate: `Root cause analysis running${pct}`,
+    actionplan: `Action plan generation running${pct}`,
+    completed: `Pipeline completed${pct}`,
+    failed: `Pipeline failed${pct}`,
+  };
+  const map = isTr ? tr : en;
+  return map[stage] || (isTr ? `Calisiyor${pct}` : `Running${pct}`);
 }
 
 /**
@@ -56,6 +78,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   const [probeCodes, setProbeCodes] = useState([]);
   const [probeBranchIdx, setProbeBranchIdx] = useState(0);
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
+  const [liveRcaStatus, setLiveRcaStatus] = useState('');
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -86,8 +109,19 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
           answer: a.label || '',
           hsg_hint: a.hsgHint || '',
         }));
-        await investigateIncident(hitlSeed.incidentId, inv);
-        await generateActionPlan(hitlSeed.incidentId);
+        await runPipelineJobWithPolling(
+          hitlSeed.incidentId,
+          inv,
+          {
+            timeoutMs: PIPELINE_TIMEOUT_MS,
+            pollIntervalMs: 2000,
+            onUpdate: (job) => {
+              const stage = job?.stage || job?.status || 'running';
+              const progress = job?.progress ?? 0;
+              setLiveRcaStatus(getStageLabel(language, stage, progress));
+            },
+          },
+        );
 
         setMessages((prev) => [
           ...prev,
@@ -99,6 +133,11 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
           },
         ]);
         setHitlPhase('pdf_prompt');
+        setLiveRcaStatus(
+          String(language || '').toLowerCase().startsWith('tr')
+            ? 'Analiz tamamlandi, rapor adimina gecildi.'
+            : 'Analysis completed, moved to report stage.',
+        );
       } catch (error) {
         setMessages((prev) => [
           ...prev,
@@ -110,6 +149,11 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
           },
         ]);
         setHitlPhase(null);
+        setLiveRcaStatus(
+          String(language || '').toLowerCase().startsWith('tr')
+            ? 'Analiz asamasinda hata olustu.'
+            : 'Error occurred during analysis stage.',
+        );
       } finally {
         setIsLoading(false);
       }
@@ -258,6 +302,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
 
   useEffect(() => {
     if (!hitlSeed?.incidentId) {
+      setLiveRcaStatus('');
       processedHitlIdRef.current = null;
       setHitlPhase(null);
       setHitlAnswers([]);
@@ -367,7 +412,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl]);
+  }, [hitlSeed, language, runRcaAfterHitl, stopLiveTicker]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
@@ -467,6 +512,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   };
 
   const handlePdfSkip = () => {
+    setLiveRcaStatus('');
     setHitlPhase(null);
     processedHitlIdRef.current = null;
     onHitlFlowComplete?.();
@@ -543,6 +589,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     if (hitlSeed?.incidentId) {
       onHitlFlowComplete?.();
     }
+    setLiveRcaStatus('');
     processedHitlIdRef.current = null;
     setCurrentFlow(null);
     setHitlPhase(null);
@@ -609,7 +656,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
             <div className="step-icon">3</div>
             <div className="step-text">
               <h4>{t('step_3')}</h4>
-              <p>{t('step_3_desc')}</p>
+              <p>{hitlPhase === 'rca' ? liveRcaStatus || t('step_3_desc') : t('step_3_desc')}</p>
             </div>
           </div>
           <div className={`step-item ${hitlPhase === 'pdf_prompt' ? 'active' : ''}`}>

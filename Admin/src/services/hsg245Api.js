@@ -15,14 +15,62 @@
 // IMPORTANT: Use Vercel serverless gateway endpoint.
 // Admin/api/hsg245.js expects { action, data } payload on POST.
 const API_GATEWAY_URL = '/api/hsg245';
+const BACKEND_HTTP_BASE = (
+  import.meta.env.VITE_BACKEND_API_URL ||
+  import.meta.env.VITE_HSG245_BACKEND_URL ||
+  ''
+).trim();
+
+function normalizeWebSocketBase(raw) {
+  if (!raw) return '';
+  try {
+    const u = new URL(raw);
+    if (u.protocol === 'https:') u.protocol = 'wss:';
+    else if (u.protocol === 'http:') u.protocol = 'ws:';
+    if (u.pathname.endsWith('/')) {
+      u.pathname = u.pathname.slice(0, -1);
+    }
+    return u.toString().replace(/\/$/, '');
+  } catch {
+    return '';
+  }
+}
+
+function resolveJobWebSocketUrl(jobId) {
+  const explicitWs = (import.meta.env.VITE_BACKEND_WS_URL || '').trim();
+  const wsBase = normalizeWebSocketBase(explicitWs || BACKEND_HTTP_BASE);
+  if (!wsBase || !jobId) return '';
+  return `${wsBase}/ws/jobs/${jobId}`;
+}
 
 /**
  * API çağrılarında hata yönetimi için yardımcı fonksiyon
  */
 async function handleResponse(response) {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+    const payload = await response.json().catch(() => null);
+    let message = `HTTP ${response.status}: ${response.statusText}`;
+    if (payload) {
+      // Gateway shape: { error, details, status }
+      // Backend shape: { detail: "..." }
+      if (typeof payload.detail === 'string' && payload.detail.trim()) {
+        message = payload.detail;
+      } else if (typeof payload.details === 'string' && payload.details.trim()) {
+        try {
+          const nested = JSON.parse(payload.details);
+          if (nested?.detail) {
+            message = String(nested.detail);
+          } else {
+            message = payload.details;
+          }
+        } catch {
+          message = payload.details;
+        }
+      } else if (typeof payload.error === 'string' && payload.error.trim()) {
+        message = payload.error;
+      }
+    }
+    throw new Error(message || 'Unknown error');
   }
   return await response.json();
 }
@@ -67,7 +115,7 @@ export async function checkHealth() {
  * 
  * @returns {Promise<Object>} - { success, data: { incident_id, part1 } }
  */
-export async function createIncident(data) {
+export async function createIncident(data, options = {}) {
   console.log('[INFO] Creating incident...', data);
   
   try {
@@ -76,6 +124,7 @@ export async function createIncident(data) {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: options.signal,
       body: JSON.stringify({
         action: 'create_incident',
         data: {
@@ -114,7 +163,7 @@ export async function createIncident(data) {
  * 
  * @returns {Promise<Object>} - { success, data: part2_data }
  */
-export async function addAssessment(incidentId, data) {
+export async function addAssessment(incidentId, data, options = {}) {
   console.log(`[INFO] Adding assessment for ${incidentId}...`);
   
   try {
@@ -123,6 +172,7 @@ export async function addAssessment(incidentId, data) {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: options.signal,
       body: JSON.stringify({
         action: 'add_assessment',
         data: {
@@ -193,7 +243,218 @@ export async function fetchHitlQuestions(incidentId, body) {
   return handleResponse(response);
 }
 
-export async function investigateIncident(incidentId, data) {
+export async function startPipelineJob(incidentId, data, options = {}) {
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: options.signal,
+    body: JSON.stringify({
+      action: 'pipeline_start',
+      data: {
+        incident_id: incidentId,
+        how_happened: data.how_happened,
+        location: data.location || '',
+        who_involved: data.who_involved || '',
+        activities: data.activities || '',
+        working_conditions: data.working_conditions || '',
+        safety_procedures: data.safety_procedures || '',
+        injuries: data.injuries || '',
+        why_probe_answers: data.why_probe_answers || [],
+      },
+    }),
+  });
+  return handleResponse(response);
+}
+
+export async function getPipelineJobStatus(jobId, options = {}) {
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: options.signal,
+    body: JSON.stringify({
+      action: 'job_status',
+      data: { job_id: jobId },
+    }),
+  });
+  return handleResponse(response);
+}
+
+async function pollPipelineJobUntilDone(jobId, options = {}) {
+  const pollIntervalMs = options.pollIntervalMs ?? 2000;
+  const timeoutMs = options.timeoutMs ?? 6 * 60 * 1000;
+  const startedAt = Date.now();
+
+  while (true) {
+    if (options.signal?.aborted) {
+      const abortErr = new Error('Pipeline polling aborted');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
+
+    const statusResp = await getPipelineJobStatus(jobId, options);
+    const job = statusResp?.data || {};
+    if (typeof options.onUpdate === 'function') {
+      options.onUpdate(job);
+    }
+
+    if (job.status === 'completed') {
+      return { success: true, data: job.result, job };
+    }
+    if (job.status === 'failed') {
+      throw new Error(job.error || 'Pipeline failed');
+    }
+    if (Date.now() - startedAt > timeoutMs) {
+      throw new Error(`Pipeline timeout (${Math.round(timeoutMs / 1000)}s)`);
+    }
+
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (options.signal) {
+          options.signal.removeEventListener('abort', onAbort);
+        }
+        resolve();
+      }, pollIntervalMs);
+      const onAbort = () => {
+        clearTimeout(timer);
+        options.signal?.removeEventListener('abort', onAbort);
+        const abortErr = new Error('Pipeline polling aborted');
+        abortErr.name = 'AbortError';
+        reject(abortErr);
+      };
+      options.signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+}
+
+export function watchPipelineJobWebSocket(jobId, options = {}) {
+  const wsUrl = resolveJobWebSocketUrl(jobId);
+  if (!wsUrl || typeof WebSocket === 'undefined') {
+    return null;
+  }
+
+  const socket = new WebSocket(wsUrl);
+  const abortSignal = options.signal;
+  let finished = false;
+
+  const closeSocket = () => {
+    try {
+      if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+        socket.close(1000, 'client_closed');
+      }
+    } catch {
+      // no-op
+    }
+  };
+
+  const onAbort = () => {
+    if (finished) return;
+    finished = true;
+    closeSocket();
+    if (typeof options.onError === 'function') {
+      const abortErr = new Error('Pipeline websocket aborted');
+      abortErr.name = 'AbortError';
+      options.onError(abortErr);
+    }
+  };
+  abortSignal?.addEventListener('abort', onAbort, { once: true });
+
+  socket.onmessage = (event) => {
+    if (finished) return;
+    try {
+      const payload = JSON.parse(event.data || '{}');
+      const job = payload?.data || {};
+      if (typeof options.onUpdate === 'function') {
+        options.onUpdate(job);
+      }
+      if (job.status === 'completed') {
+        finished = true;
+        options.onDone?.({ success: true, data: job.result, job });
+        closeSocket();
+      } else if (job.status === 'failed') {
+        finished = true;
+        options.onError?.(new Error(job.error || 'Pipeline failed'));
+        closeSocket();
+      }
+    } catch (err) {
+      finished = true;
+      options.onError?.(err);
+      closeSocket();
+    }
+  };
+
+  socket.onerror = () => {
+    if (finished) return;
+    finished = true;
+    options.onError?.(new Error('WebSocket connection error'));
+    closeSocket();
+  };
+
+  socket.onclose = () => {
+    abortSignal?.removeEventListener('abort', onAbort);
+    if (!finished) {
+      finished = true;
+      options.onError?.(new Error('WebSocket disconnected'));
+    }
+  };
+
+  return {
+    close: () => {
+      finished = true;
+      abortSignal?.removeEventListener('abort', onAbort);
+      closeSocket();
+    },
+    url: wsUrl,
+  };
+}
+
+async function runPipelineJobWithWebSocket(jobId, options = {}) {
+  return await new Promise((resolve, reject) => {
+    const timeoutMs = options.timeoutMs ?? 6 * 60 * 1000;
+    const timeoutId = setTimeout(() => {
+      watcher?.close();
+      reject(new Error(`Pipeline websocket timeout (${Math.round(timeoutMs / 1000)}s)`));
+    }, timeoutMs);
+
+    const watcher = watchPipelineJobWebSocket(jobId, {
+      signal: options.signal,
+      onUpdate: options.onUpdate,
+      onDone: (result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      },
+      onError: (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      },
+    });
+
+    if (!watcher) {
+      clearTimeout(timeoutId);
+      reject(new Error('WebSocket not configured'));
+    }
+  });
+}
+
+export async function runPipelineJobWithPolling(incidentId, data, options = {}) {
+  const started = await startPipelineJob(incidentId, data, options);
+  const jobId = started?.data?.job_id;
+  if (!jobId) {
+    throw new Error('Pipeline baslatildi ama job_id donmedi.');
+  }
+
+  const preferWebSocket = options.preferWebSocket !== false;
+  if (preferWebSocket) {
+    try {
+      return await runPipelineJobWithWebSocket(jobId, options);
+    } catch (wsError) {
+      console.warn('[WARN] WebSocket progress unavailable, falling back to polling:', wsError?.message || wsError);
+    }
+  }
+
+  return await pollPipelineJobUntilDone(jobId, options);
+}
+
+export async function investigateIncident(incidentId, data, options = {}) {
   console.log(`🔍 Investigating incident ${incidentId}...`);
   console.log('⏳ This may take 10-20 seconds (AI analysis running)...');
   
@@ -203,6 +464,7 @@ export async function investigateIncident(incidentId, data) {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: options.signal,
       body: JSON.stringify({
         action: 'investigate',
         data: {
@@ -243,7 +505,7 @@ export async function investigateIncident(incidentId, data) {
  * 
  * @returns {Promise<Object>} - { success, data: part4_data with action plan }
  */
-export async function generateActionPlan(incidentId) {
+export async function generateActionPlan(incidentId, options = {}) {
   console.log(`💡 Generating action plan for ${incidentId}...`);
   
   try {
@@ -252,6 +514,7 @@ export async function generateActionPlan(incidentId) {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: options.signal,
       body: JSON.stringify({
         action: 'generate_action_plan',
         data: { incident_id: incidentId }
@@ -351,7 +614,7 @@ export async function listIncidents() {
  * 
  * @returns {Promise<void>} - PDF otomatik indirilir
  */
-export async function generatePDFReport(incidentId) {
+export async function generatePDFReport(incidentId, options = {}) {
   console.log(`📄 Generating PDF report for ${incidentId}...`);
   
   try {
@@ -360,6 +623,7 @@ export async function generatePDFReport(incidentId) {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: options.signal,
       body: JSON.stringify({
         action: 'generate_pdf',
         data: { incident_id: incidentId }
@@ -436,6 +700,9 @@ export default {
   createIncident,
   addAssessment,
   fetchHitlQuestions,
+  startPipelineJob,
+  getPipelineJobStatus,
+  runPipelineJobWithPolling,
   investigateIncident,
   generateActionPlan,
   getIncident,

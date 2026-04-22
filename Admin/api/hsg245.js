@@ -111,6 +111,25 @@ export default async function handler(req, res) {
           }
           break
 
+        case 'pipeline_start':
+          endpoint = `/api/v1/incidents/${data.incident_id}/pipeline/start`
+          payload = {
+            how_happened: data.how_happened,
+            location: data.location || '',
+            who_involved: data.who_involved || '',
+            activities: data.activities || '',
+            working_conditions: data.working_conditions || '',
+            safety_procedures: data.safety_procedures || '',
+            injuries: data.injuries || '',
+            why_probe_answers: data.why_probe_answers || [],
+          }
+          break
+
+        case 'job_status':
+          endpoint = `/api/v1/jobs/${data.job_id}`
+          method = 'GET'
+          break
+
         case 'hitl_questions':
           endpoint = `/api/v1/incidents/${data.incident_id}/hitl/questions`
           payload = {
