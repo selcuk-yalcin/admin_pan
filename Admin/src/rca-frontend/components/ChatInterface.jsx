@@ -367,7 +367,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, resolveNextQuestion, runRcaAfterHitl]);
+  }, [hitlSeed, language, runRcaAfterHitl]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
