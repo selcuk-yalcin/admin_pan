@@ -10,7 +10,12 @@ const createDefaultTimeline = () => ([
   { time: '', event: '' },
 ]);
 
-const IncidentForm = ({ language, onSubmit, isSubmitting = false }) => {
+const IncidentForm = ({
+  language,
+  onSubmit,
+  isSubmitting = false,
+  activeSubmitMode = null,
+}) => {
   const testScenarios = getTestScenarioList(language);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
@@ -182,9 +187,14 @@ const IncidentForm = ({ language, onSubmit, isSubmitting = false }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmitReport = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit(formData, 'report');
+  };
+
+  const handleInteractive = (e) => {
+    e.preventDefault();
+    onSubmit(formData, 'interactive');
   };
 
   const eventCategories = React.useMemo(() => [
@@ -285,7 +295,7 @@ const IncidentForm = ({ language, onSubmit, isSubmitting = false }) => {
 
       {/* Main Form Content */}
       <div className="form-main-content">
-        <form onSubmit={handleSubmit} className="incident-form">
+        <form onSubmit={handleSubmitReport} className="incident-form">
         
         {/* SECTION 1: REPORTER INFORMATION */}
         <div className="form-section" ref={(el) => (sectionRefs.current[0] = el)}>
@@ -832,8 +842,8 @@ const IncidentForm = ({ language, onSubmit, isSubmitting = false }) => {
           </div>
         </div>
 
-        {/* SUBMIT BUTTON */}
-        <div className="form-actions">
+        {/* SUBMIT: PDF rapor veya Etkileşimli HITL */}
+        <div className="form-actions form-actions-split">
           <button
             type="button"
             className="btn-secondary"
@@ -842,9 +852,23 @@ const IncidentForm = ({ language, onSubmit, isSubmitting = false }) => {
           >
             {t('save_draft')}
           </button>
-          <button type="submit" className="btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? 'Agent pipeline calisiyor...' : t('submit_for_analysis')}
-          </button>
+          <div className="form-actions-primary-group">
+            <button
+              type="button"
+              className="btn-secondary btn-interactive"
+              onClick={handleInteractive}
+              disabled={isSubmitting}
+            >
+              {isSubmitting && activeSubmitMode === 'interactive'
+                ? t('submitting_hitl_seed')
+                : t('btn_interactive_hitl')}
+            </button>
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting && activeSubmitMode === 'report'
+                ? t('submitting_pdf_pipeline')
+                : t('btn_create_pdf_report')}
+            </button>
+          </div>
         </div>
       </form>
       </div>

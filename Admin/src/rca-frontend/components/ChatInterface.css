@@ -310,6 +310,74 @@
   font-size: 0.75rem;
 }
 
+/* HITL — tiklamali Evet/Hayir/Bilinmiyor */
+.hitl-choice-panel {
+  margin: 1rem 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  max-width: 720px;
+}
+
+.hitl-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-family: ui-monospace, monospace;
+}
+
+.hitl-q {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.hitl-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hitl-choice-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.hitl-choice-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.hitl-choice-no {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.hitl-choice-un {
+  opacity: 0.9;
+}
+
+.hitl-choice-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.hitl-choice-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.hitl-pdf-panel .hitl-q {
+  margin-bottom: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .chat-sidebar {

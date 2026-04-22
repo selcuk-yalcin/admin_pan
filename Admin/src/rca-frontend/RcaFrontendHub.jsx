@@ -10,7 +10,9 @@ import {
   addAssessment,
   investigateIncident,
   generateActionPlan,
+  generatePDFReport,
 } from "../services/hsg245Api";
+import { buildHowHappenedText, buildInvestigationPayload } from "./utils/investigationPayload";
 import "./RcaFrontendHub.css";
 import "./rcaEmbedLayout.css";
 
@@ -30,6 +32,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [formSubmitError, setFormSubmitError] = useState("");
   const [formSubmitInfo, setFormSubmitInfo] = useState("");
   const [createdIncidentId, setCreatedIncidentId] = useState("");
+  const [hitlSeed, setHitlSeed] = useState(null);
+  const [activeSubmitMode, setActiveSubmitMode] = useState(null);
 
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
@@ -92,28 +96,18 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     return "Unsure";
   };
 
-  const buildHowHappenedText = (formData) => {
-    const timelineRows = (formData.timeline || [])
-      .filter((row) => row?.time || row?.event)
-      .map((row) => `- ${row.time || "??:??"}: ${row.event || ""}`)
-      .join("\n");
-
-    return [
-      formData.incidentDescription || "",
-      formData.emergencyMeasures ? `Acil Onlemler: ${formData.emergencyMeasures}` : "",
-      timelineRows ? `Olay Kronolojisi:\n${timelineRows}` : "",
-      formData.additionalNotes ? `Ek Notlar: ${formData.additionalNotes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-  };
-
-  const handleFormSubmit = async (formData) => {
+  const handleFormSubmit = async (formData, mode = "report") => {
     if (isSubmittingForm) return;
 
     setIsSubmittingForm(true);
     setFormSubmitError("");
-    setFormSubmitInfo("Ajan pipeline baslatiliyor...");
+    setActiveSubmitMode(mode);
+    setHitlSeed(null);
+    setFormSubmitInfo(
+      mode === "interactive"
+        ? "Kayit ve degerlendirme (HITL oncesi)..."
+        : "Ajan pipeline ve PDF rapor baslatiliyor...",
+    );
     setCreatedIncidentId("");
 
     try {
@@ -149,54 +143,40 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
       });
 
+      if (mode === "interactive") {
+        setFormSubmitInfo(
+          `Hazir: ${incidentId}. Etkilesimli analiz sekmesinde HITL sorulari ve kok neden akisi basliyor.`,
+        );
+        setHitlSeed({ incidentId, formData });
+        setTab("chat");
+        return;
+      }
+
       setFormSubmitInfo("Assessment tamamlandi. Kök neden analizi calisiyor...");
 
-      await investigateIncident(incidentId, {
-        location: `${formData.location || ""} ${formData.department ? `| ${formData.department}` : ""}`.trim(),
-        who_involved: [formData.reportedBy, formData.witnessNames].filter(Boolean).join(" | "),
-        how_happened: description,
-        activities: [formData.workType, formData.workDuration, formData.shiftTime].filter(Boolean).join(" | "),
-        working_conditions: [
-          formData.weatherConditions,
-          formData.lightingConditions,
-          formData.noiseLevel,
-          formData.temperature,
-        ]
-          .filter(Boolean)
-          .join(" | "),
-        safety_procedures: [
-          `FallProtection=${formData.fallProtection || "unknown"}`,
-          `Harness=${formData.safetyHarness || "unknown"}`,
-          `Training=${formData.safetyTraining || "unknown"}`,
-          formData.ppeUsed ? `PPE=${formData.ppeUsed}` : "",
-        ]
-          .filter(Boolean)
-          .join(" | "),
-        injuries: [
-          formData.injuryType,
-          formData.injurySeverity,
-          formData.bodyPart,
-          formData.medicalTreatment,
-          formData.propertyDamage,
-        ]
-          .filter(Boolean)
-          .join(" | "),
-      });
+      await investigateIncident(incidentId, buildInvestigationPayload(formData, ""));
 
       setFormSubmitInfo("Root cause analizi tamamlandi. Aksiyon plani uretiliyor...");
 
       await generateActionPlan(incidentId);
 
+      setFormSubmitInfo("PDF rapor indiriliyor...");
+      await generatePDFReport(incidentId);
+
       setFormSubmitInfo(
-        `Pipeline tamamlandi. Incident ID: ${incidentId}. Sonuclar icin Interactive Analysis sekmesine gecildi.`,
+        `Tamamlandi. Incident ID: ${incidentId}. PDF indirildi. İsterseniz Etkilesimli Analiz sekmesinden ek soru-cevap yapabilirsiniz.`,
       );
-      setTab("chat");
     } catch (error) {
       setFormSubmitError(error?.message || "Form gonderimi sirasinda bilinmeyen bir hata olustu.");
       setFormSubmitInfo("");
     } finally {
       setIsSubmittingForm(false);
+      setActiveSubmitMode(null);
     }
+  };
+
+  const handleHitlFlowComplete = () => {
+    setHitlSeed(null);
   };
 
   const handleThemeToggle = () => {
@@ -276,9 +256,14 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             language={selectedLanguage}
             onSubmit={handleFormSubmit}
             isSubmitting={isSubmittingForm}
+            activeSubmitMode={activeSubmitMode}
           />
         ) : (
-          <ChatInterface language={selectedLanguage} />
+          <ChatInterface
+            language={selectedLanguage}
+            hitlSeed={hitlSeed}
+            onHitlFlowComplete={handleHitlFlowComplete}
+          />
         )}
       </main>
 

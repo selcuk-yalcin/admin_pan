@@ -389,6 +389,25 @@ html {
   border-top: 1px solid var(--border);
 }
 
+.form-actions-split {
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.form-actions-primary-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-interactive {
+  min-width: 200px;
+}
+
 .btn-primary,
 .btn-secondary {
   padding: 0.875rem 2rem;
