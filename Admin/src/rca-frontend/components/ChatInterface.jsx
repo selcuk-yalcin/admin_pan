@@ -412,7 +412,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl, stopLiveTicker]);
+  }, [hitlSeed, language, runRcaAfterHitl]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
