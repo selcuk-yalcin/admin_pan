@@ -22,21 +22,22 @@ import RightSidebar from "../CommonForBoth/RightSidebar";
 import { useSelector, useDispatch } from "react-redux";
 import { createSelector } from 'reselect';
 
+const selectVerticalLayoutProps = createSelector(
+  (state) => state.Layout,
+  (layout) => ({
+    isPreloader: layout.isPreloader,
+    layoutModeType: layout.layoutModeType,
+    leftSideBarThemeImage: layout.leftSideBarThemeImage,
+    leftSideBarType: layout.leftSideBarType,
+    layoutWidth: layout.layoutWidth,
+    topbarTheme: layout.topbarTheme,
+    showRightSidebar: layout.showRightSidebar,
+    leftSideBarTheme: layout.leftSideBarTheme,
+  })
+);
+
 const Layout = (props) => {
   const dispatch = useDispatch();
-
-  const selectLayoutProperties = createSelector(
-    (state) => state.Layout,
-    (layout) => ({
-      isPreloader: layout.isPreloader,
-      layoutModeType: layout.layoutModeType,
-      leftSideBarThemeImage: layout.leftSideBarThemeImage,
-      leftSideBarType: layout.leftSideBarType,
-      layoutWidth: layout.layoutWidth,
-      topbarTheme: layout.topbarTheme,
-      showRightSidebar: layout.showRightSidebar,
-      leftSideBarTheme: layout.leftSideBarTheme,
-    }));
 
   const {
     isPreloader,
@@ -47,7 +48,7 @@ const Layout = (props) => {
     showRightSidebar,
     leftSideBarTheme,
     layoutModeType
-  } = useSelector(selectLayoutProperties);
+  } = useSelector(selectVerticalLayoutProps);
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 

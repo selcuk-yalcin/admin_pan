@@ -5,17 +5,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
 import { changeLayoutMode } from "../store/actions";
 
+const selectNonAuthLayoutProps = createSelector(
+  (state) => state.Layout,
+  (layout) => ({
+    layoutModeType: layout.layoutModeType,
+  })
+);
+
 const NonAuthLayout = (props) => {
 
   const dispatch = useDispatch();
 
-  const selectProperty = createSelector(
-    (state) => state.Layout,
-    (layout) => ({
-      layoutModeType: layout.layoutModeType,
-    })
-  )
-  const { layoutModeType } = useSelector(selectProperty);
+  const { layoutModeType } = useSelector(selectNonAuthLayoutProps);
 
   useEffect(() => {
     if (layoutModeType) {

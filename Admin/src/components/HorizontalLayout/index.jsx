@@ -22,26 +22,27 @@ import Footer from "./Footer";
 import RightSidebar from "../CommonForBoth/RightSidebar";
 import { useLocation } from "react-router-dom";
 
+const selectHorizontalLayoutProps = createSelector(
+  (state) => state.Layout,
+  (layout) => ({
+    topbarTheme: layout.topbarTheme,
+    layoutWidth: layout.layoutWidth,
+    isPreloader: layout.isPreloader,
+    showRightSidebar: layout.showRightSidebar,
+    layoutModeType: layout.layoutModeType,
+  })
+);
+
 const Layout = (props) => {
   const dispatch = useDispatch();
 
-  const selectLayoutProperties = createSelector(
-    (state) => state.Layout,
-    (layout) => ({
-      topbarTheme: layout.topbarTheme,
-      layoutWidth: layout.layoutWidth,
-      isPreloader: layout.isPreloader,
-      showRightSidebar: layout.showRightSidebar,
-      layoutModeType: layout.layoutModeType,
-    })
-  );
   const {
     topbarTheme,
     layoutModeType,
     layoutWidth,
     isPreloader,
     showRightSidebar
-  } = useSelector(selectLayoutProperties);
+  } = useSelector(selectHorizontalLayoutProps);
 
   /*
   document title

@@ -32,6 +32,7 @@ const KindeAuthProvider = memo(({ children }) => {
       domain={KINDE_DOMAIN}
       redirectUri={redirectUri}
       logoutUri={logoutUri}
+      forceChildrenRender
     >
       {children}
     </KindeProvider>

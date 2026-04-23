@@ -22,24 +22,26 @@ import NonAuthLayout from "./components/NonAuthLayout";
 // Import scss
 import "./assets/scss/theme.scss";
 
+const selectLayoutFromState = createSelector(
+  (state) => state.Layout,
+  (layout) => ({
+    layoutType: layout.layoutType,
+  })
+);
+
 const App = (props) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading } = useKindeAuth();
 
-  const LayoutProperties = createSelector(
-    (state) => state.Layout,
-    (layout) => ({
-      layoutType: layout.layoutType,
-    })
-  );
-
-  const { layoutType } = useSelector(LayoutProperties);
+  const { layoutType } = useSelector(selectLayoutFromState);
 
   // Redirect to login if not authenticated and trying to access protected route
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/logout', '/kinde-callback', '/forgot-password', '/page-recoverpw', '/pages-login', '/pages-register'];
-    const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path));
+    const publicPaths = ['/', '/login', '/register', '/logout', '/kinde-callback', '/forgot-password', '/page-recoverpw', '/pages-login', '/pages-register'];
+    const isPublicPath = publicPaths.some((path) =>
+      path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
+    );
     
     if (!isLoading && !isAuthenticated && !isPublicPath) {
       navigate('/login');
