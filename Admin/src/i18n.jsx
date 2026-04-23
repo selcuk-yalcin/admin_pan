@@ -35,9 +35,28 @@ const resources = {
   // },
 }
 
-const language = localStorage.getItem("I18N_LANGUAGE")
+/** Safari Private / strict mode: localStorage throws → entire bundle fails before React mounts (white screen). */
+function safeGetItem(key) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key, value) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* ignore — storage blocked */
+  }
+}
+
+const language = safeGetItem("I18N_LANGUAGE");
 if (!language) {
-  localStorage.setItem("I18N_LANGUAGE", "tr")
+  safeSetItem("I18N_LANGUAGE", "tr");
 }
 
 i18n
@@ -45,7 +64,7 @@ i18n
   .use(initReactI18next) // passes i18n down to react-i18next
   .init({
     resources,
-    lng: localStorage.getItem("I18N_LANGUAGE") || "tr",
+    lng: safeGetItem("I18N_LANGUAGE") || "tr",
     fallbackLng: "tr", // use tr if detected lng is not available
 
     keySeparator: false, // we do not use keys in form messages.welcome

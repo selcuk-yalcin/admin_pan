@@ -7,16 +7,19 @@ import "./i18n"
 import { Provider } from 'react-redux'
 import store from './store/index.js'
 import KindeAuthProvider from './KindeAuthProvider.jsx'
+import ErrorBoundary from './ErrorBoundary.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.Fragment>
-    <Provider store={store}>
-      <BrowserRouter>
-        <KindeAuthProvider>
-          <App />
-        </KindeAuthProvider>
-      </BrowserRouter>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <BrowserRouter>
+          <KindeAuthProvider>
+            <App />
+          </KindeAuthProvider>
+        </BrowserRouter>
+      </Provider>
+    </ErrorBoundary>
   </React.Fragment>,
 );
 
