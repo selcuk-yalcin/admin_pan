@@ -6,11 +6,8 @@ import path from 'path'
 export default defineConfig({
   base: '/',
   plugins: [react()],
-  esbuild: {
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
-  },
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
       '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
       'bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
@@ -34,7 +31,15 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
 
-          if (id.includes('react') || id.includes('scheduler')) return 'vendor-react';
+          // DO NOT use id.includes('react'): it matches @kinde-oss/kinde-auth-react, react-router, etc.
+          // and can bundle unrelated packages with React core → broken Children / duplicate React at runtime.
+          if (
+            /[/\\]node_modules[/\\]react[/\\]/.test(id) ||
+            /[/\\]node_modules[/\\]react-dom[/\\]/.test(id) ||
+            /[/\\]node_modules[/\\]scheduler[/\\]/.test(id)
+          ) {
+            return 'vendor-react';
+          }
           if (id.includes('i18next')) return 'vendor-i18n';
           if (id.includes('chart.js') || id.includes('apexcharts') || id.includes('echarts') || id.includes('recharts')) {
             return 'vendor-charts';
