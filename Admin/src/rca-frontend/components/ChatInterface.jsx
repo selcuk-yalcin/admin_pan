@@ -61,9 +61,10 @@ function getStageLabel(language, stage, progress) {
  * @param {object} props
  * @param {string} props.language
  * @param {{ incidentId: string, formData: object } | null} props.hitlSeed - manuel formdan gelen HITL oturumu
- * @param {() => void} [props.onHitlFlowComplete] - HITL + isteğe bağlı PDF bittiğinde
+ * @param {(status: string) => void} [props.onPipelineStatusChange] - Agent pipeline canlı durum metni
+ * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
  */
-const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
+const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHitlFlowComplete }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +84,6 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   const [probeBranchIdx, setProbeBranchIdx] = useState(0);
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
-  const [pipelineResult, setPipelineResult] = useState(null);
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -123,12 +123,18 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
             onUpdate: (job) => {
               const stage = job?.stage || job?.status || 'running';
               const progress = job?.progress ?? 0;
-              setLiveRcaStatus(getStageLabel(language, stage, progress));
+              const statusLabel = getStageLabel(language, stage, progress);
+              setLiveRcaStatus(statusLabel);
+              onPipelineStatusChange?.(statusLabel);
             },
           },
         );
 
-        setPipelineResult(pipelineResponse?.data || pipelineResponse?.job?.result || null);
+        onPipelineStatusChange?.(
+          String(language || '').toLowerCase().startsWith('tr')
+            ? 'Pipeline tamamlandi. Rapor adimina gecildi.'
+            : 'Pipeline completed. Moved to report stage.',
+        );
         setMessages((prev) => [
           ...prev,
           {
@@ -160,11 +166,16 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
             ? 'Analiz asamasinda hata olustu.'
             : 'Error occurred during analysis stage.',
         );
+        onPipelineStatusChange?.(
+          String(language || '').toLowerCase().startsWith('tr')
+            ? `Pipeline hatasi: ${error.message}`
+            : `Pipeline error: ${error.message}`,
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [hitlSeed, language],
+    [hitlSeed, language, onPipelineStatusChange],
   );
 
   const fetchQuestionForState = useCallback(
@@ -328,6 +339,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
         },
       ]);
       setSessionId(Date.now().toString());
+      onPipelineStatusChange?.('');
       return;
     }
     if (processedHitlIdRef.current === hitlSeed.incidentId) {
@@ -366,6 +378,11 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setSessionId(Date.now().toString());
+    onPipelineStatusChange?.(
+      String(language || '').toLowerCase().startsWith('tr')
+        ? `HITL sorulari basladi (Incident: ${hitlSeed.incidentId})`
+        : `HITL questions started (Incident: ${hitlSeed.incidentId})`,
+    );
 
     const rci = hitlSeed.formData?.rootCauseInitial || '';
     const codes = extractHsgCodes(rci);
@@ -418,7 +435,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl]);
+  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
@@ -500,6 +517,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setIsLoading(true);
     try {
       await generateHTMLReport(hitlSeed.incidentId);
+      await openHTMLReport(hitlSeed.incidentId);
       setMessages((prev) => [
         ...prev,
         {
@@ -540,6 +558,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
       },
     ]);
     setSessionId(Date.now().toString());
+    onPipelineStatusChange?.('');
   };
 
   const runReportAction = useCallback(
@@ -636,7 +655,6 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setProbeCodes([]);
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
-    setPipelineResult(null);
     setMessages([
       {
         id: '1',
@@ -646,6 +664,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
       },
     ]);
     setSessionId(Date.now().toString());
+    onPipelineStatusChange?.('');
   };
 
   const handleQuestionAnswer = (answer) => {
@@ -657,12 +676,6 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     };
     setMessages((prev) => [...prev, userMessage]);
   };
-
-  const analysisBranches = pipelineResult?.part3?._v2_raw?.analysis_branches || [];
-  const avgChainQuality = pipelineResult?.part3?._v2_raw?.chain_quality_scores
-    ? pipelineResult.part3._v2_raw.chain_quality_scores.reduce((a, b) => a + Number(b || 0), 0) /
-      Math.max(1, pipelineResult.part3._v2_raw.chain_quality_scores.length)
-    : null;
 
   const inputLocked =
     isLoading ||
@@ -779,25 +792,6 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
                   {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Indir' : 'Download Decision Tree'}
                 </button>
               </div>
-              {!!analysisBranches.length && (
-                <div className="hitl-flow-summary">
-                  <p className="hitl-flow-title">
-                    {String(language || '').toLowerCase().startsWith('tr') ? 'Akis Ozeti' : 'Flow Summary'}
-                  </p>
-                  {avgChainQuality != null && (
-                    <p className="hitl-flow-line">
-                      {String(language || '').toLowerCase().startsWith('tr')
-                        ? `Ortalama Zincir Kalitesi: ${(avgChainQuality * 100).toFixed(2)}%`
-                        : `Average Chain Quality: ${(avgChainQuality * 100).toFixed(2)}%`}
-                    </p>
-                  )}
-                  {analysisBranches.map((branch, idx) => (
-                    <p className="hitl-flow-line" key={`branch-${idx}-${branch?.branch_number || idx}`}>
-                      {`#${branch?.branch_number || idx + 1} [${branch?.immediate_cause?.code || '-'}] ${branch?.immediate_cause?.cause_tr || ''}`}
-                    </p>
-                  ))}
-                </div>
-              )}
             </div>
           )}
 

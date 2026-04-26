@@ -34,6 +34,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [createdIncidentId, setCreatedIncidentId] = useState("");
   const [hitlSeed, setHitlSeed] = useState(null);
   const [activeSubmitMode, setActiveSubmitMode] = useState(null);
+  const [chatPipelineStatus, setChatPipelineStatus] = useState("");
   const submitAbortRef = useRef(null);
 
   const syncTabFromUrl = useCallback(() => {
@@ -150,6 +151,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         setFormSubmitInfo(
           `Hazir: ${incidentId}. Etkilesimli analiz sekmesinde HITL sorulari ve kok neden akisi basliyor.`,
         );
+        setChatPipelineStatus("");
         setHitlSeed({ incidentId, formData });
         setTab("chat");
         return;
@@ -192,6 +194,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
   const handleHitlFlowComplete = () => {
     setHitlSeed(null);
+    setChatPipelineStatus("");
   };
 
   const handleThemeToggle = () => {
@@ -253,6 +256,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             <div className="info-banner-content">
               <h2>Agent Pipeline</h2>
               <p>{formSubmitInfo}</p>
+              {activeTab === "chat" && chatPipelineStatus && <p><strong>Canli Durum:</strong> {chatPipelineStatus}</p>}
               {createdIncidentId && <p><strong>Incident ID:</strong> {createdIncidentId}</p>}
               {isSubmittingForm && (
                 <div style={{ marginTop: "10px" }}>
@@ -296,6 +300,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           <ChatInterface
             language={selectedLanguage}
             hitlSeed={hitlSeed}
+            onPipelineStatusChange={setChatPipelineStatus}
             onHitlFlowComplete={handleHitlFlowComplete}
           />
         )}
