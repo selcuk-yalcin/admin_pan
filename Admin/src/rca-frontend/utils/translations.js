@@ -150,7 +150,7 @@ const translations = {
     
     save_draft: 'Taslak Kaydet',
     submit_for_analysis: 'Analize Gönder',
-    btn_create_pdf_report: 'Rapor Oluştur (PDF)',
+    btn_create_pdf_report: 'Rapor Oluştur',
     btn_interactive_hitl: 'Etkileşimli Analize Geç',
     submitting_pdf_pipeline: 'Rapor ve analiz çalışıyor...',
     submitting_hitl_seed: 'Kayıt oluşturuluyor, HITL başlıyor...',
@@ -507,7 +507,7 @@ const translations = {
     
     save_draft: 'Save Draft',
     submit_for_analysis: 'Submit for Analysis',
-    btn_create_pdf_report: 'Create report (PDF)',
+    btn_create_pdf_report: 'Create report',
     btn_interactive_hitl: 'Continue to interactive analysis',
     submitting_pdf_pipeline: 'Generating report and analysis...',
     submitting_hitl_seed: 'Saving and starting interactive questions...',

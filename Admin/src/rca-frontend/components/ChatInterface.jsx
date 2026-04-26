@@ -542,6 +542,26 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setSessionId(Date.now().toString());
   };
 
+  const runReportAction = useCallback(
+    async (fn) => {
+      if (!hitlSeed?.incidentId) return;
+      try {
+        await fn(hitlSeed.incidentId);
+      } catch (error) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `report-action-err-${Date.now()}`,
+            type: 'error',
+            content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    },
+    [hitlSeed, language],
+  );
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     if (hitlPhase === 'questions' || hitlPhase === 'rca') {
@@ -746,16 +766,16 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
                 </button>
               </div>
               <div className="hitl-choices hitl-report-actions">
-                <button type="button" className="hitl-choice-btn" onClick={() => openHTMLReport(hitlSeed.incidentId)} disabled={isLoading}>
+                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(openHTMLReport)} disabled={isLoading}>
                   {String(language || '').toLowerCase().startsWith('tr') ? 'Raporu Ac' : 'Open Report'}
                 </button>
-                <button type="button" className="hitl-choice-btn" onClick={() => downloadHTMLReport(hitlSeed.incidentId)} disabled={isLoading}>
+                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(downloadHTMLReport)} disabled={isLoading}>
                   {String(language || '').toLowerCase().startsWith('tr') ? 'HTML Indir' : 'Download HTML'}
                 </button>
-                <button type="button" className="hitl-choice-btn" onClick={() => openDecisionTree(hitlSeed.incidentId)} disabled={isLoading}>
+                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(openDecisionTree)} disabled={isLoading}>
                   {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Ac' : 'Open Decision Tree'}
                 </button>
-                <button type="button" className="hitl-choice-btn" onClick={() => downloadDecisionTree(hitlSeed.incidentId)} disabled={isLoading}>
+                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(downloadDecisionTree)} disabled={isLoading}>
                   {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Indir' : 'Download Decision Tree'}
                 </button>
               </div>

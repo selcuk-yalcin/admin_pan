@@ -700,6 +700,13 @@ export async function downloadDecisionTree(incidentId) {
 }
 
 export async function openHTMLReport(incidentId) {
+  // Open immediately on user gesture to avoid popup blockers.
+  const reportWindow = window.open('', '_blank');
+  if (!reportWindow) {
+    throw new Error('Popup blocked. Please allow popups for preview.');
+  }
+  reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading report...</p>');
+
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
     headers: {
@@ -713,19 +720,23 @@ export async function openHTMLReport(incidentId) {
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
+    reportWindow.close();
     throw new Error(payload?.detail || payload?.error || 'Failed to load report preview');
   }
   const html = await response.text();
-  const reportWindow = window.open('', '_blank', 'noopener,noreferrer');
-  if (!reportWindow) {
-    throw new Error('Popup blocked. Please allow popups for preview.');
-  }
   reportWindow.document.open();
   reportWindow.document.write(html);
   reportWindow.document.close();
 }
 
 export async function openDecisionTree(incidentId) {
+  // Open immediately on user gesture to avoid popup blockers.
+  const treeWindow = window.open('', '_blank');
+  if (!treeWindow) {
+    throw new Error('Popup blocked. Please allow popups for preview.');
+  }
+  treeWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading decision tree...</p>');
+
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
     headers: {
@@ -739,13 +750,10 @@ export async function openDecisionTree(incidentId) {
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
+    treeWindow.close();
     throw new Error(payload?.detail || payload?.error || 'Failed to load decision tree preview');
   }
   const html = await response.text();
-  const treeWindow = window.open('', '_blank', 'noopener,noreferrer');
-  if (!treeWindow) {
-    throw new Error('Popup blocked. Please allow popups for preview.');
-  }
   treeWindow.document.open();
   treeWindow.document.write(html);
   treeWindow.document.close();

@@ -590,7 +590,7 @@ html {
 }
 
 .timeline-item {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
@@ -629,7 +629,7 @@ html {
 }
 
 .checklist-item {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
@@ -661,7 +661,7 @@ html {
 }
 
 .root-cause-item {
-  background: white;
+  background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
@@ -770,7 +770,7 @@ html {
 .btn-secondary {
   flex: 1;
   padding: 1rem 2rem;
-  background: white;
+  background: var(--surface);
   color: var(--text-primary);
   border: 2px solid var(--border);
   border-radius: 12px;
@@ -781,9 +781,19 @@ html {
 }
 
 .btn-secondary:hover {
-  background: var(--surface);
+  background: var(--surface-hover);
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.form-actions-primary-group .btn-secondary,
+.form-actions-primary-group .btn-primary {
+  min-width: 220px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 /* Responsive Updates */
