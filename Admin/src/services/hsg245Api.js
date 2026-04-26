@@ -21,6 +21,16 @@ const BACKEND_HTTP_BASE = (
   ''
 ).trim();
 
+function getTenantContextHeaders() {
+  if (typeof window === 'undefined') return {};
+  const tenantId = (window.localStorage.getItem('tenant_id') || import.meta.env.VITE_TENANT_ID || '').trim();
+  const tenantApiKey = (window.localStorage.getItem('tenant_api_key') || import.meta.env.VITE_TENANT_API_KEY || '').trim();
+  const headers = {};
+  if (tenantId) headers['X-Tenant-ID'] = tenantId;
+  if (tenantApiKey) headers['X-API-Key'] = tenantApiKey;
+  return headers;
+}
+
 function normalizeWebSocketBase(raw) {
   if (!raw) return '';
   try {
@@ -40,7 +50,9 @@ function resolveJobWebSocketUrl(jobId) {
   const explicitWs = (import.meta.env.VITE_BACKEND_WS_URL || '').trim();
   const wsBase = normalizeWebSocketBase(explicitWs || BACKEND_HTTP_BASE);
   if (!wsBase || !jobId) return '';
-  return `${wsBase}/ws/jobs/${jobId}`;
+  const tenantId = (typeof window !== 'undefined' && window.localStorage.getItem('tenant_id')) || import.meta.env.VITE_TENANT_ID || '';
+  const query = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : '';
+  return `${wsBase}/ws/jobs/${jobId}${query}`;
 }
 
 /**
@@ -123,6 +135,7 @@ export async function createIncident(data, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       signal: options.signal,
       body: JSON.stringify({
@@ -171,6 +184,7 @@ export async function addAssessment(incidentId, data, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       signal: options.signal,
       body: JSON.stringify({
@@ -222,7 +236,7 @@ export async function addAssessment(incidentId, data, options = {}) {
 export async function fetchHitlQuestions(incidentId, body) {
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
     body: JSON.stringify({
       action: 'hitl_questions',
       data: {
@@ -246,7 +260,7 @@ export async function fetchHitlQuestions(incidentId, body) {
 export async function startPipelineJob(incidentId, data, options = {}) {
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
     signal: options.signal,
     body: JSON.stringify({
       action: 'pipeline_start',
@@ -269,7 +283,7 @@ export async function startPipelineJob(incidentId, data, options = {}) {
 export async function getPipelineJobStatus(jobId, options = {}) {
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
     signal: options.signal,
     body: JSON.stringify({
       action: 'job_status',
@@ -463,6 +477,7 @@ export async function investigateIncident(incidentId, data, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       signal: options.signal,
       body: JSON.stringify({
@@ -513,6 +528,7 @@ export async function generateActionPlan(incidentId, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       signal: options.signal,
       body: JSON.stringify({
@@ -553,6 +569,7 @@ export async function getIncident(incidentId) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       body: JSON.stringify({
         action: 'get_incident',
@@ -587,6 +604,7 @@ export async function listIncidents() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       body: JSON.stringify({
         action: 'list_incidents',
@@ -614,45 +632,123 @@ export async function listIncidents() {
  * 
  * @returns {Promise<void>} - PDF otomatik indirilir
  */
-export async function generatePDFReport(incidentId, options = {}) {
-  console.log(`📄 Generating PDF report for ${incidentId}...`);
+export async function generateHTMLReport(incidentId, options = {}) {
+  console.log(`📄 Generating HTML report for ${incidentId}...`);
   
   try {
     const response = await fetch(`${API_GATEWAY_URL}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
       },
       signal: options.signal,
       body: JSON.stringify({
-        action: 'generate_pdf',
+        action: 'generate_html',
         data: { incident_id: incidentId }
       })
     });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to generate PDF');
-    }
-    
-    // PDF blob olarak gelir, indir
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `HSG245_Report_${incidentId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    
-    // Cleanup
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    
-    console.log('[SUCCESS] PDF report downloaded successfully');
+
+    const result = await handleResponse(response);
+    console.log('[SUCCESS] HTML report artifacts generated');
+    return result;
   } catch (error) {
-    console.error('[ERROR] Failed to generate PDF:', error.message);
+    console.error('[ERROR] Failed to generate HTML report:', error.message);
     throw error;
   }
+}
+
+// Backward compatibility: legacy callers still use generatePDFReport name.
+export async function generatePDFReport(incidentId, options = {}) {
+  await generateHTMLReport(incidentId, options);
+  await downloadHTMLReport(incidentId);
+}
+
+async function downloadHtmlLike(action, incidentId, filenameFallback) {
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getTenantContextHeaders(),
+    },
+    body: JSON.stringify({
+      action,
+      data: { incident_id: incidentId },
+    }),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.detail || payload?.error || 'Download failed');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filenameFallback;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
+export async function downloadHTMLReport(incidentId) {
+  return downloadHtmlLike('download_html_report', incidentId, `HSG245_Report_${incidentId}.html`);
+}
+
+export async function downloadDecisionTree(incidentId) {
+  return downloadHtmlLike('download_decision_tree', incidentId, `HSG245_Report_${incidentId}_decision_tree.html`);
+}
+
+export async function openHTMLReport(incidentId) {
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getTenantContextHeaders(),
+    },
+    body: JSON.stringify({
+      action: 'view_html_report',
+      data: { incident_id: incidentId },
+    }),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.detail || payload?.error || 'Failed to load report preview');
+  }
+  const html = await response.text();
+  const reportWindow = window.open('', '_blank', 'noopener,noreferrer');
+  if (!reportWindow) {
+    throw new Error('Popup blocked. Please allow popups for preview.');
+  }
+  reportWindow.document.open();
+  reportWindow.document.write(html);
+  reportWindow.document.close();
+}
+
+export async function openDecisionTree(incidentId) {
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getTenantContextHeaders(),
+    },
+    body: JSON.stringify({
+      action: 'view_decision_tree',
+      data: { incident_id: incidentId },
+    }),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.detail || payload?.error || 'Failed to load decision tree preview');
+  }
+  const html = await response.text();
+  const treeWindow = window.open('', '_blank', 'noopener,noreferrer');
+  if (!treeWindow) {
+    throw new Error('Popup blocked. Please allow popups for preview.');
+  }
+  treeWindow.document.open();
+  treeWindow.document.write(html);
+  treeWindow.document.close();
 }
 
 /**
@@ -708,6 +804,11 @@ export default {
   getIncident,
   listIncidents,
   generatePDFReport,
+  generateHTMLReport,
+  downloadHTMLReport,
+  downloadDecisionTree,
+  openHTMLReport,
+  openDecisionTree,
   getStatusLabel,
   getPriorityColor,
   getApiUrl

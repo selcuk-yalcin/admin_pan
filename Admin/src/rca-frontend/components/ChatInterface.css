@@ -378,6 +378,28 @@
   margin-bottom: 1rem;
 }
 
+.hitl-report-actions {
+  margin-top: 0.75rem;
+}
+
+.hitl-flow-summary {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+}
+
+.hitl-flow-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hitl-flow-line {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .chat-sidebar {

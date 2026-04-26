@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Tenant-ID, X-API-Key, Authorization'
   )
 
   // Handle OPTIONS request
@@ -41,6 +41,16 @@ export default async function handler(req, res) {
 
     console.log('[REQUEST]', req.method, req.url)
     console.log('[BACKEND URL]', BACKEND_URL)
+    const forwardHeaders = {}
+    if (req.headers['x-tenant-id']) {
+      forwardHeaders['X-Tenant-ID'] = String(req.headers['x-tenant-id'])
+    }
+    if (req.headers['x-api-key']) {
+      forwardHeaders['X-API-Key'] = String(req.headers['x-api-key'])
+    }
+    if (req.headers['authorization']) {
+      forwardHeaders['Authorization'] = String(req.headers['authorization'])
+    }
 
     // Handle GET request (health check)
     if (req.method === 'GET') {
@@ -50,6 +60,7 @@ export default async function handler(req, res) {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...forwardHeaders,
         },
       })
 
@@ -166,29 +177,45 @@ export default async function handler(req, res) {
           method = 'GET'
           break
 
-        case 'generate_pdf':
-          endpoint = `/api/v1/reports/generate`
+        case 'generate_html':
+          endpoint = `/api/v1/reports/html`
           payload = { incident_id: data.incident_id }
-          
-          // PDF needs special handling
-          const pdfResponse = await fetch(`${BACKEND_URL}${endpoint}`, {
+
+          // HTML report links endpoint
+          const htmlMetaResp = await fetch(`${BACKEND_URL}${endpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...forwardHeaders },
             body: JSON.stringify(payload)
           })
 
-          if (!pdfResponse.ok) {
-            const error = await pdfResponse.text()
-            return res.status(pdfResponse.status).json({ 
-              error: 'PDF generation failed', 
+          if (!htmlMetaResp.ok) {
+            const error = await htmlMetaResp.text()
+            return res.status(htmlMetaResp.status).json({ 
+              error: 'HTML report generation failed', 
               details: error 
             })
           }
+          return res.status(200).json(await htmlMetaResp.json())
 
-          const pdfBuffer = await pdfResponse.arrayBuffer()
-          res.setHeader('Content-Type', 'application/pdf')
-          res.setHeader('Content-Disposition', `attachment; filename="HSG245_Report_${data.incident_id}.pdf"`)
-          return res.send(Buffer.from(pdfBuffer))
+        case 'download_html_report':
+          endpoint = `/api/v1/reports/${data.incident_id}/html?download=1`
+          method = 'GET'
+          break
+
+        case 'download_decision_tree':
+          endpoint = `/api/v1/reports/${data.incident_id}/decision-tree?download=1`
+          method = 'GET'
+          break
+
+        case 'view_html_report':
+          endpoint = `/api/v1/reports/${data.incident_id}/html?download=0`
+          method = 'GET'
+          break
+
+        case 'view_decision_tree':
+          endpoint = `/api/v1/reports/${data.incident_id}/decision-tree?download=0`
+          method = 'GET'
+          break
 
         case 'list_incidents':
           endpoint = `/api/v1/incidents`
@@ -206,6 +233,7 @@ export default async function handler(req, res) {
         method,
         headers: {
           'Content-Type': 'application/json',
+          ...forwardHeaders,
         },
       }
 
@@ -233,6 +261,21 @@ export default async function handler(req, res) {
           details: error,
           status: response.status
         })
+      }
+
+      if (action === 'download_html_report' || action === 'download_decision_tree') {
+        const fileBuffer = await response.arrayBuffer()
+        const contentType = response.headers.get('content-type') || 'text/html; charset=utf-8'
+        const disposition = response.headers.get('content-disposition') || 'attachment'
+        res.setHeader('Content-Type', contentType)
+        res.setHeader('Content-Disposition', disposition)
+        return res.send(Buffer.from(fileBuffer))
+      }
+
+      if (action === 'view_html_report' || action === 'view_decision_tree') {
+        const html = await response.text()
+        res.setHeader('Content-Type', 'text/html; charset=utf-8')
+        return res.status(200).send(html)
       }
 
       const result = await response.json()

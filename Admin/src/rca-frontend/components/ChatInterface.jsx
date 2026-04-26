@@ -6,7 +6,11 @@ import { getTranslation } from '../utils/translations';
 import { sendMessage } from '../utils/api';
 import {
   runPipelineJobWithPolling,
-  generatePDFReport,
+  generateHTMLReport,
+  downloadHTMLReport,
+  downloadDecisionTree,
+  openHTMLReport,
+  openDecisionTree,
   fetchHitlQuestions,
 } from '../../services/hsg245Api';
 import {
@@ -79,6 +83,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
   const [probeBranchIdx, setProbeBranchIdx] = useState(0);
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
+  const [pipelineResult, setPipelineResult] = useState(null);
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -109,7 +114,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
           answer: a.label || '',
           hsg_hint: a.hsgHint || '',
         }));
-        await runPipelineJobWithPolling(
+        const pipelineResponse = await runPipelineJobWithPolling(
           hitlSeed.incidentId,
           inv,
           {
@@ -123,6 +128,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
           },
         );
 
+        setPipelineResult(pipelineResponse?.data || pipelineResponse?.job?.result || null);
         setMessages((prev) => [
           ...prev,
           {
@@ -489,18 +495,27 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     })();
   };
 
-  const handlePdfDownload = async () => {
+  const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
     try {
-      await generatePDFReport(hitlSeed.incidentId);
-      setHitlPhase(null);
-      onHitlFlowComplete?.();
+      await generateHTMLReport(hitlSeed.incidentId);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `html-ok-${Date.now()}`,
+          type: 'assistant',
+          content: String(language || '').toLowerCase().startsWith('tr')
+            ? 'HTML rapor ve decision tree hazir. Asagidaki butonlardan goruntuleyebilir veya indirebilirsiniz.'
+            : 'HTML report and decision tree are ready. You can preview or download from the buttons below.',
+          timestamp: new Date(),
+        },
+      ]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
-          id: `pdf-err-${Date.now()}`,
+          id: `html-err-${Date.now()}`,
           type: 'error',
           content: error.message,
           timestamp: new Date(),
@@ -601,6 +616,7 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     setProbeCodes([]);
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
+    setPipelineResult(null);
     setMessages([
       {
         id: '1',
@@ -621,6 +637,12 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
     };
     setMessages((prev) => [...prev, userMessage]);
   };
+
+  const analysisBranches = pipelineResult?.part3?._v2_raw?.analysis_branches || [];
+  const avgChainQuality = pipelineResult?.part3?._v2_raw?.chain_quality_scores
+    ? pipelineResult.part3._v2_raw.chain_quality_scores.reduce((a, b) => a + Number(b || 0), 0) /
+      Math.max(1, pipelineResult.part3._v2_raw.chain_quality_scores.length)
+    : null;
 
   const inputLocked =
     isLoading ||
@@ -716,13 +738,46 @@ const ChatInterface = ({ language, hitlSeed = null, onHitlFlowComplete }) => {
             <div className="hitl-choice-panel hitl-pdf-panel">
               <p className="hitl-q">{t('hitl_ask_pdf')}</p>
               <div className="hitl-choices">
-                <button type="button" className="hitl-choice-btn hitl-choice-primary" onClick={handlePdfDownload} disabled={isLoading}>
+                <button type="button" className="hitl-choice-btn hitl-choice-primary" onClick={handleHtmlGenerate} disabled={isLoading}>
                   {t('hitl_pdf_download')}
                 </button>
                 <button type="button" className="hitl-choice-btn" onClick={handlePdfSkip} disabled={isLoading}>
                   {t('hitl_pdf_skip')}
                 </button>
               </div>
+              <div className="hitl-choices hitl-report-actions">
+                <button type="button" className="hitl-choice-btn" onClick={() => openHTMLReport(hitlSeed.incidentId)} disabled={isLoading}>
+                  {String(language || '').toLowerCase().startsWith('tr') ? 'Raporu Ac' : 'Open Report'}
+                </button>
+                <button type="button" className="hitl-choice-btn" onClick={() => downloadHTMLReport(hitlSeed.incidentId)} disabled={isLoading}>
+                  {String(language || '').toLowerCase().startsWith('tr') ? 'HTML Indir' : 'Download HTML'}
+                </button>
+                <button type="button" className="hitl-choice-btn" onClick={() => openDecisionTree(hitlSeed.incidentId)} disabled={isLoading}>
+                  {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Ac' : 'Open Decision Tree'}
+                </button>
+                <button type="button" className="hitl-choice-btn" onClick={() => downloadDecisionTree(hitlSeed.incidentId)} disabled={isLoading}>
+                  {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Indir' : 'Download Decision Tree'}
+                </button>
+              </div>
+              {!!analysisBranches.length && (
+                <div className="hitl-flow-summary">
+                  <p className="hitl-flow-title">
+                    {String(language || '').toLowerCase().startsWith('tr') ? 'Akis Ozeti' : 'Flow Summary'}
+                  </p>
+                  {avgChainQuality != null && (
+                    <p className="hitl-flow-line">
+                      {String(language || '').toLowerCase().startsWith('tr')
+                        ? `Ortalama Zincir Kalitesi: ${(avgChainQuality * 100).toFixed(2)}%`
+                        : `Average Chain Quality: ${(avgChainQuality * 100).toFixed(2)}%`}
+                    </p>
+                  )}
+                  {analysisBranches.map((branch, idx) => (
+                    <p className="hitl-flow-line" key={`branch-${idx}-${branch?.branch_number || idx}`}>
+                      {`#${branch?.branch_number || idx + 1} [${branch?.immediate_cause?.code || '-'}] ${branch?.immediate_cause?.cause_tr || ''}`}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
