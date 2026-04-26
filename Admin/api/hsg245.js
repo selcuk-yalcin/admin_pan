@@ -27,8 +27,17 @@ export default async function handler(req, res) {
   try {
     // BACKEND URL: Railway production backend
     // You can also set this in Vercel Dashboard -> Settings -> Environment Variables
-    // Variable name: NEXT_PUBLIC_BACKEND_API_URL
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'https://hsercanalysisagenticai-production.up.railway.app'
+    // Preferred variable names (in order):
+    // 1) BACKEND_API_URL
+    // 2) NEXT_PUBLIC_BACKEND_API_URL
+    // 3) VITE_BACKEND_API_URL
+    // Fallback is legacy Railway domain.
+    const BACKEND_URL = (
+      process.env.BACKEND_API_URL ||
+      process.env.NEXT_PUBLIC_BACKEND_API_URL ||
+      process.env.VITE_BACKEND_API_URL ||
+      'https://hsercanalysisagenticai-production.up.railway.app'
+    ).trim()
 
     console.log('[REQUEST]', req.method, req.url)
     console.log('[BACKEND URL]', BACKEND_URL)
@@ -204,7 +213,17 @@ export default async function handler(req, res) {
         fetchOptions.body = JSON.stringify(payload)
       }
 
-      const response = await fetch(`${BACKEND_URL}${endpoint}`, fetchOptions)
+      let response
+      try {
+        response = await fetch(`${BACKEND_URL}${endpoint}`, fetchOptions)
+      } catch (fetchError) {
+        console.error('[ERROR] Backend fetch failed:', fetchError?.message || fetchError)
+        return res.status(502).json({
+          error: 'Backend unreachable',
+          details: `Gateway could not reach backend at ${BACKEND_URL}${endpoint}: ${fetchError?.message || 'fetch failed'}`,
+          backend_url: BACKEND_URL
+        })
+      }
 
       if (!response.ok) {
         const error = await response.text()
