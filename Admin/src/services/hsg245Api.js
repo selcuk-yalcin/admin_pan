@@ -761,6 +761,94 @@ export async function openDecisionTree(incidentId, options = {}) {
   treeWindow.document.open();
   treeWindow.document.write(html);
   treeWindow.document.close();
+
+  // Enhance decision tree preview: editable text + in-page download action.
+  try {
+    const doc = treeWindow.document;
+    const toolbar = doc.createElement('div');
+    toolbar.id = 'decision-tree-toolbar';
+    toolbar.style.position = 'fixed';
+    toolbar.style.top = '12px';
+    toolbar.style.right = '12px';
+    toolbar.style.zIndex = '2147483647';
+    toolbar.style.display = 'flex';
+    toolbar.style.gap = '8px';
+    toolbar.style.padding = '8px';
+    toolbar.style.borderRadius = '10px';
+    toolbar.style.background = 'rgba(15, 23, 42, 0.92)';
+    toolbar.style.border = '1px solid rgba(148, 163, 184, 0.45)';
+    toolbar.style.backdropFilter = 'blur(4px)';
+
+    const makeBtn = (label) => {
+      const btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.style.background = '#1d4ed8';
+      btn.style.color = '#fff';
+      btn.style.border = 'none';
+      btn.style.borderRadius = '8px';
+      btn.style.padding = '8px 10px';
+      btn.style.fontFamily = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+      btn.style.fontSize = '13px';
+      btn.style.cursor = 'pointer';
+      return btn;
+    };
+
+    const editBtn = makeBtn('Duzenlemeyi Ac');
+    const downloadBtn = makeBtn('Indir (HTML)');
+    const hint = doc.createElement('span');
+    hint.textContent = 'Metinleri tiklayip duzenleyebilirsiniz.';
+    hint.style.color = '#cbd5e1';
+    hint.style.fontSize = '12px';
+    hint.style.alignSelf = 'center';
+    hint.style.marginLeft = '4px';
+
+    const editableNodes = Array.from(
+      doc.querySelectorAll('p, span, li, td, th, h1, h2, h3, h4, h5, h6, text, div'),
+    ).filter((el) => {
+      if (!(el instanceof treeWindow.HTMLElement || el instanceof treeWindow.SVGElement)) return false;
+      if (el.closest('#decision-tree-toolbar')) return false;
+      if (el.children.length > 0) return false;
+      const txt = (el.textContent || '').trim();
+      return txt.length > 0;
+    });
+
+    let editMode = false;
+    editBtn.onclick = () => {
+      editMode = !editMode;
+      editableNodes.forEach((el) => {
+        if (el instanceof treeWindow.HTMLElement) {
+          el.contentEditable = editMode ? 'true' : 'false';
+          el.style.outline = editMode ? '1px dashed rgba(37, 99, 235, 0.55)' : '';
+          el.style.outlineOffset = editMode ? '2px' : '';
+          el.style.cursor = editMode ? 'text' : '';
+        }
+      });
+      editBtn.textContent = editMode ? 'Duzenlemeyi Kapat' : 'Duzenlemeyi Ac';
+      hint.textContent = editMode
+        ? 'Duzenleme aktif. Bittiginde kapatabilirsiniz.'
+        : 'Metinleri tiklayip duzenleyebilirsiniz.';
+    };
+
+    downloadBtn.onclick = () => {
+      const blob = new Blob([`<!doctype html>\n${doc.documentElement.outerHTML}`], { type: 'text/html;charset=utf-8' });
+      const url = treeWindow.URL.createObjectURL(blob);
+      const a = doc.createElement('a');
+      a.href = url;
+      a.download = `HSG245_Report_${incidentId}_decision_tree_edited.html`;
+      doc.body.appendChild(a);
+      a.click();
+      a.remove();
+      treeWindow.URL.revokeObjectURL(url);
+    };
+
+    toolbar.appendChild(editBtn);
+    toolbar.appendChild(downloadBtn);
+    toolbar.appendChild(hint);
+    doc.body.appendChild(toolbar);
+  } catch (enhanceError) {
+    console.warn('[WARN] Could not enhance decision tree editor:', enhanceError);
+  }
 }
 
 /**
