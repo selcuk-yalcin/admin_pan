@@ -699,13 +699,15 @@ export async function downloadDecisionTree(incidentId) {
   return downloadHtmlLike('download_decision_tree', incidentId, `HSG245_Report_${incidentId}_decision_tree.html`);
 }
 
-export async function openHTMLReport(incidentId) {
+export async function openHTMLReport(incidentId, options = {}) {
   // Open immediately on user gesture to avoid popup blockers.
-  const reportWindow = window.open('', '_blank');
+  const reportWindow = options.preopenedWindow || window.open('', '_blank');
   if (!reportWindow) {
     throw new Error('Popup blocked. Please allow popups for preview.');
   }
-  reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading report...</p>');
+  if (!options.preopenedWindow) {
+    reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading report...</p>');
+  }
 
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
@@ -729,13 +731,15 @@ export async function openHTMLReport(incidentId) {
   reportWindow.document.close();
 }
 
-export async function openDecisionTree(incidentId) {
+export async function openDecisionTree(incidentId, options = {}) {
   // Open immediately on user gesture to avoid popup blockers.
-  const treeWindow = window.open('', '_blank');
+  const treeWindow = options.preopenedWindow || window.open('', '_blank');
   if (!treeWindow) {
     throw new Error('Popup blocked. Please allow popups for preview.');
   }
-  treeWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading decision tree...</p>');
+  if (!options.preopenedWindow) {
+    treeWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading decision tree...</p>');
+  }
 
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',

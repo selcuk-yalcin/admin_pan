@@ -62,9 +62,16 @@ function getStageLabel(language, stage, progress) {
  * @param {string} props.language
  * @param {{ incidentId: string, formData: object } | null} props.hitlSeed - manuel formdan gelen HITL oturumu
  * @param {(status: string) => void} [props.onPipelineStatusChange] - Agent pipeline canlı durum metni
+ * @param {(steps: string[]) => void} [props.onPipelineWhyStreamChange] - Agent pipeline Why akış satırları
  * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
  */
-const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHitlFlowComplete }) => {
+const ChatInterface = ({
+  language,
+  hitlSeed = null,
+  onPipelineStatusChange,
+  onPipelineWhyStreamChange,
+  onHitlFlowComplete,
+}) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -131,7 +138,23 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
           },
         );
 
-        setPipelineResult(pipelineResponse?.data || pipelineResponse?.job?.result || null);
+        const resolvedPipelineResult = pipelineResponse?.data || pipelineResponse?.job?.result || null;
+        setPipelineResult(resolvedPipelineResult);
+        const streamBranch = resolvedPipelineResult?.part3?._v2_raw?.analysis_branches?.[0];
+        const streamWhyChain =
+          streamBranch?.why_chain || streamBranch?.five_why_chain || streamBranch?.why_analysis_chain || [];
+        if (Array.isArray(streamWhyChain) && streamWhyChain.length) {
+          const progressive = [];
+          streamWhyChain.forEach((why, idx) => {
+            const line = `NEDEN ${why?.level || idx + 1}: ${why?.question_tr || why?.question || ''} -> ${
+              why?.answer_tr || why?.answer || ''
+            }`;
+            progressive.push(line);
+            setTimeout(() => {
+              onPipelineWhyStreamChange?.([...progressive]);
+            }, idx * 900);
+          });
+        }
         onPipelineStatusChange?.(
           String(language || '').toLowerCase().startsWith('tr')
             ? 'Pipeline tamamlandi. Rapor adimina gecildi.'
@@ -154,6 +177,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
         );
       } catch (error) {
         setPipelineResult(null);
+        onPipelineWhyStreamChange?.([]);
         setMessages((prev) => [
           ...prev,
           {
@@ -178,7 +202,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
         setIsLoading(false);
       }
     },
-    [hitlSeed, language, onPipelineStatusChange],
+    [hitlSeed, language, onPipelineStatusChange, onPipelineWhyStreamChange],
   );
 
   const fetchQuestionForState = useCallback(
@@ -334,6 +358,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
       setProbeBranchIdx(0);
       setProbeWhyLevel(1);
       setPipelineResult(null);
+      onPipelineWhyStreamChange?.([]);
       setMessages([
         {
           id: '1',
@@ -382,6 +407,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setPipelineResult(null);
+    onPipelineWhyStreamChange?.([]);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
@@ -440,7 +466,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
+  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange, onPipelineWhyStreamChange]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
@@ -520,9 +546,24 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
   const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
+    const reportWindow = window.open('', '_blank');
+    if (!reportWindow) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `html-popup-err-${Date.now()}`,
+          type: 'error',
+          content: 'Popup blocked. Please allow popups for preview.',
+          timestamp: new Date(),
+        },
+      ]);
+      setIsLoading(false);
+      return;
+    }
+    reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Preparing HTML report...</p>');
     try {
       await generateHTMLReport(hitlSeed.incidentId);
-      await openHTMLReport(hitlSeed.incidentId);
+      await openHTMLReport(hitlSeed.incidentId, { preopenedWindow: reportWindow });
       setMessages((prev) => [
         ...prev,
         {
@@ -535,6 +576,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
         },
       ]);
     } catch (error) {
+      reportWindow.close();
       setMessages((prev) => [
         ...prev,
         {
@@ -564,6 +606,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     ]);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.('');
+    onPipelineWhyStreamChange?.([]);
   };
 
   const runReportAction = useCallback(
@@ -671,6 +714,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     ]);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.('');
+    onPipelineWhyStreamChange?.([]);
   };
 
   const handleQuestionAnswer = (answer) => {

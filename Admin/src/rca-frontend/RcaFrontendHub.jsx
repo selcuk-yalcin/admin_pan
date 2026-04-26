@@ -35,6 +35,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [hitlSeed, setHitlSeed] = useState(null);
   const [activeSubmitMode, setActiveSubmitMode] = useState(null);
   const [chatPipelineStatus, setChatPipelineStatus] = useState("");
+  const [chatWhyStream, setChatWhyStream] = useState([]);
   const submitAbortRef = useRef(null);
 
   const syncTabFromUrl = useCallback(() => {
@@ -152,6 +153,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           `Hazir: ${incidentId}. Etkilesimli analiz sekmesinde HITL sorulari ve kok neden akisi basliyor.`,
         );
         setChatPipelineStatus("");
+        setChatWhyStream([]);
         setHitlSeed({ incidentId, formData });
         setTab("chat");
         return;
@@ -195,6 +197,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const handleHitlFlowComplete = () => {
     setHitlSeed(null);
     setChatPipelineStatus("");
+    setChatWhyStream([]);
   };
 
   const handleThemeToggle = () => {
@@ -257,6 +260,11 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
               <h2>Agent Pipeline</h2>
               <p>{formSubmitInfo}</p>
               {activeTab === "chat" && chatPipelineStatus && <p><strong>Canli Durum:</strong> {chatPipelineStatus}</p>}
+              {activeTab === "chat" && chatWhyStream.length > 0 && (
+                <p>
+                  <strong>5-Why Akisi:</strong> {chatWhyStream[chatWhyStream.length - 1]}
+                </p>
+              )}
               {createdIncidentId && <p><strong>Incident ID:</strong> {createdIncidentId}</p>}
               {isSubmittingForm && (
                 <div style={{ marginTop: "10px" }}>
@@ -301,6 +309,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             language={selectedLanguage}
             hitlSeed={hitlSeed}
             onPipelineStatusChange={setChatPipelineStatus}
+            onPipelineWhyStreamChange={setChatWhyStream}
             onHitlFlowComplete={handleHitlFlowComplete}
           />
         )}
