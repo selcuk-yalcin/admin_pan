@@ -84,6 +84,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
   const [probeBranchIdx, setProbeBranchIdx] = useState(0);
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
+  const [pipelineResult, setPipelineResult] = useState(null);
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -130,6 +131,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
           },
         );
 
+        setPipelineResult(pipelineResponse?.data || pipelineResponse?.job?.result || null);
         onPipelineStatusChange?.(
           String(language || '').toLowerCase().startsWith('tr')
             ? 'Pipeline tamamlandi. Rapor adimina gecildi.'
@@ -151,6 +153,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
             : 'Analysis completed, moved to report stage.',
         );
       } catch (error) {
+        setPipelineResult(null);
         setMessages((prev) => [
           ...prev,
           {
@@ -330,6 +333,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
       setProbeCodes([]);
       setProbeBranchIdx(0);
       setProbeWhyLevel(1);
+      setPipelineResult(null);
       setMessages([
         {
           id: '1',
@@ -377,6 +381,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     setHitlQuestionsLoading(true);
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
+    setPipelineResult(null);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
@@ -655,6 +660,7 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     setProbeCodes([]);
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
+    setPipelineResult(null);
     setMessages([
       {
         id: '1',
@@ -685,6 +691,15 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
     hitlPhase === 'pdf_prompt';
 
   const showHitlPanel = hitlPhase === 'questions' && (hitlQuestionsLoading || hitlApiQuestion);
+  const primaryAnalysisBranch = pipelineResult?.part3?._v2_raw?.analysis_branches?.[0] || null;
+  const primaryWhyChain =
+    primaryAnalysisBranch?.why_chain ||
+    primaryAnalysisBranch?.five_why_chain ||
+    primaryAnalysisBranch?.why_analysis_chain ||
+    [];
+  const primaryRootCause =
+    primaryAnalysisBranch?.root_cause ||
+    (Array.isArray(primaryAnalysisBranch?.root_causes) ? primaryAnalysisBranch.root_causes[0] : null);
 
   return (
     <div className="chat-interface">
@@ -721,6 +736,30 @@ const ChatInterface = ({ language, hitlSeed = null, onPipelineStatusChange, onHi
               <p>{t('step_4_desc')}</p>
             </div>
           </div>
+
+          {!!primaryWhyChain.length && (
+            <div className="why-chain-panel">
+              <h4 className="why-chain-title">Why Analiz Zinciri</h4>
+              {primaryWhyChain.map((why, idx) => (
+                <div className="why-chain-item" key={`why-${idx}-${why?.level || idx + 1}`}>
+                  <p className="why-chain-level">{`NEDEN ${why?.level || idx + 1}`}</p>
+                  <p className="why-chain-q">{why?.question_tr || why?.question || ''}</p>
+                  <p className="why-chain-a">{`→ ${why?.answer_tr || why?.answer || ''}`}</p>
+                </div>
+              ))}
+
+              {primaryRootCause && (
+                <div className="why-root-cause">
+                  <p className="why-root-title">
+                    {`KÖK NEDEN 1: ${primaryRootCause?.cause_tr || primaryRootCause?.cause || ''}`}
+                  </p>
+                  <p className="why-root-detail">
+                    {primaryRootCause?.explanation_tr || primaryRootCause?.explanation || ''}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
