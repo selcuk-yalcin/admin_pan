@@ -176,6 +176,10 @@ const ChatInterface = ({
     scrollToBottom();
   }, [messages, hitlPhase, hitlApiQuestion?.id, hitlQuestionsLoading]);
 
+  useEffect(() => {
+    onPipelineWhyStreamChange?.(whyFlowLines.slice(-300));
+  }, [whyFlowLines, onPipelineWhyStreamChange]);
+
   const runRcaAfterHitl = useCallback(
     async (answers) => {
       if (!hitlSeed?.incidentId) return;
@@ -211,6 +215,14 @@ const ChatInterface = ({
                 if (prev[prev.length - 1] === line) return prev;
                 return [...prev, line];
               });
+              const jobMsg = String(job?.message || '').trim();
+              if (jobMsg) {
+                setWhyFlowLines((prev) => {
+                  const line = `[BACKEND] ${jobMsg}`;
+                  if (prev[prev.length - 1] === line) return prev;
+                  return [...prev, line];
+                });
+              }
             },
           },
         );
@@ -228,7 +240,13 @@ const ChatInterface = ({
             }`;
             progressive.push(line);
             setTimeout(() => {
-              onPipelineWhyStreamChange?.([...progressive]);
+              setWhyFlowLines((prev) => {
+                const existing = prev.slice();
+                for (const p of progressive) {
+                  if (!existing.includes(p)) existing.push(p);
+                }
+                return existing;
+              });
             }, idx * 900);
           });
         }

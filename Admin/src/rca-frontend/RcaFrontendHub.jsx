@@ -266,20 +266,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
               <p>{formSubmitInfo}</p>
               {activeTab === "chat" && chatPipelineStatus && <p><strong>Canli Durum:</strong> {chatPipelineStatus}</p>}
               {activeTab === "chat" && chatWhyStreamLines.length > 0 && (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    maxHeight: "180px",
-                    overflowY: "auto",
-                    background: "rgba(102, 126, 234, 0.08)",
-                    border: "1px solid rgba(102, 126, 234, 0.25)",
-                    borderRadius: "8px",
-                    padding: "8px 10px",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace",
-                    fontSize: "12px",
-                    lineHeight: 1.45,
-                  }}
-                >
+                <div className="pipeline-live-preview">
                   {chatWhyStreamLines.slice(-60).map((line, idx) => (
                     <div key={`hub-why-${idx}-${line.slice(0, 16)}`}>{line}</div>
                   ))}
@@ -325,13 +312,30 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             activeSubmitMode={activeSubmitMode}
           />
         ) : (
-          <ChatInterface
-            language={selectedLanguage}
-            hitlSeed={hitlSeed}
-            onPipelineStatusChange={setChatPipelineStatus}
-            onPipelineWhyStreamChange={setChatWhyStreamLines}
-            onHitlFlowComplete={handleHitlFlowComplete}
-          />
+          <div className="chat-tab-layout">
+            {(chatWhyStreamLines.length > 0 || chatPipelineStatus) && (
+              <section className="pipeline-live-page">
+                <header className="pipeline-live-page-header">
+                  <h3>Agent Pipeline - Canli Akis</h3>
+                  <p>{chatPipelineStatus || "Canli veri aliniyor..."}</p>
+                </header>
+                <div className="pipeline-live-page-body">
+                  {(chatWhyStreamLines.length ? chatWhyStreamLines : ["Pipeline akisi bekleniyor..."]).map((line, idx) => (
+                    <div className="pipeline-live-line" key={`live-line-${idx}-${line.slice(0, 18)}`}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+            <ChatInterface
+              language={selectedLanguage}
+              hitlSeed={hitlSeed}
+              onPipelineStatusChange={setChatPipelineStatus}
+              onPipelineWhyStreamChange={setChatWhyStreamLines}
+              onHitlFlowComplete={handleHitlFlowComplete}
+            />
+          </div>
         )}
       </main>
 
