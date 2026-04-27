@@ -165,6 +165,8 @@ const translations = {
     hitl_no_initial_causes: '(Kök neden ilk değerlendirme alanı boş — formu doldurabilirsiniz.)',
     hitl_free_text_placeholder: 'Cevabınızı kısaca yazın (bu soru Evet/Hayır ile sınırlı değil).',
     hitl_submit_text_answer: 'Cevabı gönder',
+    hitl_submit_choices: 'Seçimleri gönder',
+    hitl_multi_choice_hint: 'Birden fazla uygun seçeneği işaretleyebilirsiniz.',
     
     enter_name: 'İsim girin',
     enter_location: 'Konum girin',
@@ -524,6 +526,8 @@ const translations = {
     hitl_no_initial_causes: '(Root cause initial assessment is empty — you can fill it on the form.)',
     hitl_free_text_placeholder: 'Type a short answer (this question is not limited to Yes/No).',
     hitl_submit_text_answer: 'Submit answer',
+    hitl_submit_choices: 'Submit selection(s)',
+    hitl_multi_choice_hint: 'You can select more than one option that applies.',
     
     enter_name: 'Enter name',
     enter_location: 'Enter location',

@@ -19,7 +19,12 @@ import {
   buildHowHappenedText,
 } from '../utils/investigationPayload';
 import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
-import { hitlQuestionNeedsFreeText } from '../utils/hitlResponseMode';
+import {
+  hitlQuestionNeedsFreeText,
+  hitlQuestionNeedsChoice,
+  getHitlChoiceOptionLabels,
+  isHitlChoiceMulti,
+} from '../utils/hitlResponseMode';
 import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
@@ -112,6 +117,8 @@ const ChatInterface = ({
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
   const [pipelineResult, setPipelineResult] = useState(null);
   const [hitlTextDraft, setHitlTextDraft] = useState('');
+  /** @type {[Set<number>, React.Dispatch<React.SetStateAction<Set<number>>>]} */
+  const [hitlChoiceIdx, setHitlChoiceIdx] = useState(() => new Set());
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -126,6 +133,7 @@ const ChatInterface = ({
 
   useEffect(() => {
     setHitlTextDraft('');
+    setHitlChoiceIdx(new Set());
   }, [hitlApiQuestion?.id]);
 
   const runRcaAfterHitl = useCallback(
@@ -586,6 +594,36 @@ const ChatInterface = ({
     submitHitlResponse('free_text', text);
   };
 
+  const handleHitlChoiceClick = (optionIndex) => {
+    if (!hitlApiQuestion) return;
+    const trOpts = hitlApiQuestion.choice_options || [];
+    const displayOpts = getHitlChoiceOptionLabels(hitlApiQuestion, language);
+    const labelTr = (trOpts[optionIndex] || displayOpts[optionIndex] || '').trim();
+    if (!labelTr) return;
+    const multi = isHitlChoiceMulti(hitlApiQuestion);
+    if (!multi) {
+      submitHitlResponse('choice', labelTr);
+      return;
+    }
+    setHitlChoiceIdx((prev) => {
+      const n = new Set(prev);
+      if (n.has(optionIndex)) n.delete(optionIndex);
+      else n.add(optionIndex);
+      return n;
+    });
+  };
+
+  const handleHitlMultiChoiceSubmit = () => {
+    if (!hitlApiQuestion) return;
+    const trOpts = hitlApiQuestion.choice_options || [];
+    const displayOpts = getHitlChoiceOptionLabels(hitlApiQuestion, language);
+    const idxs = Array.from(hitlChoiceIdx).sort((a, b) => a - b);
+    if (!idxs.length) return;
+    const parts = idxs.map((i) => (trOpts[i] || displayOpts[i] || '').trim()).filter(Boolean);
+    if (!parts.length) return;
+    submitHitlResponse('choice_multi', parts.join(' · '));
+  };
+
   const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
@@ -794,6 +832,12 @@ const ChatInterface = ({
         : 'Next question is deepened from your previous answer.';
 
   const showHitlPanel = hitlPhase === 'questions' && (hitlQuestionsLoading || hitlApiQuestion);
+  const displayChoiceLabels = hitlApiQuestion
+    ? getHitlChoiceOptionLabels(hitlApiQuestion, language)
+    : [];
+  const showHitlChips =
+    hitlApiQuestion && hitlQuestionNeedsChoice(hitlApiQuestion) && displayChoiceLabels.length >= 2;
+  const showHitlFree = hitlApiQuestion && !showHitlChips && hitlQuestionNeedsFreeText(hitlApiQuestion);
   return (
     <div className="chat-interface">
       <div className="chat-sidebar">
@@ -864,7 +908,36 @@ const ChatInterface = ({
                       : hitlApiQuestion.hsg_hint}
                   </div>
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
-                  {hitlQuestionNeedsFreeText(hitlApiQuestion) ? (
+                  {showHitlChips ? (
+                    <div className="hitl-choice-chips-wrap">
+                      {isHitlChoiceMulti(hitlApiQuestion) && (
+                        <p className="hitl-multi-hint">{t('hitl_multi_choice_hint')}</p>
+                      )}
+                      <div className="hitl-option-chips" role="group" aria-label={t('hitl_questions_title')}>
+                        {displayChoiceLabels.map((label, idx) => (
+                          <button
+                            key={`hitl-opt-${hitlApiQuestion.id}-${idx}`}
+                            type="button"
+                            className={`hitl-option-chip ${hitlChoiceIdx.has(idx) ? 'is-selected' : ''}`}
+                            onClick={() => handleHitlChoiceClick(idx)}
+                            disabled={isLoading || hitlQuestionsLoading}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {isHitlChoiceMulti(hitlApiQuestion) && (
+                        <button
+                          type="button"
+                          className="hitl-choice-btn hitl-choice-primary"
+                          onClick={handleHitlMultiChoiceSubmit}
+                          disabled={hitlChoiceIdx.size === 0 || isLoading || hitlQuestionsLoading}
+                        >
+                          {t('hitl_submit_choices')}
+                        </button>
+                      )}
+                    </div>
+                  ) : showHitlFree ? (
                     <div className="hitl-free-text-wrap">
                       <textarea
                         className="hitl-free-text-input"

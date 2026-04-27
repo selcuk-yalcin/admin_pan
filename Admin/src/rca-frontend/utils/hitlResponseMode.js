@@ -1,12 +1,95 @@
 /**
- * HITL soru cevabı: Evet/Hayır/Bilinmiyor mu yoksa açık uçlu metin mi?
- * Backend `response_mode` yoksa veya eski cache için sezgisel yedek.
+ * HITL soru cevabı: Evet/Hayır, serbest metin, veya çoklu/seçenek (chip) listesi.
+ * Backend: response_mode, choice_options, choice_options_en, choice_multi
+ */
+
+const PPE_TR_MARKERS = /(\bkkd\b|kisisel\s+koruyucu|kişisel\s+koruyucu|ppe|baret|eldiven|ayakkab|gözlük|göz|isitme|dusm|düşm|kemer|emniyet|can\s+halat)/i;
+
+/** Sunucu `choice_options` dönmezse (önbellek) aynı deneyim için yedek KKD listesi */
+const FALLBACK_PPE_TR = [
+  'Baret',
+  'Gözlük / yüz kalkanı',
+  'İşitme koruyucu',
+  'Solunum (maske / FFP)',
+  'Eldiven',
+  'Koruyucu elbise / önlük',
+  'Güvenlik ayakkabısı / çizme',
+  'Düşmeye karşı kemer / lanyard',
+  'Yüksek görünürlüklü yelek',
+  'Diğer (açık yazın)',
+];
+const FALLBACK_PPE_EN = [
+  'Helmet',
+  'Goggles / face shield',
+  'Hearing protection',
+  'Respirator / FFP mask',
+  'Gloves',
+  'Coveralls / apron',
+  'Safety shoes / boots',
+  'Fall harness / lanyard',
+  'High-vis vest',
+  'Other (specify below)',
+];
+
+/**
+ * @param {object} q
+ * @returns {boolean} chip listesi (tek veya çoklu seçim)
+ */
+export function hitlQuestionNeedsChoice(q) {
+  if (!q) return false;
+  const m = String(q.response_mode || '').toLowerCase();
+  if (m === 'choice' || m === 'options' || m === 'multi_choice') {
+    return Array.isArray(q.choice_options) && q.choice_options.length >= 2;
+  }
+  const t = String(q.soru || q.question_tr || q.question_en || q.question || '');
+  if (/\bhangi\b/i.test(t) && PPE_TR_MARKERS.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * @param {object} q
+ * @param {string} language
+ * @returns {string[]}
+ */
+export function getHitlChoiceOptionLabels(q, language) {
+  if (!q) return [];
+  const trUi = String(language || 'tr').toLowerCase().startsWith('tr');
+  let tr = Array.isArray(q.choice_options) ? q.choice_options : [];
+  const en = Array.isArray(q.choice_options_en) ? q.choice_options_en : [];
+  if (tr.length < 2) {
+    const t = String(q.soru || q.question_tr || q.question || '');
+    if (/\bhangi\b/i.test(t) && PPE_TR_MARKERS.test(t)) {
+      tr = trUi ? FALLBACK_PPE_TR : FALLBACK_PPE_EN;
+    }
+  }
+  if (tr.length && en.length === tr.length && !trUi) {
+    return en;
+  }
+  return tr;
+}
+
+/**
+ * @param {object} q
+ */
+export function isHitlChoiceMulti(q) {
+  if (!q) return false;
+  if (typeof q.choice_multi === 'boolean') return q.choice_multi;
+  const t = String(q.soru || q.question_tr || q.question || '').toLowerCase();
+  return /kkd[''´` ]?ler|korumal|neler|hangileri|gerekli(ydi|ydı)?|ler\b|lar\b/.test(t);
+}
+
+/**
+ * @param {object} q
+ * @returns {boolean} serbest metin (textarea)
  */
 export function hitlQuestionNeedsFreeText(q) {
   if (!q) return false;
+  if (hitlQuestionNeedsChoice(q) && (q.choice_options || []).length >= 2) return false;
   const m = String(q.response_mode || '').toLowerCase();
   if (m === 'free_text' || m === 'freetext') return true;
-  if (m === 'yes_no_unknown') return false;
+  if (m === 'yes_no_unknown' || m === 'choice' || m === 'options') return false;
   return inferFreeTextHeuristic(
     q.soru || q.question_tr || q.question_en || q.question || '',
   );
@@ -24,7 +107,7 @@ function inferFreeTextHeuristic(t) {
     return true;
   }
   if (/\byoksa\b/i.test(t) && t.includes('?') && t.length > 20) return true;
-  if (/(hangi|açıkla|açikla|detay|açıkça|acikca)/i.test(t) && t.includes('?')) {
+  if (/(hangi|açıkla|açikla|detay|açıkça|acikca)/i.test(t) && t.includes('?') && !PPE_TR_MARKERS.test(t)) {
     return true;
   }
   return false;
