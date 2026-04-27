@@ -77,70 +77,17 @@ function getStageLabel(language, stage, progress) {
   return map[stage] || (isTr ? `Calisiyor${pct}` : `Running${pct}`);
 }
 
-function buildWhyFlowLines(resultPayload) {
-  const lines = [];
-  const raw = resultPayload?.part3?._v2_raw || {};
-  const branches = Array.isArray(raw?.analysis_branches) ? raw.analysis_branches : [];
-  if (!branches.length) return lines;
-
-  lines.push('ADIM 1: DOGRUDAN NEDENLER');
-  branches.forEach((branch, idx) => {
-    const direct = branch?.immediate_cause || branch?.direct_cause || {};
-    const directCode = direct?.code || branch?.immediate_code || '';
-    const directText = direct?.cause_tr || direct?.cause || branch?.immediate_cause_text || '';
-    lines.push(`- [${directCode || `DAL-${idx + 1}`}] ${directText}`.trim());
-  });
-
-  lines.push('');
-  lines.push('ADIM 2: 5-WHY ANALIZI (HER DAL)');
-  branches.forEach((branch, idx) => {
-    const branchType = branch?.branch_type || branch?.type || '?';
-    const direct = branch?.immediate_cause || branch?.direct_cause || {};
-    const directCode = direct?.code || branch?.immediate_code || '';
-    const directText = direct?.cause_tr || direct?.cause || branch?.immediate_cause_text || '';
-    lines.push('');
-    lines.push(`=== DAL ${idx + 1}: ${branchType} ===`);
-    lines.push(`DOGRUDAN NEDEN [${directCode || '-'}]: ${directText}`);
-
-    const whyChain = branch?.why_chain || branch?.five_why_chain || branch?.why_analysis_chain || [];
-    whyChain.forEach((why, whyIdx) => {
-      const q = why?.question_tr || why?.question || '';
-      const a = why?.answer_tr || why?.answer || '';
-      lines.push(`Why-${why?.level || whyIdx + 1}: ${q}`);
-      lines.push(` -> ${a}`);
-    });
-
-    const rc = branch?.root_cause || (Array.isArray(branch?.root_causes) ? branch.root_causes[0] : null);
-    if (rc) {
-      lines.push(`KOK NEDEN: ${rc?.cause_tr || rc?.cause || ''}`);
-      if (rc?.category_tr || rc?.category) lines.push(`Kategori: ${rc?.category_tr || rc?.category}`);
-      if (typeof rc?.confidence !== 'undefined') lines.push(`Guven: ${rc.confidence}%`);
-    }
-  });
-
-  const meta = raw?.meta_root_cause || resultPayload?.part3?.meta_root_cause;
-  if (meta) {
-    lines.push('');
-    lines.push('ADIM 3: META KOK NEDEN SENTEZI');
-    lines.push(`Meta Kok Neden: ${meta?.cause_tr || meta?.cause || ''}`);
-  }
-
-  return lines.filter((line) => typeof line === 'string');
-}
-
 /**
  * @param {object} props
  * @param {string} props.language
  * @param {{ incidentId: string, formData: object } | null} props.hitlSeed - manuel formdan gelen HITL oturumu
  * @param {(status: string) => void} [props.onPipelineStatusChange] - Agent pipeline canlı durum metni
- * @param {(steps: string[]) => void} [props.onPipelineWhyStreamChange] - Agent pipeline Why akış satırları
  * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
  */
 const ChatInterface = ({
   language,
   hitlSeed = null,
   onPipelineStatusChange,
-  onPipelineWhyStreamChange,
   onHitlFlowComplete,
 }) => {
   const [messages, setMessages] = useState([]);
@@ -163,7 +110,6 @@ const ChatInterface = ({
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
   const [pipelineResult, setPipelineResult] = useState(null);
-  const [whyFlowLines, setWhyFlowLines] = useState([]);
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -175,10 +121,6 @@ const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, hitlPhase, hitlApiQuestion?.id, hitlQuestionsLoading]);
-
-  useEffect(() => {
-    onPipelineWhyStreamChange?.(whyFlowLines.slice(-300));
-  }, [whyFlowLines, onPipelineWhyStreamChange]);
 
   const runRcaAfterHitl = useCallback(
     async (answers) => {
@@ -210,54 +152,12 @@ const ChatInterface = ({
               const statusLabel = getStageLabel(language, stage, progress);
               setLiveRcaStatus(statusLabel);
               onPipelineStatusChange?.(statusLabel);
-              setWhyFlowLines((prev) => {
-                const line = `[PIPELINE] ${statusLabel}`;
-                if (prev[prev.length - 1] === line) return prev;
-                return [...prev, line];
-              });
-              const jobMsg = String(job?.message || '').trim();
-              if (jobMsg) {
-                setWhyFlowLines((prev) => {
-                  const line = `[BACKEND] ${jobMsg}`;
-                  if (prev[prev.length - 1] === line) return prev;
-                  return [...prev, line];
-                });
-              }
             },
           },
         );
 
         const resolvedPipelineResult = pipelineResponse?.data || pipelineResponse?.job?.result || null;
         setPipelineResult(resolvedPipelineResult);
-        const streamBranch = resolvedPipelineResult?.part3?._v2_raw?.analysis_branches?.[0];
-        const streamWhyChain =
-          streamBranch?.why_chain || streamBranch?.five_why_chain || streamBranch?.why_analysis_chain || [];
-        if (Array.isArray(streamWhyChain) && streamWhyChain.length) {
-          const progressive = [];
-          streamWhyChain.forEach((why, idx) => {
-            const line = `NEDEN ${why?.level || idx + 1}: ${why?.question_tr || why?.question || ''} -> ${
-              why?.answer_tr || why?.answer || ''
-            }`;
-            progressive.push(line);
-            setTimeout(() => {
-              setWhyFlowLines((prev) => {
-                const existing = prev.slice();
-                for (const p of progressive) {
-                  if (!existing.includes(p)) existing.push(p);
-                }
-                return existing;
-              });
-            }, idx * 900);
-          });
-        }
-        const fullFlowLines = buildWhyFlowLines(resolvedPipelineResult);
-        if (fullFlowLines.length) {
-          fullFlowLines.forEach((line, idx) => {
-            setTimeout(() => {
-              setWhyFlowLines((prev) => [...prev, line]);
-            }, idx * 180);
-          });
-        }
         onPipelineStatusChange?.(
           String(language || '').toLowerCase().startsWith('tr')
             ? 'Pipeline tamamlandi. Rapor adimina gecildi.'
@@ -280,8 +180,6 @@ const ChatInterface = ({
         );
       } catch (error) {
         setPipelineResult(null);
-        setWhyFlowLines([]);
-        onPipelineWhyStreamChange?.([]);
         setMessages((prev) => [
           ...prev,
           {
@@ -306,7 +204,7 @@ const ChatInterface = ({
         setIsLoading(false);
       }
     },
-    [hitlSeed, language, onPipelineStatusChange, onPipelineWhyStreamChange],
+    [hitlSeed, language, onPipelineStatusChange],
   );
 
   const fetchQuestionForState = useCallback(
@@ -464,8 +362,6 @@ const ChatInterface = ({
       setProbeBranchIdx(0);
       setProbeWhyLevel(1);
       setPipelineResult(null);
-      setWhyFlowLines([]);
-      onPipelineWhyStreamChange?.([]);
       setMessages([
         {
           id: '1',
@@ -523,8 +419,6 @@ const ChatInterface = ({
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setPipelineResult(null);
-    setWhyFlowLines([]);
-    onPipelineWhyStreamChange?.([]);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
@@ -583,7 +477,7 @@ const ChatInterface = ({
     return () => {
       cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange, onPipelineWhyStreamChange]);
+  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
 
   const handleHitlAnswer = (value) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
@@ -738,8 +632,6 @@ const ChatInterface = ({
     ]);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.('');
-    setWhyFlowLines([]);
-    onPipelineWhyStreamChange?.([]);
   };
 
   const runReportAction = useCallback(
@@ -837,7 +729,6 @@ const ChatInterface = ({
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setPipelineResult(null);
-    setWhyFlowLines([]);
     setMessages([
       {
         id: '1',
@@ -848,8 +739,6 @@ const ChatInterface = ({
     ]);
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.('');
-    setWhyFlowLines([]);
-    onPipelineWhyStreamChange?.([]);
   };
 
   const handleQuestionAnswer = (answer) => {
@@ -929,19 +818,6 @@ const ChatInterface = ({
 
       <div className="chat-main">
         <div className="chat-messages">
-          {!!whyFlowLines.length && (
-            <div className="why-stream-panel">
-              <h4 className="why-stream-title">5-Why Canli Akis</h4>
-              <div className="why-stream-body">
-                {whyFlowLines.map((line, idx) => (
-                  <p className="why-stream-line" key={`why-stream-${idx}-${line.slice(0, 20)}`}>
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
           {messages.map((message) => (
             <Message key={message.id} message={message} language={language} />
           ))}

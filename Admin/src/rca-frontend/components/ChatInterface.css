@@ -175,36 +175,6 @@
   color: var(--text-secondary);
 }
 
-.why-stream-panel {
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(102, 126, 234, 0.08), rgba(102, 126, 234, 0.03));
-  border-radius: 12px;
-  padding: 0.9rem;
-}
-
-.why-stream-title {
-  margin: 0 0 0.6rem 0;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.why-stream-body {
-  max-height: 300px;
-  overflow-y: auto;
-  padding-right: 0.2rem;
-}
-
-.why-stream-line {
-  margin: 0 0 0.34rem 0;
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
 /* Main Chat Area */
 .chat-main {
   flex: 1;

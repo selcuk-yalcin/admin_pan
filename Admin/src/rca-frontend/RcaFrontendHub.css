@@ -166,26 +166,6 @@
   box-sizing: border-box;
 }
 
-.pipeline-live-preview {
-  margin-top: 10px;
-  max-height: 180px;
-  overflow-y: auto;
-  background: rgba(102, 126, 234, 0.08);
-  border: 1px solid rgba(102, 126, 234, 0.25);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.pipeline-live-preview.large {
-  max-height: 55vh;
-  min-height: 240px;
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-
 /* Loading Overlay */
 .loading-overlay {
   position: fixed;
@@ -233,10 +213,5 @@
 
   .info-banner-content p {
     font-size: 0.8rem;
-  }
-
-  .pipeline-live-preview.large {
-    min-height: 180px;
-    max-height: 42vh;
   }
 }
