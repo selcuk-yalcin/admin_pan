@@ -724,27 +724,30 @@ export async function openHTMLReport(incidentId, options = {}) {
   if (!options.preopenedWindow) {
     reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading report...</p>');
   }
-
-  await generateHTMLReport(incidentId, options);
-  const response = await fetch(`${API_GATEWAY_URL}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getTenantContextHeaders(),
-    },
-    body: JSON.stringify({
-      action: 'view_html_report',
-      data: { incident_id: incidentId },
-    }),
-  });
-  if (!response.ok) {
-    reportWindow.close();
-    throw new Error(await parseGatewayError(response, 'Failed to load report preview'));
+  try {
+    // Single request is enough: backend view endpoint already ensures artifact generation.
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
+      },
+      body: JSON.stringify({
+        action: 'view_html_report',
+        data: { incident_id: incidentId },
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(await parseGatewayError(response, 'Failed to load report preview'));
+    }
+    const html = await response.text();
+    reportWindow.document.open();
+    reportWindow.document.write(html);
+    reportWindow.document.close();
+  } catch (error) {
+    try { reportWindow.close(); } catch {}
+    throw error;
   }
-  const html = await response.text();
-  reportWindow.document.open();
-  reportWindow.document.write(html);
-  reportWindow.document.close();
 }
 
 export async function openDecisionTree(incidentId, options = {}) {
@@ -756,27 +759,30 @@ export async function openDecisionTree(incidentId, options = {}) {
   if (!options.preopenedWindow) {
     treeWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading decision tree...</p>');
   }
-
-  await generateHTMLReport(incidentId, options);
-  const response = await fetch(`${API_GATEWAY_URL}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getTenantContextHeaders(),
-    },
-    body: JSON.stringify({
-      action: 'view_decision_tree',
-      data: { incident_id: incidentId },
-    }),
-  });
-  if (!response.ok) {
-    treeWindow.close();
-    throw new Error(await parseGatewayError(response, 'Failed to load decision tree preview'));
+  try {
+    // Single request is enough: backend view endpoint already ensures artifact generation.
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
+      },
+      body: JSON.stringify({
+        action: 'view_decision_tree',
+        data: { incident_id: incidentId },
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(await parseGatewayError(response, 'Failed to load decision tree preview'));
+    }
+    const html = await response.text();
+    treeWindow.document.open();
+    treeWindow.document.write(html);
+    treeWindow.document.close();
+  } catch (error) {
+    try { treeWindow.close(); } catch {}
+    throw error;
   }
-  const html = await response.text();
-  treeWindow.document.open();
-  treeWindow.document.write(html);
-  treeWindow.document.close();
 
   // Enhance decision tree preview: editable text + in-page download action.
   try {
