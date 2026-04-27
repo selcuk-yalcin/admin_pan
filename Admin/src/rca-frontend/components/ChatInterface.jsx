@@ -804,6 +804,7 @@ const ChatInterface = ({
     hitlPhase === 'questions' ||
     hitlPhase === 'rca' ||
     hitlPhase === 'pdf_prompt';
+  const isTurkish = String(language || '').toLowerCase().startsWith('tr');
 
   const showHitlPanel = hitlPhase === 'questions' && (hitlQuestionsLoading || hitlApiQuestion);
   return (
@@ -913,18 +914,24 @@ const ChatInterface = ({
                 </button>
               </div>
               <div className="hitl-choices hitl-report-actions">
-                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(openHTMLReport)} disabled={isLoading}>
-                  {String(language || '').toLowerCase().startsWith('tr') ? 'Raporu Ac' : 'Open Report'}
-                </button>
-                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(downloadHTMLReport)} disabled={isLoading}>
-                  {String(language || '').toLowerCase().startsWith('tr') ? 'HTML Indir' : 'Download HTML'}
-                </button>
-                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(openDecisionTree)} disabled={isLoading}>
-                  {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Ac' : 'Open Decision Tree'}
-                </button>
-                <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(downloadDecisionTree)} disabled={isLoading}>
-                  {String(language || '').toLowerCase().startsWith('tr') ? 'Decision Tree Indir' : 'Download Decision Tree'}
-                </button>
+                <div className="report-action-card">
+                  <div className="report-action-title">{isTurkish ? 'Rapor' : 'Report'}</div>
+                  <button type="button" className="hitl-choice-btn report-open-btn" onClick={() => runReportAction(openHTMLReport)} disabled={isLoading}>
+                    {isTurkish ? 'Raporu Ac' : 'Open Report'}
+                  </button>
+                  <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(downloadHTMLReport)} disabled={isLoading}>
+                    {isTurkish ? 'HTML Indir' : 'Download HTML'}
+                  </button>
+                </div>
+                <div className="report-action-card">
+                  <div className="report-action-title">Decision Tree</div>
+                  <button type="button" className="hitl-choice-btn report-open-btn" onClick={() => runReportAction(openDecisionTree)} disabled={isLoading}>
+                    {isTurkish ? 'Decision Tree Ac' : 'Open Decision Tree'}
+                  </button>
+                  <button type="button" className="hitl-choice-btn" onClick={() => runReportAction(downloadDecisionTree)} disabled={isLoading}>
+                    {isTurkish ? 'Decision Tree Indir' : 'Download Decision Tree'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

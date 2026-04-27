@@ -677,8 +677,7 @@ async function downloadHtmlLike(action, incidentId, filenameFallback) {
     }),
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload?.detail || payload?.error || 'Download failed');
+    throw new Error(await parseGatewayError(response, 'Download failed'));
   }
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
@@ -692,11 +691,27 @@ async function downloadHtmlLike(action, incidentId, filenameFallback) {
 }
 
 export async function downloadHTMLReport(incidentId) {
+  await generateHTMLReport(incidentId);
   return downloadHtmlLike('download_html_report', incidentId, `HSG245_Report_${incidentId}.html`);
 }
 
 export async function downloadDecisionTree(incidentId) {
+  await generateHTMLReport(incidentId);
   return downloadHtmlLike('download_decision_tree', incidentId, `HSG245_Report_${incidentId}_decision_tree.html`);
+}
+
+async function parseGatewayError(response, fallbackMessage) {
+  const payload = await response.json().catch(() => ({}));
+  let message = payload?.detail || payload?.error || fallbackMessage;
+  if (typeof payload?.details === 'string' && payload.details.trim()) {
+    try {
+      const nested = JSON.parse(payload.details);
+      message = nested?.detail || nested?.error || payload.details;
+    } catch {
+      message = payload.details;
+    }
+  }
+  return message || fallbackMessage;
 }
 
 export async function openHTMLReport(incidentId, options = {}) {
@@ -709,6 +724,7 @@ export async function openHTMLReport(incidentId, options = {}) {
     reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading report...</p>');
   }
 
+  await generateHTMLReport(incidentId, options);
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
     headers: {
@@ -721,9 +737,8 @@ export async function openHTMLReport(incidentId, options = {}) {
     }),
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
     reportWindow.close();
-    throw new Error(payload?.detail || payload?.error || 'Failed to load report preview');
+    throw new Error(await parseGatewayError(response, 'Failed to load report preview'));
   }
   const html = await response.text();
   reportWindow.document.open();
@@ -741,6 +756,7 @@ export async function openDecisionTree(incidentId, options = {}) {
     treeWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading decision tree...</p>');
   }
 
+  await generateHTMLReport(incidentId, options);
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
     headers: {
@@ -753,9 +769,8 @@ export async function openDecisionTree(incidentId, options = {}) {
     }),
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
     treeWindow.close();
-    throw new Error(payload?.detail || payload?.error || 'Failed to load decision tree preview');
+    throw new Error(await parseGatewayError(response, 'Failed to load decision tree preview'));
   }
   const html = await response.text();
   treeWindow.document.open();

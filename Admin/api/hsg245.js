@@ -255,10 +255,21 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         const error = await response.text()
-        console.error('[ERROR] Backend error:', error)
+        let parsedDetail = error
+        try {
+          const asJson = JSON.parse(error)
+          if (typeof asJson?.detail === 'string' && asJson.detail.trim()) {
+            parsedDetail = asJson.detail
+          } else if (typeof asJson?.error === 'string' && asJson.error.trim()) {
+            parsedDetail = asJson.error
+          }
+        } catch {
+          // keep raw text
+        }
+        console.error('[ERROR] Backend error:', parsedDetail)
         return res.status(response.status).json({
           error: 'Backend API error',
-          details: error,
+          details: parsedDetail,
           status: response.status
         })
       }
