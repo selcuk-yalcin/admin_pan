@@ -426,6 +426,26 @@
   font-family: ui-monospace, monospace;
 }
 
+.hitl-branch-status {
+  border: 1px solid rgba(102, 126, 234, 0.35);
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 9px;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.hitl-branch-title {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.hitl-branch-sub {
+  margin-top: 0.18rem;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
 .hitl-q {
   margin: 0 0 1rem;
   font-size: 1rem;

@@ -35,6 +35,26 @@ function extractHsgCodes(text) {
   return uniq.slice(0, MAX_PROBE_CODES);
 }
 
+function deriveKnownFields(formData = {}) {
+  const out = [];
+  if (formData.incidentDate || formData.incidentTime || (formData.timeline || []).some((r) => r?.time || r?.event)) {
+    out.push('timeline_known');
+  }
+  if (formData.safetyTraining) out.push('training_known');
+  if (formData.fallProtection || formData.safetyHarness || formData.ppeUsed) out.push('ppe_known');
+  if (formData.weatherConditions) out.push('weather_known');
+  if (formData.lightingConditions) out.push('lighting_known');
+  if (formData.workType || formData.rootCauseInitial) out.push('risk_assessment');
+  return out;
+}
+
+function stripCodePrefix(line) {
+  return String(line || '')
+    .replace(/^\s*\d+[\.)-]?\s*/, '')
+    .replace(/^\s*[ABCD]\d+\.\d+\s*[-:)]?\s*/i, '')
+    .trim();
+}
+
 function getStageLabel(language, stage, progress) {
   const isTr = String(language || '').toLowerCase().startsWith('tr');
   const pctNum = Number(progress);
@@ -300,6 +320,7 @@ const ChatInterface = ({
               current_why_question: `Why-${whyLevel} (${currentCode || 'GENERIC'})`,
               previous_why_answer: previousWhyAnswer || '',
               batch_size: 1,
+              known_fields: deriveKnownFields(hitlSeed.formData || {}),
             }
           : {
               mode: 'global',
@@ -307,6 +328,7 @@ const ChatInterface = ({
               root_cause_initial: rci,
               answered_ids: answeredIds,
               batch_size: 1,
+              known_fields: deriveKnownFields(hitlSeed.formData || {}),
             };
 
       const res = await fetchHitlQuestions(hitlSeed.incidentId, body);
@@ -443,15 +465,24 @@ const ChatInterface = ({
     }
     processedHitlIdRef.current = hitlSeed.incidentId;
 
-    const bullets = parseInitialImmediateCauses(hitlSeed.formData?.rootCauseInitial);
+    const bullets = parseInitialImmediateCauses(hitlSeed.formData?.rootCauseInitial)
+      .map(stripCodePrefix)
+      .filter(Boolean)
+      .slice(0, MAX_PROBE_CODES);
     const bulletText = bullets.length
       ? bullets.map((b, i) => `${i + 1}. ${b}`).join('\n')
       : getTranslation(language, 'hitl_no_initial_causes');
 
     const intro = [
-      getTranslation(language, 'hitl_intro_title'),
+      String(language || '').toLowerCase().startsWith('tr')
+        ? 'İlk bulunan dogrudan nedenler'
+        : 'Initial immediate causes',
       '',
       bulletText,
+      '',
+      String(language || '').toLowerCase().startsWith('tr')
+        ? 'Simdi daha derin arastirma icin sorulari birlikte yanitlayacagiz.'
+        : 'Now we will answer deeper investigation questions together.',
       '',
       `Incident ID: ${hitlSeed.incidentId}`,
       '',
@@ -585,6 +616,21 @@ const ChatInterface = ({
           codes: probeCodes,
         });
         if (next.question) {
+          if (hitlMode === 'why_probe' && next.nextBranchIdx > probeBranchIdx) {
+            const finishedBranch = probeBranchIdx + 1;
+            const rcCode = probeCodes[probeBranchIdx] || '-';
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `branch-done-${Date.now()}`,
+                type: 'assistant',
+                content: isTurkish
+                  ? `Dal ${finishedBranch} tamamlandi (Kod: ${rcCode}). Simdi Dal ${next.nextBranchIdx + 1} icin derin sorulara geciyoruz.`
+                  : `Branch ${finishedBranch} completed (Code: ${rcCode}). Moving to deep questions for branch ${next.nextBranchIdx + 1}.`,
+                timestamp: new Date(),
+              },
+            ]);
+          }
           setHitlApiQuestion(next.question);
           setProbeBranchIdx(next.nextBranchIdx);
           setProbeWhyLevel(next.nextWhyLevel);
@@ -805,6 +851,23 @@ const ChatInterface = ({
     hitlPhase === 'rca' ||
     hitlPhase === 'pdf_prompt';
   const isTurkish = String(language || '').toLowerCase().startsWith('tr');
+  const totalBranches = hitlMode === 'why_probe' ? Math.max(1, probeCodes.length) : 1;
+  const branchProgressLabel =
+    hitlMode === 'why_probe'
+      ? isTurkish
+        ? `Dal ${probeBranchIdx + 1}/${totalBranches} - Why ${probeWhyLevel}/${MAX_WHY_LEVEL}`
+        : `Branch ${probeBranchIdx + 1}/${totalBranches} - Why ${probeWhyLevel}/${MAX_WHY_LEVEL}`
+      : isTurkish
+        ? `Derinlestirme asamasi - Soru ${hitlAnswers.length + 1}`
+        : `Deepening stage - Question ${hitlAnswers.length + 1}`;
+  const branchGateText =
+    hitlMode === 'why_probe'
+      ? isTurkish
+        ? `Dal ${probeBranchIdx + 1} tamamlanmadan sonraki dala gecilmez.`
+        : `The next branch cannot start before Branch ${probeBranchIdx + 1} is completed.`
+      : isTurkish
+        ? 'Siradaki soru onceki cevaplara gore derinlestirilir.'
+        : 'Next question is deepened from your previous answer.';
 
   const showHitlPanel = hitlPhase === 'questions' && (hitlQuestionsLoading || hitlApiQuestion);
   return (
@@ -876,6 +939,10 @@ const ChatInterface = ({
 
           {showHitlPanel && (
             <div className="hitl-choice-panel">
+              <div className="hitl-branch-status">
+                <div className="hitl-branch-title">{branchProgressLabel}</div>
+                <div className="hitl-branch-sub">{branchGateText}</div>
+              </div>
               {hitlQuestionsLoading && !hitlApiQuestion ? (
                 <p className="hitl-q">{t('hitl_loading_questions')}</p>
               ) : hitlApiQuestion ? (

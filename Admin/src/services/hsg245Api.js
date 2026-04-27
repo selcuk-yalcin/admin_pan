@@ -231,7 +231,7 @@ export async function addAssessment(incidentId, data, options = {}) {
  * Dinamik HITL soru batch'i (backend: disambiguation + QuestionEngine / knowledge_base).
  *
  * @param {string} incidentId
- * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, immediate_code?: string, why_level?: number, current_why_question?: string, previous_why_answer?: string, mode?: 'global'|'why_probe', batch_size?: number }} body
+ * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, immediate_code?: string, why_level?: number, current_why_question?: string, previous_why_answer?: string, mode?: 'global'|'why_probe', batch_size?: number, known_fields?: string[] }} body
  */
 export async function fetchHitlQuestions(incidentId, body) {
   const response = await fetch(`${API_GATEWAY_URL}`, {
@@ -251,6 +251,7 @@ export async function fetchHitlQuestions(incidentId, body) {
         previous_why_answer: body.previous_why_answer || '',
         mode: body.mode || 'global',
         batch_size: body.batch_size ?? 1,
+        known_fields: body.known_fields || [],
       },
     }),
   });
