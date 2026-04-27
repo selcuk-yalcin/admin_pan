@@ -35,6 +35,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [hitlSeed, setHitlSeed] = useState(null);
   const [activeSubmitMode, setActiveSubmitMode] = useState(null);
   const [chatPipelineStatus, setChatPipelineStatus] = useState("");
+  const [chatWhyStreamLines, setChatWhyStreamLines] = useState([]);
   const submitAbortRef = useRef(null);
 
   const syncTabFromUrl = useCallback(() => {
@@ -107,6 +108,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setFormSubmitError("");
     setActiveSubmitMode(mode);
     setHitlSeed(null);
+    setChatWhyStreamLines([]);
     setFormSubmitInfo(
       mode === "interactive"
         ? "Kayit ve degerlendirme (HITL oncesi)..."
@@ -152,6 +154,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           `Hazir: ${incidentId}. Etkilesimli analiz sekmesinde HITL sorulari ve kok neden akisi basliyor.`,
         );
         setChatPipelineStatus("");
+        setChatWhyStreamLines([]);
         setHitlSeed({ incidentId, formData });
         setTab("chat");
         return;
@@ -159,7 +162,11 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
       setFormSubmitInfo("Assessment tamamlandi. Kök neden analizi calisiyor...");
 
-      await investigateIncident(incidentId, buildInvestigationPayload(formData, ""), { signal: controller.signal });
+      await investigateIncident(
+        incidentId,
+        buildInvestigationPayload(formData, "", selectedLanguage),
+        { signal: controller.signal },
+      );
 
       setFormSubmitInfo("Root cause analizi tamamlandi. Aksiyon plani uretiliyor...");
 
@@ -195,6 +202,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const handleHitlFlowComplete = () => {
     setHitlSeed(null);
     setChatPipelineStatus("");
+    setChatWhyStreamLines([]);
   };
 
   const handleThemeToggle = () => {
@@ -257,6 +265,26 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
               <h2>Agent Pipeline</h2>
               <p>{formSubmitInfo}</p>
               {activeTab === "chat" && chatPipelineStatus && <p><strong>Canli Durum:</strong> {chatPipelineStatus}</p>}
+              {activeTab === "chat" && chatWhyStreamLines.length > 0 && (
+                <div
+                  style={{
+                    marginTop: "10px",
+                    maxHeight: "180px",
+                    overflowY: "auto",
+                    background: "rgba(102, 126, 234, 0.08)",
+                    border: "1px solid rgba(102, 126, 234, 0.25)",
+                    borderRadius: "8px",
+                    padding: "8px 10px",
+                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace",
+                    fontSize: "12px",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {chatWhyStreamLines.slice(-60).map((line, idx) => (
+                    <div key={`hub-why-${idx}-${line.slice(0, 16)}`}>{line}</div>
+                  ))}
+                </div>
+              )}
               {createdIncidentId && <p><strong>Incident ID:</strong> {createdIncidentId}</p>}
               {isSubmittingForm && (
                 <div style={{ marginTop: "10px" }}>
@@ -301,6 +329,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             language={selectedLanguage}
             hitlSeed={hitlSeed}
             onPipelineStatusChange={setChatPipelineStatus}
+            onPipelineWhyStreamChange={setChatWhyStreamLines}
             onHitlFlowComplete={handleHitlFlowComplete}
           />
         )}

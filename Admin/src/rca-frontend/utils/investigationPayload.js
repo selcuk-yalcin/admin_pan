@@ -30,8 +30,9 @@ export function parseInitialImmediateCauses(text) {
 /**
  * @param {object} formData
  * @param {string} [hitlAppendix] - HITL soru-cevap özeti (how_happened sonuna eklenir)
+ * @param {string} [outputLanguage] - rapor/analiz hedef dili (tr, en, de, fr, es, ar)
  */
-export function buildInvestigationPayload(formData, hitlAppendix = "") {
+export function buildInvestigationPayload(formData, hitlAppendix = "", outputLanguage = "") {
   let description = buildHowHappenedText(formData);
   if (formData.rootCauseInitial) {
     description += `\n\nKök Neden (İlk Değerlendirme):\n${formData.rootCauseInitial}`;
@@ -73,5 +74,6 @@ export function buildInvestigationPayload(formData, hitlAppendix = "") {
     ]
       .filter(Boolean)
       .join(" | "),
+    output_language: String(outputLanguage || "").trim(),
   };
 }

@@ -164,7 +164,7 @@ const ChatInterface = ({
       setIsLoading(true);
       try {
         const appendix = formatHitlAnswersBlock(answers);
-        const inv = buildInvestigationPayload(hitlSeed.formData, appendix);
+        const inv = buildInvestigationPayload(hitlSeed.formData, appendix, language);
         inv.why_probe_answers = answers.map((a) => ({
           branch_number: a.branchNumber || 1,
           why_level: a.whyLevel || 1,
