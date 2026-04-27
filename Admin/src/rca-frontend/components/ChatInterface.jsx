@@ -19,6 +19,7 @@ import {
   buildHowHappenedText,
 } from '../utils/investigationPayload';
 import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
+import { hitlQuestionNeedsFreeText } from '../utils/hitlResponseMode';
 import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
@@ -110,6 +111,7 @@ const ChatInterface = ({
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
   const [pipelineResult, setPipelineResult] = useState(null);
+  const [hitlTextDraft, setHitlTextDraft] = useState('');
 
   const t = (key) => getTranslation(language, key);
   const currentProbeCode = probeCodes[probeBranchIdx] || '';
@@ -121,6 +123,10 @@ const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, hitlPhase, hitlApiQuestion?.id, hitlQuestionsLoading]);
+
+  useEffect(() => {
+    setHitlTextDraft('');
+  }, [hitlApiQuestion?.id]);
 
   const runRcaAfterHitl = useCallback(
     async (answers) => {
@@ -479,14 +485,9 @@ const ChatInterface = ({
     };
   }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
 
-  const handleHitlAnswer = (value) => {
+  const submitHitlResponse = (value, displayLabel) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
-    const labels = {
-      yes: t('yes'),
-      no: t('no'),
-      unknown: t('unknown'),
-    };
-    const label = labels[value] || value;
+    const label = displayLabel;
     const qLabel = getHitlQuestionLabel(hitlApiQuestion, language);
     const entry = {
       questionId: hitlApiQuestion.id,
@@ -567,6 +568,22 @@ const ChatInterface = ({
         setHitlQuestionsLoading(false);
       }
     })();
+  };
+
+  const handleHitlAnswer = (value) => {
+    if (!['yes', 'no', 'unknown'].includes(value)) return;
+    const labels = {
+      yes: t('yes'),
+      no: t('no'),
+      unknown: t('unknown'),
+    };
+    submitHitlResponse(value, labels[value] || value);
+  };
+
+  const handleHitlFreeTextSubmit = () => {
+    const text = (hitlTextDraft || '').trim();
+    if (!text) return;
+    submitHitlResponse('free_text', text);
   };
 
   const handleHtmlGenerate = async () => {
@@ -847,17 +864,37 @@ const ChatInterface = ({
                       : hitlApiQuestion.hsg_hint}
                   </div>
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
-                  <div className="hitl-choices">
-                    <button type="button" className="hitl-choice-btn" onClick={() => handleHitlAnswer('yes')}>
-                      {t('yes')}
-                    </button>
-                    <button type="button" className="hitl-choice-btn hitl-choice-no" onClick={() => handleHitlAnswer('no')}>
-                      {t('no')}
-                    </button>
-                    <button type="button" className="hitl-choice-btn hitl-choice-un" onClick={() => handleHitlAnswer('unknown')}>
-                      {t('unknown')}
-                    </button>
-                  </div>
+                  {hitlQuestionNeedsFreeText(hitlApiQuestion) ? (
+                    <div className="hitl-free-text-wrap">
+                      <textarea
+                        className="hitl-free-text-input"
+                        value={hitlTextDraft}
+                        onChange={(e) => setHitlTextDraft(e.target.value)}
+                        rows={3}
+                        placeholder={t('hitl_free_text_placeholder')}
+                      />
+                      <button
+                        type="button"
+                        className="hitl-choice-btn hitl-choice-primary"
+                        onClick={handleHitlFreeTextSubmit}
+                        disabled={!hitlTextDraft.trim() || isLoading || hitlQuestionsLoading}
+                      >
+                        {t('hitl_submit_text_answer')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="hitl-choices">
+                      <button type="button" className="hitl-choice-btn" onClick={() => handleHitlAnswer('yes')}>
+                        {t('yes')}
+                      </button>
+                      <button type="button" className="hitl-choice-btn hitl-choice-no" onClick={() => handleHitlAnswer('no')}>
+                        {t('no')}
+                      </button>
+                      <button type="button" className="hitl-choice-btn hitl-choice-un" onClick={() => handleHitlAnswer('unknown')}>
+                        {t('unknown')}
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : null}
             </div>

@@ -7,9 +7,9 @@ export function getHitlQuestionLabel(q, language) {
   if (!q) return "";
   const tr = (language || "tr").toLowerCase().startsWith("tr");
   if (tr) {
-    return q.question_tr || q.question || "";
+    return q.soru || q.question_tr || q.question || "";
   }
-  return q.question_en || q.question_tr || q.question || "";
+  return q.question_en || q.soru || q.question_tr || q.question || "";
 }
 
 /** Cevaplari metin blok olarak birlestirir (investigate how_happened eki). */
