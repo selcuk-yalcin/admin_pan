@@ -266,8 +266,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
               <p>{formSubmitInfo}</p>
               {activeTab === "chat" && chatPipelineStatus && <p><strong>Canli Durum:</strong> {chatPipelineStatus}</p>}
               {activeTab === "chat" && chatWhyStreamLines.length > 0 && (
-                <div className="pipeline-live-preview">
-                  {chatWhyStreamLines.slice(-60).map((line, idx) => (
+                <div className="pipeline-live-preview large">
+                  {chatWhyStreamLines.slice(-300).map((line, idx) => (
                     <div key={`hub-why-${idx}-${line.slice(0, 16)}`}>{line}</div>
                   ))}
                 </div>
@@ -312,30 +312,13 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             activeSubmitMode={activeSubmitMode}
           />
         ) : (
-          <div className="chat-tab-layout">
-            {(chatWhyStreamLines.length > 0 || chatPipelineStatus) && (
-              <section className="pipeline-live-page">
-                <header className="pipeline-live-page-header">
-                  <h3>Agent Pipeline - Canli Akis</h3>
-                  <p>{chatPipelineStatus || "Canli veri aliniyor..."}</p>
-                </header>
-                <div className="pipeline-live-page-body">
-                  {(chatWhyStreamLines.length ? chatWhyStreamLines : ["Pipeline akisi bekleniyor..."]).map((line, idx) => (
-                    <div className="pipeline-live-line" key={`live-line-${idx}-${line.slice(0, 18)}`}>
-                      {line}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-            <ChatInterface
-              language={selectedLanguage}
-              hitlSeed={hitlSeed}
-              onPipelineStatusChange={setChatPipelineStatus}
-              onPipelineWhyStreamChange={setChatWhyStreamLines}
-              onHitlFlowComplete={handleHitlFlowComplete}
-            />
-          </div>
+          <ChatInterface
+            language={selectedLanguage}
+            hitlSeed={hitlSeed}
+            onPipelineStatusChange={setChatPipelineStatus}
+            onPipelineWhyStreamChange={setChatWhyStreamLines}
+            onHitlFlowComplete={handleHitlFlowComplete}
+          />
         )}
       </main>
 

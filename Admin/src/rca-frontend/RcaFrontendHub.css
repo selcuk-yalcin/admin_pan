@@ -166,13 +166,6 @@
   box-sizing: border-box;
 }
 
-.chat-tab-layout {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
 .pipeline-live-preview {
   margin-top: 10px;
   max-height: 180px;
@@ -186,48 +179,11 @@
   line-height: 1.45;
 }
 
-.pipeline-live-page {
-  margin: 0.75rem 1rem 0;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(102, 126, 234, 0.12), rgba(102, 126, 234, 0.04));
-  min-height: calc(100vh - 360px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.pipeline-live-page-header {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.28);
-}
-
-.pipeline-live-page-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--text-primary);
-}
-
-.pipeline-live-page-header p {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.pipeline-live-page-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.9rem 1rem;
-}
-
-.pipeline-live-line {
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin-bottom: 0.35rem;
-  font-size: 0.82rem;
-  line-height: 1.42;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: var(--text-primary);
+.pipeline-live-preview.large {
+  max-height: 55vh;
+  min-height: 240px;
+  font-size: 12.5px;
+  line-height: 1.5;
 }
 
 /* Loading Overlay */
@@ -279,8 +235,8 @@
     font-size: 0.8rem;
   }
 
-  .pipeline-live-page {
-    margin: 0.5rem;
-    min-height: 42vh;
+  .pipeline-live-preview.large {
+    min-height: 180px;
+    max-height: 42vh;
   }
 }
