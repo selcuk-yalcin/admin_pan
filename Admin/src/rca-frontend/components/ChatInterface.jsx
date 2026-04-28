@@ -11,6 +11,7 @@ import {
   downloadDecisionTree,
   openHTMLReport,
   openDecisionTree,
+  getIncident,
   fetchHitlQuestions,
 } from '../../services/hsg245Api';
 import {
@@ -670,6 +671,21 @@ const ChatInterface = ({
     submitHitlResponse('choice', `${otherLabel}: ${text}`);
   };
 
+  const ensureIncidentReadyForReport = useCallback(async (incidentId) => {
+    // Job "completed" olsa da incident.part3 kısa süre gecikmeli yazılabilir.
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        const res = await getIncident(incidentId);
+        const incident = res?.data || {};
+        const hasPart3 = !!incident?.part3 && typeof incident.part3 === 'object';
+        if (hasPart3) return;
+      } catch {
+        // Ağ/timeout hatasında kısa retry yap.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+  }, []);
+
   const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
@@ -689,6 +705,7 @@ const ChatInterface = ({
     }
     reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Preparing HTML report...</p>');
     try {
+      await ensureIncidentReadyForReport(hitlSeed.incidentId);
       await generateHTMLReport(hitlSeed.incidentId);
       await openHTMLReport(hitlSeed.incidentId, { preopenedWindow: reportWindow });
       setMessages((prev) => [
@@ -739,6 +756,7 @@ const ChatInterface = ({
     async (fn) => {
       if (!hitlSeed?.incidentId) return;
       try {
+        await ensureIncidentReadyForReport(hitlSeed.incidentId);
         await fn(hitlSeed.incidentId);
       } catch (error) {
         setMessages((prev) => [
