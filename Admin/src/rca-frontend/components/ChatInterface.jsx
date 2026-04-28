@@ -118,6 +118,7 @@ const ChatInterface = ({
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
   const [pipelineResult, setPipelineResult] = useState(null);
   const [hitlTextDraft, setHitlTextDraft] = useState('');
+  const [hitlOtherDraft, setHitlOtherDraft] = useState('');
   /** @type {[Set<number>, React.Dispatch<React.SetStateAction<Set<number>>>]} */
   const [hitlChoiceIdx, setHitlChoiceIdx] = useState(() => new Set());
 
@@ -134,6 +135,7 @@ const ChatInterface = ({
 
   useEffect(() => {
     setHitlTextDraft('');
+    setHitlOtherDraft('');
     setHitlChoiceIdx(new Set());
   }, [hitlApiQuestion?.id]);
 
@@ -595,6 +597,17 @@ const ChatInterface = ({
     submitHitlResponse('free_text', text);
   };
 
+  const isOtherChoiceLabel = (label) =>
+    /\b(diğer|diger|other|autre|otro|sonstige|altro|anderes)\b/i.test(String(label || ''));
+
+  const getOtherChoiceIndex = () => {
+    if (!hitlApiQuestion) return -1;
+    const trOpts = hitlApiQuestion.choice_options || [];
+    const displayOpts = getHitlChoiceOptionLabels(hitlApiQuestion, language);
+    const merged = trOpts.length ? trOpts : displayOpts;
+    return merged.findIndex((opt) => isOtherChoiceLabel(opt));
+  };
+
   const handleHitlChoiceClick = (optionIndex) => {
     if (!hitlApiQuestion) return;
     const trOpts = hitlApiQuestion.choice_options || [];
@@ -602,7 +615,13 @@ const ChatInterface = ({
     const labelTr = (trOpts[optionIndex] || displayOpts[optionIndex] || '').trim();
     if (!labelTr) return;
     const multi = isHitlChoiceMulti(hitlApiQuestion);
+    const otherIdx = getOtherChoiceIndex();
+    const isOther = optionIndex === otherIdx;
     if (!multi) {
+      if (isOther) {
+        setHitlChoiceIdx(new Set([optionIndex]));
+        return;
+      }
       submitHitlResponse('choice', labelTr);
       return;
     }
@@ -620,9 +639,35 @@ const ChatInterface = ({
     const displayOpts = getHitlChoiceOptionLabels(hitlApiQuestion, language);
     const idxs = Array.from(hitlChoiceIdx).sort((a, b) => a - b);
     if (!idxs.length) return;
+    const otherIdx = getOtherChoiceIndex();
     const parts = idxs.map((i) => (trOpts[i] || displayOpts[i] || '').trim()).filter(Boolean);
+    if (otherIdx >= 0 && idxs.includes(otherIdx)) {
+      const extra = (hitlOtherDraft || '').trim();
+      if (!extra) return;
+      const mapped = parts.map((p, i) =>
+        idxs[i] === otherIdx ? `${p}: ${extra}` : p,
+      );
+      submitHitlResponse('choice_multi', mapped.join(' · '));
+      return;
+    }
     if (!parts.length) return;
     submitHitlResponse('choice_multi', parts.join(' · '));
+  };
+
+  const handleHitlOtherSubmit = () => {
+    if (!hitlApiQuestion) return;
+    const text = (hitlOtherDraft || '').trim();
+    if (!text) return;
+    const trOpts = hitlApiQuestion.choice_options || [];
+    const displayOpts = getHitlChoiceOptionLabels(hitlApiQuestion, language);
+    const otherIdx = getOtherChoiceIndex();
+    const otherLabel = (trOpts[otherIdx] || displayOpts[otherIdx] || (isTurkish ? 'Diğer' : 'Other')).trim();
+    const multi = isHitlChoiceMulti(hitlApiQuestion);
+    if (multi) {
+      handleHitlMultiChoiceSubmit();
+      return;
+    }
+    submitHitlResponse('choice', `${otherLabel}: ${text}`);
   };
 
   const handleHtmlGenerate = async () => {
@@ -838,6 +883,8 @@ const ChatInterface = ({
     : [];
   const showHitlChips =
     hitlApiQuestion && hitlQuestionNeedsChoice(hitlApiQuestion) && displayChoiceLabels.length >= 2;
+  const hitlOtherIdx = showHitlChips ? getOtherChoiceIndex() : -1;
+  const hitlOtherSelected = showHitlChips && hitlOtherIdx >= 0 && hitlChoiceIdx.has(hitlOtherIdx);
   const showHitlFree = hitlApiQuestion && !showHitlChips && hitlQuestionNeedsFreeText(hitlApiQuestion);
   return (
     <div className="chat-interface">
@@ -911,6 +958,16 @@ const ChatInterface = ({
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
                   {showHitlChips ? (
                     <div className="hitl-choice-chips-wrap">
+                      <div className="hitl-choice-head">
+                        <span className="hitl-choice-title">
+                          {isTurkish ? 'Uygun seçenekleri işaretleyin' : 'Select applicable options'}
+                        </span>
+                        {isHitlChoiceMulti(hitlApiQuestion) && (
+                          <span className="hitl-choice-count">
+                            {hitlChoiceIdx.size} {isTurkish ? 'seçim' : 'selected'}
+                          </span>
+                        )}
+                      </div>
                       {isHitlChoiceMulti(hitlApiQuestion) && (
                         <p className="hitl-multi-hint">{t('hitl_multi_choice_hint')}</p>
                       )}
@@ -927,12 +984,38 @@ const ChatInterface = ({
                           </button>
                         ))}
                       </div>
+                      {hitlOtherSelected && (
+                        <div className="hitl-other-wrap">
+                          <textarea
+                            className="hitl-free-text-input hitl-other-text-input"
+                            value={hitlOtherDraft}
+                            onChange={(e) => setHitlOtherDraft(e.target.value)}
+                            rows={2}
+                            placeholder={isTurkish ? 'Diğer seçeneğini kısaca yazın...' : 'Please specify the other option...'}
+                          />
+                          {!isHitlChoiceMulti(hitlApiQuestion) && (
+                            <button
+                              type="button"
+                              className="hitl-choice-btn hitl-choice-primary"
+                              onClick={handleHitlOtherSubmit}
+                              disabled={!hitlOtherDraft.trim() || isLoading || hitlQuestionsLoading}
+                            >
+                              {t('hitl_submit_text_answer')}
+                            </button>
+                          )}
+                        </div>
+                      )}
                       {isHitlChoiceMulti(hitlApiQuestion) && (
                         <button
                           type="button"
                           className="hitl-choice-btn hitl-choice-primary"
                           onClick={handleHitlMultiChoiceSubmit}
-                          disabled={hitlChoiceIdx.size === 0 || isLoading || hitlQuestionsLoading}
+                          disabled={
+                            hitlChoiceIdx.size === 0 ||
+                            (hitlOtherSelected && !hitlOtherDraft.trim()) ||
+                            isLoading ||
+                            hitlQuestionsLoading
+                          }
                         >
                           {t('hitl_submit_choices')}
                         </button>
