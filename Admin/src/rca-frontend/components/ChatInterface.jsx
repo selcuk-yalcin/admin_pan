@@ -29,7 +29,8 @@ import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
 const MAX_WHY_LEVEL = 5;
-const PIPELINE_TIMEOUT_MS = 6 * 60 * 1000;
+/** Uzun RCA + thinking modeller; 6 dk önce UI "Pipeline timeout" veriyordu. */
+const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
 
 function extractHsgCodes(text) {
   const matches = String(text || '').match(/[ABCD]\d+\.\d+/gi) || [];

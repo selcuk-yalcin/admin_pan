@@ -294,9 +294,12 @@ export async function getPipelineJobStatus(jobId, options = {}) {
   return handleResponse(response);
 }
 
+/** Default client wait for Celery pipeline (RCA / thinking models can exceed a few minutes). */
+const DEFAULT_PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
+
 async function pollPipelineJobUntilDone(jobId, options = {}) {
   const pollIntervalMs = options.pollIntervalMs ?? 2000;
-  const timeoutMs = options.timeoutMs ?? 6 * 60 * 1000;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_PIPELINE_TIMEOUT_MS;
   const startedAt = Date.now();
 
   while (true) {
@@ -424,7 +427,7 @@ export function watchPipelineJobWebSocket(jobId, options = {}) {
 
 async function runPipelineJobWithWebSocket(jobId, options = {}) {
   return await new Promise((resolve, reject) => {
-    const timeoutMs = options.timeoutMs ?? 6 * 60 * 1000;
+    const timeoutMs = options.timeoutMs ?? DEFAULT_PIPELINE_TIMEOUT_MS;
     const timeoutId = setTimeout(() => {
       watcher?.close();
       reject(new Error(`Pipeline websocket timeout (${Math.round(timeoutMs / 1000)}s)`));
