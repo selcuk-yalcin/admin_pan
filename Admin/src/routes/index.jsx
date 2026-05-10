@@ -6,6 +6,7 @@ import LegislationChatbot from "../pages/Chatbot/LegislationChatbot";
 import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
 import RcaFrontendPage from "../pages/RootCauseAnalysis/RcaFrontendPage";
 import ManualFormFullscreenPage from "../pages/RootCauseAnalysis/ManualFormFullscreenPage";
+import DeepTrainingFullscreenPage from "../pages/DeepTraining/DeepTrainingFullscreenPage";
 import RiskAssessmentPanel from "../pages/RiskAssessment/RiskAssessmentPanel";
 import RiskAssessmentForm from "../pages/RiskAssessment/RiskAssessmentForm";
 
@@ -73,6 +74,7 @@ const authProtectedRoutes = [
 const fullScreenRoutes = [
   { path: "/legislation-chatbot", component: <LegislationChatbot /> },
   { path: "/root-cause-manual", component: <ManualFormFullscreenPage /> },
+  { path: "/deep-training", component: <DeepTrainingFullscreenPage /> },
 ];
 
 const publicRoutes = [
