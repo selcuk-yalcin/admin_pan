@@ -1,7 +1,62 @@
 /* Deep Training — light “templates gallery” layout (reference UI) */
 
-.dt-shell {
+.dt-layout {
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  background: #ffffff;
+}
+
+.dt-side {
+  border-right: 1px solid #eceef2;
+  background: #fff;
+}
+
+.dt-side-title {
+  height: 74px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dt-side-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.dt-side-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.dt-side-item-active {
+  background: #f3f4f6;
+}
+
+.dt-pro-badge {
+  margin-left: 8px;
+  background: #ffedd5;
+  color: #f97316;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dt-shell {
+  min-height: 100%;
   background: #f5f6f8;
   color: #1a1d24;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -16,8 +71,7 @@
 }
 
 .dt-shell-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   padding: 14px 24px;
   display: flex;
   align-items: center;
@@ -95,8 +149,7 @@
 }
 
 .dt-main {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   padding: 28px 24px 48px;
 }
 
@@ -254,6 +307,14 @@
 }
 
 @media (max-width: 992px) {
+  .dt-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-side {
+    display: none;
+  }
+
   .dt-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

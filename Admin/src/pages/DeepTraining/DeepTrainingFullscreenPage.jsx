@@ -99,79 +99,101 @@ const DeepTrainingFullscreenPage = () => {
   }, [activeFilter]);
 
   return (
-    <div className="dt-shell">
-      <header className="dt-shell-header">
-        <div className="dt-shell-header-inner">
-          <div className="dt-shell-brand">
-            <span className="dt-shell-brand-mark">DT</span>
-            <span className="dt-shell-brand-text">Deep Training</span>
+    <div className="dt-layout">
+      <aside className="dt-side">
+        <div className="dt-side-title">Deep Training</div>
+        <nav className="dt-side-nav">
+          <Link to="/dashboard" className="dt-side-item">
+            Home
+          </Link>
+          <div className="dt-side-item">Projects</div>
+          <div className="dt-side-item">
+            Create project <span className="dt-pro-badge">PRO</span>
           </div>
-          <div className="dt-shell-header-actions">
-            <span className="dt-shell-trial">Trial workspace</span>
-            <Link to="/root-cause-manual" className="dt-btn dt-btn-ghost">
-              Open DeepWhy
-            </Link>
-            <Link to="/dashboard" className="dt-btn dt-btn-solid">
-              Back to Admin
-            </Link>
+          <div className="dt-side-item">Hire an expert</div>
+          <div className="dt-side-item dt-side-item-active">Templates</div>
+        </nav>
+      </aside>
+
+      <div className="dt-shell">
+        <header className="dt-shell-header">
+          <div className="dt-shell-header-inner">
+            <div className="dt-shell-brand">
+              <span className="dt-shell-brand-mark">DT</span>
+              <span className="dt-shell-brand-text">Deep Training</span>
+            </div>
+            <div className="dt-shell-header-actions">
+              <span className="dt-shell-trial">Trial workspace</span>
+              <button type="button" className="dt-btn dt-btn-ghost">
+                Turkish
+              </button>
+              <button type="button" className="dt-btn dt-btn-ghost">
+                Light
+              </button>
+              <Link to="/root-cause-manual" className="dt-btn dt-btn-ghost">
+                Open DeepWhy
+              </Link>
+              <Link to="/dashboard" className="dt-btn dt-btn-solid">
+                Admin Panel
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="dt-main">
-        <h1 className="dt-page-title">Training modules</h1>
-        <p className="dt-page-lead">
-          Pick a starting layout for AI-generated education decks — same flow as
-          template galleries.
-        </p>
+        <main className="dt-main">
+          <h1 className="dt-page-title">Templates</h1>
+          <p className="dt-page-lead">
+            Pick a starting layout for AI-generated education decks.
+          </p>
 
-        <div className="dt-filter-row" role="tablist" aria-label="Categories">
-          {FILTERS.map((label) => (
-            <button
-              key={label}
-              type="button"
-              role="tab"
-              aria-selected={activeFilter === label}
-              className={
-                activeFilter === label ? "dt-chip dt-chip-active" : "dt-chip"
-              }
-              onClick={() => setActiveFilter(label)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          <div className="dt-filter-row" role="tablist" aria-label="Categories">
+            {FILTERS.map((label) => (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={activeFilter === label}
+                className={
+                  activeFilter === label ? "dt-chip dt-chip-active" : "dt-chip"
+                }
+                onClick={() => setActiveFilter(label)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-        <div className="dt-card-grid">
-          {visible.map((item) => (
-            <article key={item.id} className="dt-card">
-              <div className="dt-card-media">
-                <img src={item.image} alt="" loading="lazy" />
-                <div className="dt-card-overlay">
-                  <button type="button" className="dt-card-cta">
-                    + Use this template
-                  </button>
+          <div className="dt-card-grid">
+            {visible.map((item) => (
+              <article key={item.id} className="dt-card">
+                <div className="dt-card-media">
+                  <img src={item.image} alt="" loading="lazy" />
+                  <div className="dt-card-overlay">
+                    <button type="button" className="dt-card-cta">
+                      + Use this template
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <footer className="dt-card-footer">
-                <span className="dt-card-logo" aria-hidden>
-                  I
-                </span>
-                <div className="dt-card-text">
-                  <h2 className="dt-card-title">{item.title}</h2>
-                  <p className="dt-card-meta">
-                    {item.subtitle} · Created by Infera
-                  </p>
-                </div>
-              </footer>
-            </article>
-          ))}
-        </div>
+                <footer className="dt-card-footer">
+                  <span className="dt-card-logo" aria-hidden>
+                    I
+                  </span>
+                  <div className="dt-card-text">
+                    <h2 className="dt-card-title">{item.title}</h2>
+                    <p className="dt-card-meta">
+                      {item.subtitle} · Created by Infera
+                    </p>
+                  </div>
+                </footer>
+              </article>
+            ))}
+          </div>
 
-        {visible.length === 0 && (
-          <p className="dt-empty">No modules in this category yet.</p>
-        )}
-      </main>
+          {visible.length === 0 && (
+            <p className="dt-empty">No modules in this category yet.</p>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
