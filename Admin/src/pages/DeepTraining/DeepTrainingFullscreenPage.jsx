@@ -2,89 +2,27 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "./deep-training.css";
 
-const FILTERS = [
-  "All",
-  "Education",
-  "Business",
-  "Creative",
-  "Pitch Deck",
-  "Startups",
-  "Sales",
-];
+const FILTERS = ["All", "İş Güvenliği", "Fire Protection"];
 
-/** Training module cards — same mental model as template gallery */
+/** Starter decks for Deep Training — occupational safety and fire protection */
 const MODULES = [
   {
-    id: "m1",
-    category: "Education",
-    title: "Microlearning sprint",
-    subtitle: "5-slide drill + quiz",
+    id: "occ-safety",
+    category: "İş Güvenliği",
+    title: "İş Güvenliği",
+    subtitle:
+      "KKD, makine ve elektrik güvenliği, ergonomi, risk değerlendirme özeti ve olay bildirimi modüllerinden oluşan İSG eğitim iskeleti.",
     image:
-      "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=800&q=80",
+      "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&q=80",
   },
   {
-    id: "m2",
-    category: "Education",
-    title: "Safety briefing deck",
-    subtitle: "Photo + voice narration",
+    id: "fire-protection",
+    category: "Fire Protection",
+    title: "Fire Protection",
+    subtitle:
+      "Yangın önleme, algılama ve alarm, söndürücü seçimi / kullanımı, tahliye planı ve tatbikat vurguları ile yangın güvenliği eğitim akışı.",
     image:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",
-  },
-  {
-    id: "m3",
-    category: "Business",
-    title: "QBR storyline",
-    subtitle: "Metrics + executive summary",
-    image:
-      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
-  },
-  {
-    id: "m4",
-    category: "Creative",
-    title: "Brand narrative",
-    subtitle: "Bold visuals + typography",
-    image:
-      "https://images.unsplash.com/photo-1557804506-669353633995?w=800&q=80",
-  },
-  {
-    id: "m5",
-    category: "Pitch Deck",
-    title: "Seed pitch pack",
-    subtitle: "Problem → traction → ask",
-    image:
-      "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&q=80",
-  },
-  {
-    id: "m6",
-    category: "Startups",
-    title: "Product demo flow",
-    subtitle: "Screens + voice-over cues",
-    image:
-      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80",
-  },
-  {
-    id: "m7",
-    category: "Sales",
-    title: "Enterprise ROI story",
-    subtitle: "Proof points + comparison",
-    image:
-      "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&q=80",
-  },
-  {
-    id: "m8",
-    category: "Education",
-    title: "Onboarding 101",
-    subtitle: "Day-one essentials",
-    image:
-      "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80",
-  },
-  {
-    id: "m9",
-    category: "Business",
-    title: "Consulting engagement",
-    subtitle: "Structured storyline",
-    image:
-      "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80",
+      "https://images.unsplash.com/photo-1587825140708-dfaf72ae436b?w=800&q=80",
   },
 ];
 
@@ -111,7 +49,7 @@ const DeepTrainingFullscreenPage = () => {
             Create project <span className="dt-pro-badge">PRO</span>
           </div>
           <div className="dt-side-item">Hire an expert</div>
-          <div className="dt-side-item dt-side-item-active">Templates</div>
+          <div className="dt-side-item dt-side-item-active">Deep Training</div>
         </nav>
       </aside>
 
@@ -141,9 +79,10 @@ const DeepTrainingFullscreenPage = () => {
         </header>
 
         <main className="dt-main">
-          <h1 className="dt-page-title">Templates</h1>
+          <h1 className="dt-page-title">Deep Training</h1>
           <p className="dt-page-lead">
-            Pick a starting layout for AI-generated education decks.
+            İş Güvenliği ve Fire Protection için yapay zekâ destekli eğitim
+            sunumlarına başlangıç şablonları seçin.
           </p>
 
           <div className="dt-filter-row" role="tablist" aria-label="Categories">
