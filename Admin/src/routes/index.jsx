@@ -51,6 +51,7 @@ const authProtectedRoutes = [
   { path: "/root-cause-smart", component: <Navigate to="/legislation-chatbot" replace /> },
   { path: "/root-cause-tools", component: <RcaFrontendPage /> },
   { path: "/rootcause-form", component: <Navigate to="/root-cause-manual" replace /> },
+  { path: "/deep-training", component: <DeepTrainingFullscreenPage /> },
   
   // Risk Assessment
   { path: "/risk-assessment", component: <RiskAssessmentPanel /> },
@@ -74,7 +75,6 @@ const authProtectedRoutes = [
 const fullScreenRoutes = [
   { path: "/legislation-chatbot", component: <LegislationChatbot /> },
   { path: "/root-cause-manual", component: <ManualFormFullscreenPage /> },
-  { path: "/deep-training", component: <DeepTrainingFullscreenPage /> },
 ];
 
 const publicRoutes = [
