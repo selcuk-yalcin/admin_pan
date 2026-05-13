@@ -27,7 +27,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("form");
   const [selectedLanguage, setSelectedLanguage] = useState("tr");
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(true);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [formSubmitError, setFormSubmitError] = useState("");
   const [formSubmitInfo, setFormSubmitInfo] = useState("");
@@ -205,7 +205,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setIsLightMode((prev) => !prev);
   };
 
-  const hubClassName = `app rca-frontend-hub${showAdminReturn ? " fullscreen-mode" : ""}${isLightMode ? " light-mode" : ""}`;
+  const hubClassName = `app rca-frontend-hub${showAdminReturn ? " fullscreen-mode" : ""}${isLightMode ? " light-mode" : " theme-dark"}`;
 
   return (
     <div className={hubClassName}>

@@ -149,6 +149,18 @@
   color: var(--primary);
 }
 
+.rca-frontend-hub:not(.theme-dark) .admin-return-top-btn {
+  background: var(--primary);
+  color: #ffffff;
+  border: 1px solid var(--primary);
+}
+
+.rca-frontend-hub:not(.theme-dark) .admin-return-top-btn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: #ffffff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header {

@@ -61,7 +61,7 @@
 }
 
 .step-item.active {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(37, 99, 235, 0.1);
   border: 1px solid var(--primary);
 }
 
@@ -71,7 +71,7 @@
 }
 
 .step-item:not(.completed):not(.active) {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(15, 23, 42, 0.04);
   border: 1px solid var(--border);
 }
 
@@ -307,7 +307,7 @@
 
 .chat-input-wrapper:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .attach-btn {
@@ -397,8 +397,8 @@
 }
 
 .hitl-branch-status {
-  border: 1px solid rgba(102, 126, 234, 0.35);
-  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.08);
   border-radius: 9px;
   padding: 0.55rem 0.7rem;
   margin-bottom: 0.7rem;
@@ -445,7 +445,7 @@
 }
 
 .hitl-free-text-input:focus {
-  outline: 2px solid rgba(102, 126, 234, 0.45);
+  outline: 2px solid rgba(37, 99, 235, 0.45);
   border-color: var(--primary);
 }
 
@@ -471,8 +471,8 @@
 .hitl-choice-count {
   font-size: 0.75rem;
   color: var(--text-primary);
-  border: 1px solid rgba(102, 126, 234, 0.35);
-  background: rgba(102, 126, 234, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.12);
   border-radius: 999px;
   padding: 0.12rem 0.48rem;
 }
@@ -507,7 +507,7 @@
 
 .hitl-option-chip:hover:not(:disabled) {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .hitl-option-chip:disabled {
@@ -517,8 +517,8 @@
 
 .hitl-option-chip.is-selected {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.2);
-  box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.25);
+  background: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
 }
 
 .hitl-other-wrap {
@@ -550,7 +550,7 @@
 
 .hitl-choice-btn:hover:not(:disabled) {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.08);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .hitl-choice-no {
@@ -584,7 +584,7 @@
 
 .report-action-card {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(15, 23, 42, 0.03);
   border-radius: 10px;
   padding: 0.7rem;
   display: flex;
@@ -601,7 +601,15 @@
 
 .report-open-btn {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.12);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.rca-frontend-hub.theme-dark .step-item:not(.completed):not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rca-frontend-hub.theme-dark .report-action-card {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* Responsive */

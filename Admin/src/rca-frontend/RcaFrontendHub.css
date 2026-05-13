@@ -1,5 +1,24 @@
-/* Vite frontend index.css ile aynı tema değişkenleri (yalnızca bu hub içinde) */
-.rca-frontend-hub {
+/* Deep Training–aligned light theme (default). Legacy dark: .theme-dark */
+
+.rca-frontend-hub,
+.rca-frontend-hub.light-mode {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #f97316;
+  --background: #f5f6f8;
+  --surface: #ffffff;
+  --surface-hover: #f3f4f6;
+  --border: #e8eaef;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #2563eb;
+}
+
+.rca-frontend-hub.theme-dark {
   --primary: #667eea;
   --primary-dark: #5568d3;
   --secondary: #764ba2;
@@ -16,23 +35,6 @@
   --info: #3b82f6;
 }
 
-.rca-frontend-hub.light-mode {
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
-  --secondary: #7c3aed;
-  --background: #f3f6fb;
-  --surface: #ffffff;
-  --surface-hover: #eef2ff;
-  --border: #d6dcee;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #3b82f6;
-}
-
 .app.rca-frontend-hub {
   min-height: calc(100vh - 140px);
   display: flex;
@@ -41,7 +43,7 @@
   max-width: 100%;
   background: var(--background);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
 /* Full-screen route (/root-cause-manual): bot sayfası gibi viewport'u tamamen kapla */
@@ -105,8 +107,15 @@
 }
 
 .tab-btn.active {
+  background: #e2e8f0;
+  color: var(--text-primary);
+  border: 1px solid #cbd5e1;
+}
+
+.rca-frontend-hub.theme-dark .tab-btn.active {
   background: var(--primary);
   color: white;
+  border: none;
 }
 
 /* Info Banner */
@@ -115,15 +124,28 @@
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem 2rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-  border-bottom: 2px solid var(--primary);
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.06) 0%,
+    rgba(249, 115, 22, 0.05) 100%
+  );
+  border-bottom: 1px solid var(--border);
   backdrop-filter: blur(10px);
+}
+
+.rca-frontend-hub.theme-dark .info-banner {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.15) 0%,
+    rgba(118, 75, 162, 0.15) 100%
+  );
+  border-bottom: 2px solid var(--primary);
 }
 
 .info-banner-icon {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
   border-radius: 16px;
   display: flex;
@@ -132,8 +154,13 @@
   font-weight: 700;
   font-size: 1.25rem;
   letter-spacing: 1px;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
   flex-shrink: 0;
+}
+
+.rca-frontend-hub.theme-dark .info-banner-icon {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
 }
 
 .info-banner-content h2 {
@@ -141,10 +168,6 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .info-banner-content p {
@@ -173,12 +196,16 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 20, 25, 0.8);
+  background: rgba(248, 250, 252, 0.88);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
+}
+
+.rca-frontend-hub.theme-dark .loading-overlay {
+  background: rgba(15, 20, 25, 0.8);
 }
 
 .loading-spinner {
