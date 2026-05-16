@@ -206,6 +206,14 @@ const SidebarContent = (props) => {
             </li>
 
             <li>
+              <Link to="/create-project">
+                <i className="bx bx-plus-circle"></i>
+                <span>{props.t("Create Project")}</span>
+                <span className="badge rounded-pill bg-warning float-end">PRO</span>
+              </Link>
+            </li>
+
+            <li>
               <Link to="/apps-filemanager">
                 <i className="bx bx-file"></i>
                 <span>{props.t("File Manager")}</span>

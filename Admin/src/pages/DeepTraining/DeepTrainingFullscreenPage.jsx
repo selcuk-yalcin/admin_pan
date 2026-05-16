@@ -45,9 +45,9 @@ const DeepTrainingFullscreenPage = () => {
             Home
           </Link>
           <div className="dt-side-item">Projects</div>
-          <div className="dt-side-item">
+          <Link to="/create-project" className="dt-side-item">
             Create project <span className="dt-pro-badge">PRO</span>
-          </div>
+          </Link>
           <div className="dt-side-item">Hire an expert</div>
           <div className="dt-side-item dt-side-item-active">Deep Training</div>
         </nav>
@@ -108,9 +108,12 @@ const DeepTrainingFullscreenPage = () => {
                 <div className="dt-card-media">
                   <img src={item.image} alt="" loading="lazy" />
                   <div className="dt-card-overlay">
-                    <button type="button" className="dt-card-cta">
+                    <Link
+                      to={`/create-project?template=${encodeURIComponent(item.id)}`}
+                      className="dt-card-cta"
+                    >
                       + Use this template
-                    </button>
+                    </Link>
                   </div>
                 </div>
                 <footer className="dt-card-footer">

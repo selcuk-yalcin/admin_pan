@@ -8,6 +8,7 @@ import RootCausePanel from "../pages/RootCauseAnalysis/RootCausePanel";
 import RcaFrontendPage from "../pages/RootCauseAnalysis/RcaFrontendPage";
 import ManualFormFullscreenPage from "../pages/RootCauseAnalysis/ManualFormFullscreenPage";
 import DeepTrainingFullscreenPage from "../pages/DeepTraining/DeepTrainingFullscreenPage";
+import CreateProjectPage from "../pages/CreateProject/CreateProjectPage";
 import RiskAssessmentPanel from "../pages/RiskAssessment/RiskAssessmentPanel";
 import RiskAssessmentForm from "../pages/RiskAssessment/RiskAssessmentForm";
 
@@ -81,6 +82,7 @@ const fullScreenRoutes = [
   },
   { path: "/root-cause-manual", component: <ManualFormFullscreenPage /> },
   { path: "/deep-training", component: <DeepTrainingFullscreenPage /> },
+  { path: "/create-project", component: <CreateProjectPage /> },
 ];
 
 const publicRoutes = [

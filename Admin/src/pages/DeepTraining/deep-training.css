@@ -254,6 +254,9 @@
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(6px);
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
 }
 
 .dt-card-cta:hover {
