@@ -275,6 +275,8 @@ export async function startPipelineJob(incidentId, data, options = {}) {
         safety_procedures: data.safety_procedures || '',
         injuries: data.injuries || '',
         why_probe_answers: data.why_probe_answers || [],
+        output_language: data.output_language || '',
+        analysis_model_preset: data.analysis_model_preset || '',
       },
     }),
   });
@@ -488,15 +490,18 @@ export async function investigateIncident(incidentId, data, options = {}) {
         action: 'investigate',
         data: {
           incident_id: incidentId,
-          location: data.location,
-          who_involved: data.who_involved,
+          location: data.location || '',
+          who_involved: data.who_involved || '',
           how_happened: data.how_happened,
           activities: data.activities || '',
           working_conditions: data.working_conditions || '',
           safety_procedures: data.safety_procedures || '',
           injuries: data.injuries || '',
           why_probe_answers: data.why_probe_answers || [],
-        }
+          output_language: data.output_language || '',
+          oracle_context: data.oracle_context || '',
+          analysis_model_preset: data.analysis_model_preset || '',
+        },
       })
     });
     

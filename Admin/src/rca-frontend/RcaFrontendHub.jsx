@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock, FolderOpen } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
+import SavedReportsPanel from "./components/SavedReportsPanel";
 import Header from "./components/Header";
 import { getTranslation } from "./utils/translations";
+import { upsertDraftReport } from "./utils/draftReportsStorage";
 import {
   createIncident,
   addAssessment,
@@ -16,10 +18,10 @@ import { buildHowHappenedText, buildInvestigationPayload } from "./utils/investi
 import "./RcaFrontendHub.css";
 import "./rcaEmbedLayout.css";
 
-const TAB_KEYS = ["form", "chat"];
+const TAB_KEYS = ["form", "chat", "reports"];
 
 /**
- * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat).
+ * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports).
  * Eski ?tab=smart bağlantıları form sekmesine yönlendirilir.
  */
 export default function RcaFrontendHub({ showAdminReturn = false }) {
@@ -35,6 +37,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [hitlSeed, setHitlSeed] = useState(null);
   const [activeSubmitMode, setActiveSubmitMode] = useState(null);
   const [chatPipelineStatus, setChatPipelineStatus] = useState("");
+  const [activeDraftId, setActiveDraftId] = useState(null);
+  const [formDraftSeed, setFormDraftSeed] = useState(null);
   const submitAbortRef = useRef(null);
 
   const syncTabFromUrl = useCallback(() => {
@@ -201,6 +205,30 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setChatPipelineStatus("");
   };
 
+  const handlePersistDraft = useCallback(
+    (formData) => {
+      const entry = upsertDraftReport(formData, "", activeDraftId);
+      setActiveDraftId(entry.id);
+      setFormSubmitError("");
+      setFormSubmitInfo(translate("draft_saved_toast"));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("deepwhy-drafts-changed"));
+      }
+    },
+    [activeDraftId, translate],
+  );
+
+  const handleLoadDraftEntry = useCallback((entry) => {
+    setActiveDraftId(entry.id);
+    setFormDraftSeed(entry.snapshot ? { ...entry.snapshot } : null);
+    setTab("form");
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 0);
+  }, []);
+
   const handleThemeToggle = () => {
     setIsLightMode((prev) => !prev);
   };
@@ -240,6 +268,14 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           <Lock size={14} className="tab-lock-icon" />
           <span>{translate("interactive_analysis")}</span>
         </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === "reports" ? "active" : ""}`}
+          onClick={() => setTab("reports")}
+        >
+          <FolderOpen size={20} aria-hidden />
+          <span>{translate("tab_saved_reports")}</span>
+        </button>
       </div>
 
       <div className="info-banner">
@@ -254,7 +290,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       </div>
 
       <main className="main-content">
-        {formSubmitInfo && (
+        {formSubmitInfo && activeTab !== "reports" && (
           <div className="info-banner" style={{ marginBottom: "16px" }}>
             <div className="info-banner-icon">AI</div>
             <div className="info-banner-content">
@@ -284,7 +320,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             </div>
           </div>
         )}
-        {formSubmitError && (
+        {formSubmitError && activeTab !== "reports" && (
           <div className="info-banner" style={{ marginBottom: "16px", borderColor: "#ef4444" }}>
             <div className="info-banner-icon">!</div>
             <div className="info-banner-content">
@@ -293,19 +329,29 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             </div>
           </div>
         )}
-        {activeTab === "form" ? (
+        {activeTab === "form" && (
           <IncidentForm
             language={selectedLanguage}
             onSubmit={handleFormSubmit}
             isSubmitting={isSubmittingForm}
             activeSubmitMode={activeSubmitMode}
+            seedSnapshot={formDraftSeed}
+            onSeedConsumed={() => setFormDraftSeed(null)}
+            onSaveDraft={handlePersistDraft}
           />
-        ) : (
+        )}
+        {activeTab === "chat" && (
           <ChatInterface
             language={selectedLanguage}
             hitlSeed={hitlSeed}
             onPipelineStatusChange={setChatPipelineStatus}
             onHitlFlowComplete={handleHitlFlowComplete}
+          />
+        )}
+        {activeTab === "reports" && (
+          <SavedReportsPanel
+            language={selectedLanguage}
+            onEditDraft={handleLoadDraftEntry}
           />
         )}
       </main>

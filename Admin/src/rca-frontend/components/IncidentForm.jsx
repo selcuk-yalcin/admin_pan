@@ -61,6 +61,9 @@ const IncidentForm = ({
   onSubmit,
   isSubmitting = false,
   activeSubmitMode = null,
+  seedSnapshot = null,
+  onSeedConsumed,
+  onSaveDraft,
 }) => {
   const testScenarios = getTestScenarioList(language);
   const [activeSection, setActiveSection] = useState(0);
@@ -130,7 +133,34 @@ const IncidentForm = ({
     correctiveActions: '',
     additionalNotes: '',
     evidenceAttachments: [],
+    analysisModelTier: 'economy',
   });
+
+  const mergeSnapshotIntoFormState = React.useCallback((snap) => {
+    if (!snap || typeof snap !== 'object') return;
+    const timeline =
+      Array.isArray(snap.timeline) && snap.timeline.length > 0
+        ? snap.timeline
+        : createDefaultTimeline();
+    setAttachmentError('');
+    setFormData((prev) => ({
+      ...prev,
+      ...snap,
+      timeline,
+      evidenceAttachments: Array.isArray(snap.evidenceAttachments)
+        ? snap.evidenceAttachments
+        : prev.evidenceAttachments,
+      analysisModelTier: snap.analysisModelTier === 'quality' ? 'quality' : 'economy',
+    }));
+  }, []);
+
+  useEffect(() => {
+    if (!seedSnapshot) return;
+    mergeSnapshotIntoFormState(seedSnapshot);
+    if (typeof onSeedConsumed === 'function') {
+      queueMicrotask(() => onSeedConsumed());
+    }
+  }, [seedSnapshot, mergeSnapshotIntoFormState, onSeedConsumed]);
 
   const t = (key) => getTranslation(language, key);
 
@@ -235,6 +265,7 @@ const IncidentForm = ({
       correctiveActions: '',
       additionalNotes: '',
       evidenceAttachments: [],
+      analysisModelTier: 'economy',
     });
   };
 
@@ -405,6 +436,37 @@ const IncidentForm = ({
       {/* Main Form Content */}
       <div className="form-main-content">
         <form onSubmit={handleSubmitReport} className="incident-form">
+
+          <section className="form-section model-tier-section" aria-labelledby="model-tier-heading">
+            <div className="section-header">
+              <h2 id="model-tier-heading">{t('model_tier_section')}</h2>
+            </div>
+            <p className="model-tier-hint">{t('model_tier_intro')}</p>
+            <div className="model-tier-cards">
+              <label className={`model-tier-card ${formData.analysisModelTier === 'economy' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="analysisModelTier"
+                  value="economy"
+                  checked={formData.analysisModelTier === 'economy'}
+                  onChange={() => handleChange('analysisModelTier', 'economy')}
+                />
+                <span className="model-tier-card-title">{t('model_tier_economy')}</span>
+                <span className="model-tier-card-desc">{t('model_tier_economy_desc')}</span>
+              </label>
+              <label className={`model-tier-card ${formData.analysisModelTier === 'quality' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="analysisModelTier"
+                  value="quality"
+                  checked={formData.analysisModelTier === 'quality'}
+                  onChange={() => handleChange('analysisModelTier', 'quality')}
+                />
+                <span className="model-tier-card-title">{t('model_tier_quality')}</span>
+                <span className="model-tier-card-desc">{t('model_tier_quality_desc')}</span>
+              </label>
+            </div>
+          </section>
         
         {/* SECTION 1: REPORTER INFORMATION */}
         <div className="form-section" ref={(el) => (sectionRefs.current[0] = el)}>
@@ -950,7 +1012,7 @@ const IncidentForm = ({
             />
           </div>
 
-          <div className="form-field full-width evidence-upload-section">
+          <div className="form-field full-width evidence-upload-section" id="deepwhy-evidence-upload">
             <label className="evidence-section-label">{t('evidence_attachments_label')}</label>
             <p className="evidence-hint">{t('evidence_attachments_hint')}</p>
             <input
@@ -1012,8 +1074,10 @@ const IncidentForm = ({
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => console.log('Draft saved')}
-            disabled={isSubmitting}
+            onClick={() =>
+              typeof onSaveDraft === 'function' ? onSaveDraft(formData) : undefined
+            }
+            disabled={isSubmitting || typeof onSaveDraft !== 'function'}
           >
             {t('save_draft')}
           </button>

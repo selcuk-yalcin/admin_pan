@@ -120,14 +120,17 @@ export default async function handler(req, res) {
           endpoint = `/api/v1/incidents/${data.incident_id}/investigate`
           payload = {
             incident_id: data.incident_id,
-            location: data.location,
-            who_involved: data.who_involved,
+            location: data.location || '',
+            who_involved: data.who_involved || '',
             how_happened: data.how_happened,
-            activities: data.activities,
-            working_conditions: data.working_conditions,
-            safety_procedures: data.safety_procedures,
-            injuries: data.injuries,
+            activities: data.activities || '',
+            working_conditions: data.working_conditions || '',
+            safety_procedures: data.safety_procedures || '',
+            injuries: data.injuries || '',
             why_probe_answers: data.why_probe_answers || [],
+            output_language: data.output_language || '',
+            oracle_context: data.oracle_context || '',
+            analysis_model_preset: data.analysis_model_preset || '',
           }
           break
 
@@ -142,6 +145,8 @@ export default async function handler(req, res) {
             safety_procedures: data.safety_procedures || '',
             injuries: data.injuries || '',
             why_probe_answers: data.why_probe_answers || [],
+            output_language: data.output_language || '',
+            analysis_model_preset: data.analysis_model_preset || '',
           }
           break
 

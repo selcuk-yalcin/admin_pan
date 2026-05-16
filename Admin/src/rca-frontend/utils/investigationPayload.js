@@ -122,5 +122,9 @@ export function buildInvestigationPayload(formData, hitlAppendix = "", outputLan
       .filter(Boolean)
       .join(" | "),
     output_language: String(outputLanguage || "").trim(),
+    analysis_model_preset:
+      formData.analysisModelTier === "quality"
+        ? "quality"
+        : "economy",
   };
 }

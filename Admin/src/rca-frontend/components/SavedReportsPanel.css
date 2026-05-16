@@ -1,0 +1,119 @@
+.saved-reports-panel {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.saved-reports-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary, #1e293b);
+}
+
+.saved-reports-intro h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.saved-reports-intro p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-secondary, #64748b);
+}
+
+.saved-reports-empty {
+  padding: 2rem;
+  text-align: center;
+  border: 1px dashed var(--border, #e2e8f0);
+  border-radius: 12px;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.95rem;
+}
+
+.saved-reports-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.saved-reports-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface, #ffffff);
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.saved-reports-card-main {
+  flex: 1;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.saved-reports-card-main:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.saved-reports-card-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-primary, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-reports-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.saved-reports-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding-right: 0.35rem;
+}
+
+.icon-btn-reports {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+}
+
+.icon-btn-reports:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary, #2563eb);
+}
+
+.icon-btn-reports.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}

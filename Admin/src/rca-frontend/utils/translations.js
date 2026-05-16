@@ -6,6 +6,7 @@ const translations = {
     smart_form_v2: 'Akıllı Form (V2)',
     manual_form: 'Manuel Form',
     interactive_analysis: 'Etkileşimli Analiz',
+    tab_saved_reports: 'Raporlarım (Taslaklar)',
     root_cause_analysis: 'Root Cause Analysis',
     subtitle: 'HSG245 v2.0 - İş Kazası Kök Neden Analiz Sistemi',
     
@@ -159,7 +160,21 @@ const translations = {
     evidence_error_max_count: 'En fazla 6 dosya ekleyebilirsiniz.',
     evidence_error_read: 'Dosya okunamadı.',
 
-    save_draft: 'Taslak Kaydet',
+    model_tier_section: 'Analiz modeli',
+    model_tier_intro: 'Kök neden analizi için tercihinizi seçin (gönderimden önce değiştirebilirsiniz).',
+    model_tier_quality: 'Güçlü analiz',
+    model_tier_economy: 'Hızlı / ekonomik',
+    model_tier_quality_desc: 'Daha derin 5-Neden zinciri için güçlü model (daha yavaş ve maliyetli olabilir).',
+    model_tier_economy_desc: 'Daha kısa sürede sonuç; rutin raporlar veya ön tasarım için uygun.',
+
+    reports_intro:
+      'Tamamlanan sunucu raporları yakında bağlanacaktır. Şimdilik forma kaydettiğiniz taslakları buradan açıp düzenleyebilirsiniz (bu tarayıcıda saklanır).',
+    reports_empty: 'Kayıtlı taslak yok. Manuel formdan "Taslak Kaydet" ile ekleyebilirsiniz.',
+    reports_edit: 'Formda aç',
+    reports_delete: 'Sil',
+    reports_delete_confirm: 'Bu taslağı silmek istiyor musunuz?',
+    draft_saved_toast: 'Taslak kaydedildi',
+
     submit_for_analysis: 'Analize Gönder',
     btn_create_pdf_report: 'Rapor Oluştur',
     btn_interactive_hitl: 'Etkileşimli Analize Geç',
@@ -378,6 +393,7 @@ const translations = {
     smart_form_v2: 'Smart Form (V2)',
     manual_form: 'Manual Form',
     interactive_analysis: 'Interactive Analysis',
+    tab_saved_reports: 'My reports (drafts)',
     root_cause_analysis: 'Root Cause Analysis',
     subtitle: 'HSG245 v2.0 - Workplace Incident Root Cause Analysis System',
     
@@ -531,7 +547,21 @@ const translations = {
     evidence_error_max_count: 'You can attach at most 6 files.',
     evidence_error_read: 'Could not read the file.',
 
-    save_draft: 'Save Draft',
+    model_tier_section: 'Analysis model',
+    model_tier_intro: 'Choose how intensive the root-cause AI run should be (you can switch before submitting).',
+    model_tier_quality: 'Higher quality',
+    model_tier_economy: 'Faster / lower cost',
+    model_tier_quality_desc: 'Uses a stronger model for deeper reasoning (may be slower and higher cost).',
+    model_tier_economy_desc: 'Optimized for quicker turnaround; suited for drafts and lighter cases.',
+
+    reports_intro:
+      'Server-hosted completed reports will be linked here later. For now, drafts you save from the manual form appear in this browser only — open them to keep editing.',
+    reports_empty: 'No saved drafts yet. Use "Save draft" on the manual form.',
+    reports_edit: 'Open in form',
+    reports_delete: 'Delete',
+    reports_delete_confirm: 'Delete this draft?',
+    draft_saved_toast: 'Draft saved',
+
     submit_for_analysis: 'Submit for Analysis',
     btn_create_pdf_report: 'Create report',
     btn_interactive_hitl: 'Continue to interactive analysis',
