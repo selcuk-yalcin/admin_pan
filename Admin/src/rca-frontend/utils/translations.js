@@ -6,7 +6,7 @@ const translations = {
     smart_form_v2: 'Akıllı Form (V2)',
     manual_form: 'Manuel Form',
     interactive_analysis: 'Etkileşimli Analiz',
-    tab_saved_reports: 'Raporlarım (Taslaklar)',
+    tab_saved_reports: 'Raporlar',
     root_cause_analysis: 'Root Cause Analysis',
     subtitle: 'HSG245 v2.0 - İş Kazası Kök Neden Analiz Sistemi',
     
@@ -162,14 +162,20 @@ const translations = {
 
     model_tier_section: 'Analiz modeli',
     model_tier_intro: 'Kök neden analizi için tercihinizi seçin (gönderimden önce değiştirebilirsiniz).',
-    model_tier_quality: 'Güçlü analiz',
-    model_tier_economy: 'Hızlı / ekonomik',
-    model_tier_quality_desc: 'Daha derin 5-Neden zinciri için güçlü model (daha yavaş ve maliyetli olabilir).',
-    model_tier_economy_desc: 'Daha kısa sürede sonuç; rutin raporlar veya ön tasarım için uygun.',
+    model_tier_quality: 'Derinlemesine analiz',
+    model_tier_economy: 'Hızlı analiz',
+    model_tier_quality_desc:
+      '5-Neden ve kök neden taraması için daha ayrıntılı değerlendirme; yanıt süresi uzayabilir.',
+    model_tier_economy_desc:
+      'Kısa sürede özet çıktı; günlük bildirimler ve ilk taslak değerlendirmesi için uygundur.',
+    model_tier_quality_soon: 'Yakında',
+    model_tier_quality_locked_hint: 'Bu analiz seviyesi şu an kullanılamıyor.',
 
     reports_intro:
-      'Tamamlanan sunucu raporları yakında bağlanacaktır. Şimdilik forma kaydettiğiniz taslakları buradan açıp düzenleyebilirsiniz (bu tarayıcıda saklanır).',
-    reports_empty: 'Kayıtlı taslak yok. Manuel formdan "Taslak Kaydet" ile ekleyebilirsiniz.',
+      'Manuel formdan kaydettiğiniz rapor taslakları burada listelenir. Veriler sadece bu tarayıcıda saklanır; sunucu raporları ileride eklenecek.',
+    reports_empty: 'Henüz kayıtlı rapor yok.',
+    reports_empty_cta: 'Manuel Form’a geçip formu doldurun ve «Taslak Kaydet» ile ekleyin.',
+    reports_badge: 'Yerel',
     reports_edit: 'Formda aç',
     reports_delete: 'Sil',
     reports_delete_confirm: 'Bu taslağı silmek istiyor musunuz?',
@@ -393,7 +399,7 @@ const translations = {
     smart_form_v2: 'Smart Form (V2)',
     manual_form: 'Manual Form',
     interactive_analysis: 'Interactive Analysis',
-    tab_saved_reports: 'My reports (drafts)',
+    tab_saved_reports: 'Reports',
     root_cause_analysis: 'Root Cause Analysis',
     subtitle: 'HSG245 v2.0 - Workplace Incident Root Cause Analysis System',
     
@@ -548,15 +554,22 @@ const translations = {
     evidence_error_read: 'Could not read the file.',
 
     model_tier_section: 'Analysis model',
-    model_tier_intro: 'Choose how intensive the root-cause AI run should be (you can switch before submitting).',
-    model_tier_quality: 'Higher quality',
-    model_tier_economy: 'Faster / lower cost',
-    model_tier_quality_desc: 'Uses a stronger model for deeper reasoning (may be slower and higher cost).',
-    model_tier_economy_desc: 'Optimized for quicker turnaround; suited for drafts and lighter cases.',
+    model_tier_intro:
+      'Choose how thorough the root-cause analysis should be (you can change this before submitting).',
+    model_tier_quality: 'In-depth analysis',
+    model_tier_economy: 'Quick analysis',
+    model_tier_quality_desc:
+      'More detailed 5-Why review and root-cause exploration; responses may take longer.',
+    model_tier_economy_desc:
+      'Faster summary output; suited for routine incidents and first-pass drafts.',
+    model_tier_quality_soon: 'Soon',
+    model_tier_quality_locked_hint: 'This analysis level is not available yet.',
 
     reports_intro:
-      'Server-hosted completed reports will be linked here later. For now, drafts you save from the manual form appear in this browser only — open them to keep editing.',
-    reports_empty: 'No saved drafts yet. Use "Save draft" on the manual form.',
+      'Draft reports you save from the manual form appear here. Data stays in this browser only; hosted reports will be linked later.',
+    reports_empty: 'No saved reports yet.',
+    reports_empty_cta: 'Open Manual Form, fill in the incident, then use Save draft.',
+    reports_badge: 'Local',
     reports_edit: 'Open in form',
     reports_delete: 'Delete',
     reports_delete_confirm: 'Delete this draft?',

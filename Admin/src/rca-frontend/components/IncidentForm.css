@@ -876,6 +876,54 @@ html {
   line-height: 1.4;
 }
 
+.model-tier-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.65rem;
+  justify-content: space-between;
+}
+
+.model-tier-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(100, 116, 139, 0.14);
+  color: var(--text-secondary);
+}
+
+.model-tier-card--locked {
+  cursor: not-allowed;
+  opacity: 0.92;
+  border-style: dashed;
+  border-color: rgba(100, 116, 139, 0.35);
+}
+
+.model-tier-card--locked:hover {
+  border-color: rgba(100, 116, 139, 0.4);
+  box-shadow: none;
+}
+
+.model-tier-card--locked .model-tier-card-desc {
+  opacity: 0.95;
+}
+
+.rca-frontend-hub.theme-dark .model-tier-soon-badge {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+}
+
+.rca-frontend-hub.theme-dark .model-tier-card--locked {
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
 
 /* P1.7 — Evidence uploads (manual form) */
 .evidence-upload-section {

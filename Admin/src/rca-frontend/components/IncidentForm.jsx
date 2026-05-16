@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, MapPin, User, AlertTriangle, FileText, Users, Shield, Cloud, Briefcase, Heart, Search, Upload, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, AlertTriangle, FileText, Users, Shield, Cloud, Briefcase, Heart, Search, Upload, X, Lock } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import { getTestScenarioList, loadTestScenario } from '../utils/testScenarios';
 import './IncidentForm.css';
@@ -12,6 +12,9 @@ const createDefaultTimeline = () => ([
 
 const MAX_EVIDENCE_FILES = 6;
 const MAX_EVIDENCE_BYTES_PER_FILE = 4 * 1024 * 1024;
+
+/** In-depth (quality) tier: visible but not selectable until product turns this on. */
+const ANALYSIS_QUALITY_TIER_SELECTABLE = false;
 
 const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
@@ -150,7 +153,10 @@ const IncidentForm = ({
       evidenceAttachments: Array.isArray(snap.evidenceAttachments)
         ? snap.evidenceAttachments
         : prev.evidenceAttachments,
-      analysisModelTier: snap.analysisModelTier === 'quality' ? 'quality' : 'economy',
+      analysisModelTier:
+        ANALYSIS_QUALITY_TIER_SELECTABLE && snap.analysisModelTier === 'quality'
+          ? 'quality'
+          : 'economy',
     }));
   }, []);
 
@@ -165,6 +171,13 @@ const IncidentForm = ({
   const t = (key) => getTranslation(language, key);
 
   const handleChange = (field, value) => {
+    if (
+      field === 'analysisModelTier' &&
+      value === 'quality' &&
+      !ANALYSIS_QUALITY_TIER_SELECTABLE
+    ) {
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -454,15 +467,31 @@ const IncidentForm = ({
                 <span className="model-tier-card-title">{t('model_tier_economy')}</span>
                 <span className="model-tier-card-desc">{t('model_tier_economy_desc')}</span>
               </label>
-              <label className={`model-tier-card ${formData.analysisModelTier === 'quality' ? 'selected' : ''}`}>
+              <label
+                className={`model-tier-card model-tier-card--locked ${formData.analysisModelTier === 'quality' && ANALYSIS_QUALITY_TIER_SELECTABLE ? 'selected' : ''}`}
+                aria-disabled={!ANALYSIS_QUALITY_TIER_SELECTABLE}
+                title={
+                  ANALYSIS_QUALITY_TIER_SELECTABLE ? undefined : t('model_tier_quality_locked_hint')
+                }
+              >
                 <input
                   type="radio"
                   name="analysisModelTier"
                   value="quality"
                   checked={formData.analysisModelTier === 'quality'}
                   onChange={() => handleChange('analysisModelTier', 'quality')}
+                  disabled={!ANALYSIS_QUALITY_TIER_SELECTABLE}
+                  tabIndex={ANALYSIS_QUALITY_TIER_SELECTABLE ? undefined : -1}
                 />
-                <span className="model-tier-card-title">{t('model_tier_quality')}</span>
+                <div className="model-tier-card-heading">
+                  <span className="model-tier-card-title">{t('model_tier_quality')}</span>
+                  {!ANALYSIS_QUALITY_TIER_SELECTABLE ? (
+                    <span className="model-tier-soon-badge">
+                      <Lock size={12} aria-hidden />
+                      {t('model_tier_quality_soon')}
+                    </span>
+                  ) : null}
+                </div>
                 <span className="model-tier-card-desc">{t('model_tier_quality_desc')}</span>
               </label>
             </div>
