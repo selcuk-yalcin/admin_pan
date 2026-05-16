@@ -8,6 +8,7 @@ import { withTranslation } from "react-i18next";
 import SidebarContent from "./SidebarContent";
 
 import { Link } from "react-router-dom";
+import { APP_HOME_PATH } from "../../config/appHome";
 
 import logo from "../../assets/images/logo.svg";
 import logoLightPng from "../../assets/images/logo-light.png";
@@ -19,7 +20,7 @@ const Sidebar = (props) => {
     <React.Fragment>
       <div className="vertical-menu">
         <div className="navbar-brand-box">
-          <Link to="/legislation-chatbot" className="logo logo-dark">
+          <Link to={APP_HOME_PATH} className="logo logo-dark">
             <span className="logo-sm">
               <h5 className="mb-0 text-dark" style={{ fontWeight: "bold" }}>I</h5>
             </span>
@@ -28,7 +29,7 @@ const Sidebar = (props) => {
             </span>
           </Link>
 
-          <Link to="/legislation-chatbot" className="logo logo-light">
+          <Link to={APP_HOME_PATH} className="logo logo-light">
             <span className="logo-sm">
               <h5 className="mb-0 text-white" style={{ fontWeight: "bold" }}>I</h5>
             </span>

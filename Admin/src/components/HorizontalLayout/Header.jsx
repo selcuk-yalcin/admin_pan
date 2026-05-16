@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { Link } from "react-router-dom";
+import { APP_HOME_PATH } from "../../config/appHome";
 
 // Redux Store
 import { showRightSidebarAction, toggleLeftmenu } from "/src/store/actions";
@@ -69,7 +70,7 @@ const Header = (props) => {
         <div className="navbar-header">
           <div className="d-flex">
             <div className="navbar-brand-box">
-              <Link to="/legislation-chatbot" className="logo logo-dark">
+              <Link to={APP_HOME_PATH} className="logo logo-dark">
                 <span className="logo-sm">
                   <h5 className="mb-0 text-dark" style={{ fontWeight: "bold" }}>I</h5>
                 </span>
@@ -78,7 +79,7 @@ const Header = (props) => {
                 </span>
               </Link>
 
-              <Link to="/legislation-chatbot" className="logo logo-light">
+              <Link to={APP_HOME_PATH} className="logo logo-light">
                 <span className="logo-sm">
                   <h5 className="mb-0 text-white" style={{ fontWeight: "bold" }}>I</h5>
                 </span>

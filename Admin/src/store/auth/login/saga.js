@@ -11,6 +11,7 @@ import {
   postJwtLogin,
   postSocialLogin,
 } from "../../../helpers/fakebackend_helper";
+import { APP_HOME_PATH } from "../../../config/appHome";
 
 const fireBaseBackend = getFirebaseBackend();
 
@@ -38,7 +39,7 @@ function* loginUser({ payload: { user, history } }) {
       localStorage.setItem("authUser", JSON.stringify(response));
       yield put(loginSuccess(response));
     }
-    history('/legislation-chatbot');
+    history(APP_HOME_PATH);
   } catch (error) {
     yield put(apiError(error));
   }
@@ -64,14 +65,14 @@ function* socialLogin({ payload: { type, history } }) {
       const fireBaseBackend = getFirebaseBackend();
       const response = yield call(fireBaseBackend.socialLoginUser, type);
       if (response) {
-        history("/legislation-chatbot");
+        history(APP_HOME_PATH);
       } else {
         history("/login");
       }
       localStorage.setItem("authUser", JSON.stringify(response));
       yield put(loginSuccess(response));
       if(response)
-      history("/legislation-chatbot");
+      history(APP_HOME_PATH);
     }
   } catch (error) {
     yield put(apiError(error));

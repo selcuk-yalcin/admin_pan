@@ -44,7 +44,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
     if (raw === "smart") {
-      navigate("/legislation-chatbot", { replace: true });
+      setSearchParams({ tab: "form" }, { replace: true });
       return;
     }
     if (raw && TAB_KEYS.includes(raw)) {

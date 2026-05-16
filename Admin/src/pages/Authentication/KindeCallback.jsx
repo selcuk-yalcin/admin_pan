@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "reactstrap";
+import { APP_HOME_PATH } from "../../config/appHome";
 
 const KindeCallback = () => {
   const { isAuthenticated, isLoading, user } = useKindeAuth();
@@ -13,8 +14,7 @@ const KindeCallback = () => {
       if (user) {
         localStorage.setItem('authUser', JSON.stringify(user));
       }
-      // Legislation Chatbot'a yönlendir (Ana Sayfa)
-      navigate("/legislation-chatbot");
+      navigate(APP_HOME_PATH, { replace: true });
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 

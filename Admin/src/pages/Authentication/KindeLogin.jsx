@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
 import { useNavigate } from "react-router-dom";
+import { APP_HOME_PATH } from "../../config/appHome";
 
 const KindeLogin = () => {
   const { login, register, isAuthenticated, isLoading } = useKindeAuth();
@@ -9,7 +10,7 @@ const KindeLogin = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/legislation-chatbot", { replace: true });
+      navigate(APP_HOME_PATH, { replace: true });
     }
   }, [isAuthenticated, navigate]);
 

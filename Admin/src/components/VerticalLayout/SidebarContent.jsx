@@ -12,6 +12,7 @@ import withRouter from "../Common/withRouter";
 //i18n
 import { withTranslation } from "react-i18next";
 import { useCallback } from "react";
+import { LEGISLATION_CHATBOT_ENABLED } from "../../config/appHome";
 
 const SidebarContent = (props) => {
   const ref = useRef();
@@ -156,13 +157,22 @@ const SidebarContent = (props) => {
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">{props.t("Ana Menü")} </li>
 
-            <li style={{ display: "none" }}>
-              <Link to="/legislation-chatbot">
-                <i className="bx bx-book-bookmark"></i>
-                <span>{props.t("Mevzuat Asistanı")}</span>
-                <span className="badge rounded-pill bg-warning float-end">AI</span>
+            <li>
+              <Link to="/dashboard">
+                <i className="bx bx-home-circle"></i>
+                <span>{props.t("Dashboard")}</span>
               </Link>
             </li>
+
+            {LEGISLATION_CHATBOT_ENABLED ? (
+              <li>
+                <Link to="/legislation-chatbot">
+                  <i className="bx bx-book-bookmark"></i>
+                  <span>{props.t("Mevzuat Asistanı")}</span>
+                  <span className="badge rounded-pill bg-warning float-end">AI</span>
+                </Link>
+              </li>
+            ) : null}
 
             <li style={{ display: "none" }}>
               <Link to="/#" className="has-arrow">

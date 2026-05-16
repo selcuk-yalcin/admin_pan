@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
+import { APP_HOME_PATH, LEGISLATION_CHATBOT_ENABLED } from "../config/appHome";
 
 // Pages Component
 import LegislationChatbot from "../pages/Chatbot/LegislationChatbot";
@@ -40,15 +41,13 @@ import Dashboard from "../pages/Dashboard/index";
 import PagesPricing from "../pages/Utility/pages-pricing";
 
 const authProtectedRoutes = [
-  // Ana sayfa - Legislation Chatbot'a yönlendir
-  { path: "/", component: <Navigate to="/legislation-chatbot" /> },
-  
-  // Dashboard - gizli (URL'den erişilebilir ama menüde görünmez)
+  { path: "/", component: <Navigate to={APP_HOME_PATH} replace /> },
+
   { path: "/dashboard", component: <Dashboard /> },
   
   // Root Cause Analysis
   { path: "/root-cause-analysis", component: <RootCausePanel /> },
-  { path: "/root-cause-smart", component: <Navigate to="/legislation-chatbot" replace /> },
+  { path: "/root-cause-smart", component: <Navigate to="/root-cause-manual" replace /> },
   { path: "/root-cause-tools", component: <RcaFrontendPage /> },
   { path: "/rootcause-form", component: <Navigate to="/root-cause-manual" replace /> },
   
@@ -72,7 +71,14 @@ const authProtectedRoutes = [
 
 // Full-screen routes - auth protected but NO admin layout (no sidebar, header, footer)
 const fullScreenRoutes = [
-  { path: "/legislation-chatbot", component: <LegislationChatbot /> },
+  {
+    path: "/legislation-chatbot",
+    component: LEGISLATION_CHATBOT_ENABLED ? (
+      <LegislationChatbot />
+    ) : (
+      <Navigate to={APP_HOME_PATH} replace />
+    ),
+  },
   { path: "/root-cause-manual", component: <ManualFormFullscreenPage /> },
   { path: "/deep-training", component: <DeepTrainingFullscreenPage /> },
 ];

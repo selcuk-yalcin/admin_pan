@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { connect } from "react-redux";
 import { Row, Col } from "reactstrap";
 import { Link } from "react-router-dom";
+import { APP_HOME_PATH } from "../../config/appHome";
 
 // Reactstrap
 import { Dropdown, DropdownToggle, DropdownMenu } from "reactstrap";
@@ -84,13 +85,13 @@ const Header = props => {
           <div className="d-flex">
 
             <div className="navbar-brand-box d-lg-none d-md-block">
-              <Link to="/legislation-chatbot" className="logo logo-dark">
+              <Link to={APP_HOME_PATH} className="logo logo-dark">
                 <span className="logo-sm">
                   <h4 className="mb-0 text-dark" style={{ fontWeight: "bold", fontSize: "20px" }}>Infera</h4>
                 </span>
               </Link>
 
-              <Link to="/legislation-chatbot" className="logo logo-light">
+              <Link to={APP_HOME_PATH} className="logo logo-light">
                 <span className="logo-sm">
                   <h4 className="mb-0 text-white" style={{ fontWeight: "bold", fontSize: "20px" }}>Infera</h4>
                 </span>
