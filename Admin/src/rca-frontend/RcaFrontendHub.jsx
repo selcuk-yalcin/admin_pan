@@ -115,7 +115,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setCreatedIncidentId("");
 
     try {
-      const description = buildHowHappenedText(formData);
+      const description = buildHowHappenedText(formData, selectedLanguage);
       const dateTime = `${formData.incidentDate || ""}T${formData.incidentTime || ""}`.replace(/T$/, "");
 
       const part1Result = await createIncident({

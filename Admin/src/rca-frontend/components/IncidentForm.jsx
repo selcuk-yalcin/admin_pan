@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, MapPin, User, AlertTriangle, FileText, Users, Shield, Cloud, Briefcase, Heart, Search } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, AlertTriangle, FileText, Users, Shield, Cloud, Briefcase, Heart, Search, Upload, X } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import { getTestScenarioList, loadTestScenario } from '../utils/testScenarios';
 import './IncidentForm.css';
@@ -10,6 +10,52 @@ const createDefaultTimeline = () => ([
   { time: '', event: '' },
 ]);
 
+const MAX_EVIDENCE_FILES = 6;
+const MAX_EVIDENCE_BYTES_PER_FILE = 4 * 1024 * 1024;
+
+const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+function makeEvidenceId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function isAllowedEvidenceMIME(mimeRaw, name) {
+  const mime = (mimeRaw || '').toLowerCase();
+  if (ALLOWED_IMAGE_MIME.has(mime)) return true;
+  if (mime === 'application/pdf') return true;
+  if (mime === 'text/plain' || mime === 'text/csv') return true;
+  const ext = (name || '').split('.').pop()?.toLowerCase();
+  return ext === 'txt' || ext === 'csv' || ext === 'pdf';
+}
+
+function readEvidenceFile(file) {
+  return new Promise((resolve, reject) => {
+    const id = makeEvidenceId();
+    const mimeType = (file.type || '').trim() || 'application/octet-stream';
+    const base = { id, name: file.name, mimeType, size: file.size };
+    const ext = (file.name || '').split('.').pop()?.toLowerCase();
+    const asText =
+      mimeType === 'text/plain' ||
+      mimeType === 'text/csv' ||
+      ext === 'txt' ||
+      ext === 'csv';
+    if (!asText) {
+      resolve(base);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () =>
+      resolve({
+        ...base,
+        mimeType: mimeType || 'text/plain',
+        textExcerpt: String(reader.result ?? ''),
+      });
+    reader.onerror = () => reject(new Error('read'));
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
 const IncidentForm = ({
   language,
   onSubmit,
@@ -19,6 +65,8 @@ const IncidentForm = ({
   const testScenarios = getTestScenarioList(language);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
+  const evidenceInputRef = useRef(null);
+  const [attachmentError, setAttachmentError] = useState('');
   
   const [formData, setFormData] = useState({
     // Reporter Info
@@ -81,6 +129,7 @@ const IncidentForm = ({
     rootCauseInitial: '',
     correctiveActions: '',
     additionalNotes: '',
+    evidenceAttachments: [],
   });
 
   const t = (key) => getTranslation(language, key);
@@ -98,6 +147,7 @@ const IncidentForm = ({
       setFormData(prev => ({
         ...prev,
         ...scenarioData,
+        evidenceAttachments: [],
         timeline:
           Array.isArray(scenarioData.timeline) && scenarioData.timeline.length > 0
             ? scenarioData.timeline
@@ -184,6 +234,7 @@ const IncidentForm = ({
       rootCauseInitial: '',
       correctiveActions: '',
       additionalNotes: '',
+      evidenceAttachments: [],
     });
   };
 
@@ -195,6 +246,64 @@ const IncidentForm = ({
   const handleInteractive = (e) => {
     e.preventDefault();
     onSubmit(formData, 'interactive');
+  };
+
+  const removeEvidenceAttachment = (id) => {
+    setAttachmentError('');
+    setFormData((prev) => ({
+      ...prev,
+      evidenceAttachments: (prev.evidenceAttachments || []).filter((a) => a.id !== id),
+    }));
+  };
+
+  const ingestEvidenceFiles = async (fileArray) => {
+    setAttachmentError('');
+    let startingList = [];
+    setFormData((prev) => {
+      startingList = [...(prev.evidenceAttachments || [])];
+      return prev;
+    });
+
+    const next = [...startingList];
+    for (const file of fileArray) {
+      if (next.length >= MAX_EVIDENCE_FILES) {
+        setAttachmentError(t('evidence_error_max_count'));
+        break;
+      }
+      if (!isAllowedEvidenceMIME(file.type, file.name)) {
+        setAttachmentError(t('evidence_error_type'));
+        continue;
+      }
+      if (file.size > MAX_EVIDENCE_BYTES_PER_FILE) {
+        setAttachmentError(t('evidence_error_size'));
+        continue;
+      }
+      try {
+        next.push(await readEvidenceFile(file));
+      } catch {
+        setAttachmentError(t('evidence_error_read'));
+      }
+    }
+    setFormData((prev) => ({ ...prev, evidenceAttachments: next }));
+  };
+
+  const handleEvidenceInputChange = async (e) => {
+    const { files } = e.target;
+    e.target.value = '';
+    if (!files?.length) return;
+    await ingestEvidenceFiles(Array.from(files));
+  };
+
+  const handleEvidenceDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length) await ingestEvidenceFiles(files);
+  };
+
+  const handleEvidenceDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const eventCategories = React.useMemo(() => [
@@ -839,6 +948,62 @@ const IncidentForm = ({
               placeholder={t('notes_placeholder')}
               rows={3}
             />
+          </div>
+
+          <div className="form-field full-width evidence-upload-section">
+            <label className="evidence-section-label">{t('evidence_attachments_label')}</label>
+            <p className="evidence-hint">{t('evidence_attachments_hint')}</p>
+            <input
+              ref={evidenceInputRef}
+              type="file"
+              className="evidence-file-input"
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.txt,.csv,application/pdf,text/plain,text/csv"
+              onChange={handleEvidenceInputChange}
+            />
+            <div
+              className="evidence-drop-zone"
+              onDrop={handleEvidenceDrop}
+              onDragOver={handleEvidenceDragOver}
+            >
+              <button
+                type="button"
+                className="btn-evidence-pick"
+                onClick={() => evidenceInputRef.current?.click()}
+              >
+                <Upload size={18} aria-hidden />
+                {t('evidence_choose_files')}
+              </button>
+              <span className="evidence-limits">{t('evidence_limits_note')}</span>
+            </div>
+            {attachmentError ? (
+              <p className="evidence-error" role="alert">
+                {attachmentError}
+              </p>
+            ) : null}
+            {(formData.evidenceAttachments || []).length > 0 ? (
+              <ul className="evidence-file-list">
+                {(formData.evidenceAttachments || []).map((a) => (
+                  <li key={a.id} className="evidence-file-row">
+                    <span className="evidence-file-name" title={a.name}>
+                      {a.name}
+                    </span>
+                    <span className="evidence-file-meta">
+                      {a.mimeType}
+                      {typeof a.size === 'number' ? ` · ${Math.max(1, Math.round(a.size / 1024))} KB` : ''}
+                    </span>
+                    <button
+                      type="button"
+                      className="evidence-remove-btn"
+                      onClick={() => removeEvidenceAttachment(a.id)}
+                      aria-label={t('evidence_remove')}
+                    >
+                      <X size={18} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </div>
 

@@ -236,7 +236,7 @@ const ChatInterface = ({
       codes,
     }) => {
       if (!hitlSeed?.incidentId) return { done: true, question: null };
-      const baseHow = buildHowHappenedText(hitlSeed.formData);
+      const baseHow = buildHowHappenedText(hitlSeed.formData, language);
       const rci = hitlSeed.formData?.rootCauseInitial || '';
       const appendix = formatHitlAnswersBlock(answers || []);
       const howAugmented = appendix ? `${baseHow}\n\n--- HITL ---\n${appendix}` : baseHow;

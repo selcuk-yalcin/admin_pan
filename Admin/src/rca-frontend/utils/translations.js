@@ -147,7 +147,18 @@ const translations = {
     root_cause_placeholder: 'Kazanın temel nedenleri nelerdir?',
     corrective_placeholder: 'Önerilen önleyici tedbirler',
     notes_placeholder: 'Diğer önemli bilgiler',
-    
+
+    evidence_attachments_label: 'Ek kanıt dosyaları',
+    evidence_attachments_hint:
+      'Fotoğraf (JPEG/PNG/WebP/GIF), PDF veya düz metin (TXT/CSV) ekleyebilirsiniz. Metin dosyalarının özeti analiz metnine eklenir; görüntü ve PDF için şimdilik dosya adı ve tür bilgisi iletilir.',
+    evidence_choose_files: 'Dosya seç',
+    evidence_limits_note: 'En fazla 6 dosya; dosya başına en fazla 4 MB.',
+    evidence_remove: 'Dosyayı kaldır',
+    evidence_error_type: 'Bu dosya türü desteklenmiyor.',
+    evidence_error_size: 'Dosya çok büyük (en fazla 4 MB).',
+    evidence_error_max_count: 'En fazla 6 dosya ekleyebilirsiniz.',
+    evidence_error_read: 'Dosya okunamadı.',
+
     save_draft: 'Taslak Kaydet',
     submit_for_analysis: 'Analize Gönder',
     btn_create_pdf_report: 'Rapor Oluştur',
@@ -508,7 +519,18 @@ const translations = {
     root_cause_placeholder: 'What are the root causes?',
     corrective_placeholder: 'Recommended preventive measures',
     notes_placeholder: 'Other important information',
-    
+
+    evidence_attachments_label: 'Evidence attachments',
+    evidence_attachments_hint:
+      'You may add photos (JPEG/PNG/WebP/GIF), PDF, or plain text (TXT/CSV). Text file excerpts are appended to the analysis narrative; for images and PDFs only filename and type are included in this version.',
+    evidence_choose_files: 'Choose files',
+    evidence_limits_note: 'Up to 6 files; up to 4 MB each.',
+    evidence_remove: 'Remove file',
+    evidence_error_type: 'This file type is not supported.',
+    evidence_error_size: 'File is too large (max 4 MB).',
+    evidence_error_max_count: 'You can attach at most 6 files.',
+    evidence_error_read: 'Could not read the file.',
+
     save_draft: 'Save Draft',
     submit_for_analysis: 'Submit for Analysis',
     btn_create_pdf_report: 'Create report',

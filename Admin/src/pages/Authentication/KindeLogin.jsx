@@ -9,7 +9,7 @@ const KindeLogin = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate("/legislation-chatbot", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
