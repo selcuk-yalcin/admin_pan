@@ -247,22 +247,21 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   }, []);
 
   const handleOpenReportEntry = useCallback(
-    (entry) => {
+    async (entry) => {
       if (!entry?.incidentId) {
         handleLoadDraftEntry(entry);
         return;
       }
-      setHitlSeed({
-        incidentId: entry.incidentId,
-        formData: entry.snapshot ? { ...entry.snapshot } : {},
-        resumeAt: entry.has_report_html ? "report_saved" : "pdf_prompt",
-        libraryItemId: entry.id,
-      });
-      setTab("chat");
       setFormSubmitError("");
-      setFormSubmitInfo(
-        `${translate("tab_saved_reports")}: ${entry.incidentId}`,
-      );
+      try {
+        const { openReportForEntry } = await import("./utils/reportsLibraryApi");
+        await openReportForEntry(entry, "report");
+        setFormSubmitInfo(
+          `${translate("tab_saved_reports")}: ${entry.incidentId}`,
+        );
+      } catch (err) {
+        setFormSubmitError(err?.message || String(err));
+      }
     },
     [handleLoadDraftEntry, translate],
   );

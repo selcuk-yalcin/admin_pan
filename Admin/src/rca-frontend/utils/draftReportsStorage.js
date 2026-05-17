@@ -6,12 +6,16 @@
 import {
   listLibraryItems,
   upsertLibraryItem,
-  finalizeLibraryReport,
   deleteLibraryItem,
+  syncReportHtmlToLibrary,
 } from './reportsLibraryApi';
 
 const STORAGE_KEY = "infera_deepwhy_drafts_v1";
 let serverAvailable = true;
+
+export function isLibraryServerMode() {
+  return serverAvailable;
+}
 
 /**
  * @typedef {'draft' | 'report'} SavedEntryKind
@@ -170,11 +174,13 @@ export async function finalizeSavedReport({
   if (!incidentId) throw new Error('incidentId required');
   if (serverAvailable) {
     try {
-      const item = await finalizeLibraryReport({
+      const { generateHTMLReport } = await import('../../services/hsg245Api');
+      const item = await syncReportHtmlToLibrary({
         incidentId,
         snapshot,
         titleHint,
         analysisModelPreset,
+        generateHTMLReportFn: generateHTMLReport,
       });
       notifyDraftsChanged();
       return mapServerItem(item);

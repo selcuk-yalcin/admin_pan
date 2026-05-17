@@ -267,6 +267,19 @@ export default async function handler(req, res) {
           }
           break
 
+        case 'library_save_html':
+          endpoint = `/api/v1/library/items/save-html`
+          method = 'POST'
+          payload = {
+            incident_id: data.incident_id,
+            snapshot: data.snapshot || {},
+            title_hint: data.title_hint || '',
+            analysis_model_preset: data.analysis_model_preset || '',
+            report_html: data.report_html || '',
+            decision_tree_html: data.decision_tree_html || '',
+          }
+          break
+
         case 'library_delete':
           endpoint = `/api/v1/library/items/${encodeURIComponent(data.item_id)}`
           method = 'DELETE'

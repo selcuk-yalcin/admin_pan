@@ -161,7 +161,7 @@ const ChatInterface = ({
   }, [hitlApiQuestion?.id]);
 
   const ensureIncidentReadyForReport = useCallback(async (incidentId) => {
-    for (let attempt = 0; attempt < 10; attempt += 1) {
+    for (let attempt = 0; attempt < 25; attempt += 1) {
       try {
         const res = await getIncident(incidentId);
         const incident = res?.data || res || {};
@@ -173,7 +173,7 @@ const ChatInterface = ({
       } catch {
         // retry
       }
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }, []);
 
@@ -209,6 +209,49 @@ const ChatInterface = ({
     },
     [hitlSeed, onSaveReport],
   );
+
+  // If finalize failed earlier, auto-retry when user lands on pdf_prompt.
+  useEffect(() => {
+    if (hitlPhase !== 'pdf_prompt' || !hitlSeed?.incidentId) return;
+    if (librarySavedRef.current === hitlSeed.incidentId) return;
+    let cancelled = false;
+    (async () => {
+      setIsLoading(true);
+      try {
+        await ensureIncidentReadyForReport(hitlSeed.incidentId);
+        if (cancelled) return;
+        await persistReportToLibrary(true);
+        if (cancelled) return;
+        setHitlPhase('report_saved');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `auto-save-${Date.now()}`,
+            type: 'assistant',
+            content: getTranslation(language, 'hitl_auto_saved'),
+            timestamp: new Date(),
+          },
+        ]);
+      } catch (err) {
+        if (!cancelled) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `auto-save-err-${Date.now()}`,
+              type: 'error',
+              content: `${getTranslation(language, 'error_occurred')}: ${err.message}`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hitlPhase, hitlSeed, language, persistReportToLibrary, ensureIncidentReadyForReport]);
 
   const runRcaAfterHitl = useCallback(
     async (answers) => {

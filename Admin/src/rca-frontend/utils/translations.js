@@ -172,7 +172,9 @@ const translations = {
     model_tier_quality_locked_hint: 'Bu analiz seviyesi şu an kullanılamıyor.',
 
     reports_intro:
-      'Tamamlanan analizler ve taslaklar hesabınıza özel olarak sunucuda saklanır. Rapor ve karar ağacına tıklayarak HTML olarak açabilirsiniz.',
+      'Tamamlanan analizler ve taslaklar hesabınıza özel saklanır (MongoDB: veritabanı rca, koleksiyon deepwhy_saved_items). Rapor satırına tıklayınca HTML açılır.',
+    reports_mongo_hint:
+      'Atlas\'ta analysis_cache değil — rca → deepwhy_saved_items koleksiyonuna bakın.',
     reports_badge_server: 'Bulut',
     reports_folder_created: 'Oluşturulan Raporlar',
     reports_folder_drafts: 'Taslaklar',

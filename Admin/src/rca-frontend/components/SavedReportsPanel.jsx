@@ -11,8 +11,13 @@ import {
   Loader2,
 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
-import { loadDraftReportsList, deleteDraftReport, notifyDraftsChanged } from '../utils/draftReportsStorage';
-import { openLibraryArtifact } from '../utils/reportsLibraryApi';
+import {
+  loadDraftReportsList,
+  deleteDraftReport,
+  notifyDraftsChanged,
+  isLibraryServerMode,
+} from '../utils/draftReportsStorage';
+import { openReportForEntry } from '../utils/reportsLibraryApi';
 import './SavedReportsPanel.css';
 
 function formatDate(iso, lang) {
@@ -144,6 +149,7 @@ export default function SavedReportsPanel({
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [serverMode, setServerMode] = useState(true);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -152,8 +158,10 @@ export default function SavedReportsPanel({
       const list = await loadDraftReportsList();
       list.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
       setEntries(list);
+      setServerMode(isLibraryServerMode());
     } catch (err) {
       setError(err?.message || String(err));
+      setServerMode(false);
     } finally {
       setLoading(false);
     }
@@ -178,17 +186,23 @@ export default function SavedReportsPanel({
     notifyDraftsChanged();
   };
 
-  const handleOpen = (entry) => {
+  const handleOpen = async (entry) => {
     if (isReportEntry(entry)) {
-      if (typeof onOpenReport === 'function') onOpenReport(entry);
+      setError('');
+      try {
+        await openReportForEntry(entry, 'report');
+      } catch (err) {
+        setError(err?.message || String(err));
+      }
       return;
     }
     if (typeof onEditDraft === 'function') onEditDraft(entry);
   };
 
   const handleViewArtifact = async (entry, artifactType) => {
+    setError('');
     try {
-      await openLibraryArtifact(entry.id, artifactType);
+      await openReportForEntry(entry, artifactType);
     } catch (err) {
       setError(err?.message || String(err));
     }
@@ -206,7 +220,9 @@ export default function SavedReportsPanel({
         </div>
         <div className="saved-reports-hero-copy">
           <div className="saved-reports-hero-row">
-            <span className="saved-reports-badge">{t('reports_badge_server')}</span>
+            <span className="saved-reports-badge">
+              {serverMode ? t('reports_badge_server') : t('reports_badge')}
+            </span>
             {count > 0 ? (
               <span className="saved-reports-count-pill">
                 {count} {language === 'tr' ? 'kayıt' : 'saved'}
