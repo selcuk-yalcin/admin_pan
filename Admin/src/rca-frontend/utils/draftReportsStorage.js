@@ -12,9 +12,14 @@ import {
 
 const STORAGE_KEY = "infera_deepwhy_drafts_v1";
 let serverAvailable = true;
+let lastLibraryError = "";
 
 export function isLibraryServerMode() {
   return serverAvailable;
+}
+
+export function getLastLibraryError() {
+  return lastLibraryError;
 }
 
 /**
@@ -73,15 +78,18 @@ function buildTitle(snapshot, titleHint = "", incidentId = "") {
 
 /** @returns {Promise<SavedDraftEntry[]>} */
 export async function loadDraftReportsList() {
-  if (serverAvailable) {
-    try {
-      const items = await listLibraryItems();
-      return items.map(mapServerItem).filter(Boolean);
-    } catch {
-      serverAvailable = false;
-    }
+  try {
+    const items = await listLibraryItems();
+    lastLibraryError = "";
+    serverAvailable = true;
+    return items.map(mapServerItem).filter(Boolean);
+  } catch (err) {
+    lastLibraryError = err?.message || String(err);
+    serverAvailable = false;
+    const local = loadDraftReportsListLocal();
+    if (local.length) return local;
+    throw err;
   }
-  return loadDraftReportsListLocal();
 }
 
 export function notifyDraftsChanged() {

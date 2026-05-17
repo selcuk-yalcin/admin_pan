@@ -16,6 +16,7 @@ import {
   deleteDraftReport,
   notifyDraftsChanged,
   isLibraryServerMode,
+  getLastLibraryError,
 } from '../utils/draftReportsStorage';
 import { openReportForEntry } from '../utils/reportsLibraryApi';
 import './SavedReportsPanel.css';
@@ -158,9 +159,16 @@ export default function SavedReportsPanel({
       const list = await loadDraftReportsList();
       list.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
       setEntries(list);
-      setServerMode(isLibraryServerMode());
+      const onServer = isLibraryServerMode();
+      setServerMode(onServer);
+      if (!onServer && list.length) {
+        setError(`${getLastLibraryError() || ''} — ${t('reports_mongo_hint')}`.replace(/^ — /, ''));
+      } else if (!onServer) {
+        setError(`${getLastLibraryError() || err?.message || String(err)} — ${t('reports_mongo_hint')}`);
+      }
     } catch (err) {
-      setError(err?.message || String(err));
+      const msg = getLastLibraryError() || err?.message || String(err);
+      setError(`${msg} — ${t('reports_mongo_hint')}`);
       setServerMode(false);
     } finally {
       setLoading(false);

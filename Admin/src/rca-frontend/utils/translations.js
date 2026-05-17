@@ -174,7 +174,7 @@ const translations = {
     reports_intro:
       'Tamamlanan analizler ve taslaklar hesabınıza özel saklanır (MongoDB: veritabanı rca, koleksiyon deepwhy_saved_items). Rapor satırına tıklayınca HTML açılır.',
     reports_mongo_hint:
-      'Atlas\'ta analysis_cache değil — rca → deepwhy_saved_items koleksiyonuna bakın.',
+      'Kayıtlar sunucuya yazılamadı (Yerel mod). Railway\'de MONGODB_URI tanımlı mı? Atlas: rca → deepwhy_saved_items',
     reports_badge_server: 'Bulut',
     reports_folder_created: 'Oluşturulan Raporlar',
     reports_folder_drafts: 'Taslaklar',
