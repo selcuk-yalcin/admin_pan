@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Tenant-ID, X-API-Key, Authorization'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Tenant-ID, X-API-Key, X-User-ID, X-User-Email, Authorization'
   )
 
   // Handle OPTIONS request
@@ -50,6 +50,12 @@ export default async function handler(req, res) {
     }
     if (req.headers['authorization']) {
       forwardHeaders['Authorization'] = String(req.headers['authorization'])
+    }
+    if (req.headers['x-user-id']) {
+      forwardHeaders['X-User-ID'] = String(req.headers['x-user-id'])
+    }
+    if (req.headers['x-user-email']) {
+      forwardHeaders['X-User-Email'] = String(req.headers['x-user-email'])
     }
 
     // Handle GET request (health check)
@@ -228,6 +234,51 @@ export default async function handler(req, res) {
           method = 'GET'
           break
 
+        case 'library_list': {
+          const kindQ = data.kind ? `?kind=${encodeURIComponent(data.kind)}` : ''
+          endpoint = `/api/v1/library/items${kindQ}`
+          method = 'GET'
+          payload = undefined
+          break
+        }
+
+        case 'library_upsert':
+          endpoint = `/api/v1/library/items`
+          method = 'POST'
+          payload = {
+            kind: data.kind || 'draft',
+            snapshot: data.snapshot || {},
+            title_hint: data.title_hint || '',
+            incident_id: data.incident_id || '',
+            report_ready: !!data.report_ready,
+            analysis_model_preset: data.analysis_model_preset || '',
+            item_id: data.item_id || '',
+          }
+          break
+
+        case 'library_finalize':
+          endpoint = `/api/v1/library/items/finalize`
+          method = 'POST'
+          payload = {
+            incident_id: data.incident_id,
+            snapshot: data.snapshot || {},
+            title_hint: data.title_hint || '',
+            analysis_model_preset: data.analysis_model_preset || '',
+          }
+          break
+
+        case 'library_delete':
+          endpoint = `/api/v1/library/items/${encodeURIComponent(data.item_id)}`
+          method = 'DELETE'
+          payload = undefined
+          break
+
+        case 'library_artifact':
+          endpoint = `/api/v1/library/items/${encodeURIComponent(data.item_id)}/artifact/${encodeURIComponent(data.artifact_type || 'report')}`
+          method = 'GET'
+          payload = undefined
+          break
+
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` })
       }
@@ -289,7 +340,7 @@ export default async function handler(req, res) {
         return res.send(Buffer.from(fileBuffer))
       }
 
-      if (action === 'view_html_report' || action === 'view_decision_tree') {
+      if (action === 'view_html_report' || action === 'view_decision_tree' || action === 'library_artifact') {
         const html = await response.text()
         res.setHeader('Content-Type', 'text/html; charset=utf-8')
         return res.status(200).send(html)

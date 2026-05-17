@@ -2,18 +2,10 @@
  * HSG245 Investigation API Service
  * 
  * UPDATED: Now uses Vercel API Route as proxy to Railway backend
- * 
- * Architecture:
- * Admin Panel -> Vercel API Route (/api/hsg245) -> Railway Backend -> AI Agents
- * 
- * Benefits:
- * - No CORS issues
- * - Backend URL stays private
- * - Better security
  */
+import { getUserContextHeaders as buildUserContextHeaders } from '../rca-frontend/utils/userContext';
 
 // IMPORTANT: Use Vercel serverless gateway endpoint.
-// Admin/api/hsg245.js expects { action, data } payload on POST.
 const API_GATEWAY_URL = '/api/hsg245';
 const BACKEND_HTTP_BASE = (
   import.meta.env.VITE_BACKEND_API_URL ||
@@ -22,13 +14,7 @@ const BACKEND_HTTP_BASE = (
 ).trim();
 
 function getTenantContextHeaders() {
-  if (typeof window === 'undefined') return {};
-  const tenantId = (window.localStorage.getItem('tenant_id') || import.meta.env.VITE_TENANT_ID || '').trim();
-  const tenantApiKey = (window.localStorage.getItem('tenant_api_key') || import.meta.env.VITE_TENANT_API_KEY || '').trim();
-  const headers = {};
-  if (tenantId) headers['X-Tenant-ID'] = tenantId;
-  if (tenantApiKey) headers['X-API-Key'] = tenantApiKey;
-  return headers;
+  return buildUserContextHeaders();
 }
 
 function normalizeWebSocketBase(raw) {

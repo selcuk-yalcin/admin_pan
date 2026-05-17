@@ -172,7 +172,17 @@ const translations = {
     model_tier_quality_locked_hint: 'Bu analiz seviyesi şu an kullanılamıyor.',
 
     reports_intro:
-      'Tamamlanan analizler ve manuel form taslakları burada listelenir. Veriler bu tarayıcıda saklanır; sunucu senkronu ileride eklenecek.',
+      'Tamamlanan analizler ve taslaklar hesabınıza özel olarak sunucuda saklanır. Rapor ve karar ağacına tıklayarak HTML olarak açabilirsiniz.',
+    reports_badge_server: 'Bulut',
+    reports_folder_created: 'Oluşturulan Raporlar',
+    reports_folder_drafts: 'Taslaklar',
+    reports_folder_empty: 'Bu klasörde kayıt yok.',
+    reports_loading: 'Kayıtlar yükleniyor...',
+    reports_view_html: 'Raporu HTML olarak aç',
+    reports_view_tree: 'Karar ağacını HTML olarak aç',
+    hitl_auto_saved:
+      'Analiz tamamlandı. Rapor ve karar ağacı Raporlar → Oluşturulan Raporlar klasörüne kaydedildi.',
+    hitl_open_reports_tab: 'Raporlara git',
     reports_empty: 'Henüz kayıtlı rapor yok.',
     reports_empty_cta:
       'Manuel formdan taslak kaydedin veya etkileşimli analizde rapor tamamlanınca otomatik eklenir.',
@@ -583,7 +593,17 @@ const translations = {
     model_tier_quality_locked_hint: 'This analysis level is not available yet.',
 
     reports_intro:
-      'Completed analyses and manual form drafts appear here. Data stays in this browser; server sync comes later.',
+      'Completed analyses and drafts are stored on the server for your account. Click to open report or decision tree as HTML.',
+    reports_badge_server: 'Cloud',
+    reports_folder_created: 'Created Reports',
+    reports_folder_drafts: 'Drafts',
+    reports_folder_empty: 'No items in this folder.',
+    reports_loading: 'Loading saved items...',
+    reports_view_html: 'Open report as HTML',
+    reports_view_tree: 'Open decision tree as HTML',
+    hitl_auto_saved:
+      'Analysis complete. Report and decision tree were saved under Reports → Created Reports.',
+    hitl_open_reports_tab: 'Go to Reports',
     reports_empty: 'No saved reports yet.',
     reports_empty_cta:
       'Save a draft from the manual form, or complete interactive analysis to auto-add a report.',

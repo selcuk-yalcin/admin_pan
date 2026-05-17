@@ -210,8 +210,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   };
 
   const handlePersistDraft = useCallback(
-    (formData) => {
-      const entry = upsertDraftReport(formData, "", activeDraftId);
+    async (formData) => {
+      const entry = await upsertDraftReport(formData, "", activeDraftId);
       setActiveDraftId(entry.id);
       setFormSubmitError("");
       setFormSubmitInfo(translate("draft_saved_toast"));
@@ -221,9 +221,9 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   );
 
   const handleSaveToReports = useCallback(
-    ({ incidentId, formData, reportReady = true }) => {
+    async ({ incidentId, formData, reportReady = true }) => {
       if (!incidentId) return;
-      upsertSavedReport({
+      await upsertSavedReport({
         incidentId,
         snapshot: formData || {},
         reportReady,
@@ -255,7 +255,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       setHitlSeed({
         incidentId: entry.incidentId,
         formData: entry.snapshot ? { ...entry.snapshot } : {},
-        resumeAt: "pdf_prompt",
+        resumeAt: entry.has_report_html ? "report_saved" : "pdf_prompt",
+        libraryItemId: entry.id,
       });
       setTab("chat");
       setFormSubmitError("");
@@ -384,6 +385,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             onPipelineStatusChange={setChatPipelineStatus}
             onHitlFlowComplete={handleHitlFlowComplete}
             onSaveReport={handleSaveToReports}
+            onGoToReportsTab={() => setTab("reports")}
           />
         )}
         {activeTab === "reports" && (

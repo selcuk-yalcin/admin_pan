@@ -1,9 +1,70 @@
 /* ── Reports tab (DeepWhy) — polished list + empty state ── */
 
 .saved-reports-panel {
-  max-width: 680px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 0.5rem 1rem 2.5rem;
+}
+
+.saved-reports-folder {
+  margin-bottom: 1.75rem;
+}
+
+.saved-reports-folder-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: #0f172a;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-folder-title {
+  color: #f1f5f9;
+}
+
+.saved-reports-folder-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.saved-reports-folder-empty {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 0.5rem 0.25rem;
+}
+
+.saved-reports-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.5rem;
+  color: #64748b;
+}
+
+.saved-reports-loading .spin {
+  animation: saved-reports-spin 0.9s linear infinite;
+}
+
+@keyframes saved-reports-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.saved-reports-error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
 }
 
 /* Hero */

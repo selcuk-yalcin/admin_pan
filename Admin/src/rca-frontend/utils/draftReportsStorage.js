@@ -1,4 +1,17 @@
+/**
+ * Saved drafts + completed reports.
+ * Primary: MongoDB per tenant + user (reportsLibraryApi).
+ * Fallback: browser localStorage when server unavailable.
+ */
+import {
+  listLibraryItems,
+  upsertLibraryItem,
+  finalizeLibraryReport,
+  deleteLibraryItem,
+} from './reportsLibraryApi';
+
 const STORAGE_KEY = "infera_deepwhy_drafts_v1";
+let serverAvailable = true;
 
 /**
  * @typedef {'draft' | 'report'} SavedEntryKind
@@ -10,11 +23,28 @@ const STORAGE_KEY = "infera_deepwhy_drafts_v1";
  *   snapshot: object;
  *   incidentId?: string;
  *   reportReady?: boolean;
+ *   has_report_html?: boolean;
+ *   has_decision_tree_html?: boolean;
  * }} SavedDraftEntry
  */
 
+function mapServerItem(item) {
+  if (!item) return null;
+  return {
+    id: item.id,
+    kind: item.kind === 'report' ? 'report' : 'draft',
+    title: item.title || '',
+    updatedAt: item.updated_at || item.updatedAt || new Date().toISOString(),
+    snapshot: item.snapshot || {},
+    incidentId: item.incident_id || item.incidentId || '',
+    reportReady: Boolean(item.report_ready ?? item.reportReady),
+    has_report_html: Boolean(item.has_report_html),
+    has_decision_tree_html: Boolean(item.has_decision_tree_html),
+  };
+}
+
 /** @returns {SavedDraftEntry[]} */
-export function loadDraftReportsList() {
+export function loadDraftReportsListLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -25,8 +55,7 @@ export function loadDraftReportsList() {
   }
 }
 
-/** @param {SavedDraftEntry[]} list */
-function persistList(list) {
+function persistListLocal(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
@@ -38,9 +67,43 @@ function buildTitle(snapshot, titleHint = "", incidentId = "") {
   return "Kayıt";
 }
 
+/** @returns {Promise<SavedDraftEntry[]>} */
+export async function loadDraftReportsList() {
+  if (serverAvailable) {
+    try {
+      const items = await listLibraryItems();
+      return items.map(mapServerItem).filter(Boolean);
+    } catch {
+      serverAvailable = false;
+    }
+  }
+  return loadDraftReportsListLocal();
+}
+
+export function notifyDraftsChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('deepwhy-drafts-changed'));
+  }
+}
+
 /** @param {object} snapshot @param {string} titleHint @param {string|null} persistId */
-export function upsertDraftReport(snapshot, titleHint = "", persistId = null) {
-  const list = loadDraftReportsList();
+export async function upsertDraftReport(snapshot, titleHint = "", persistId = null) {
+  if (serverAvailable) {
+    try {
+      const item = await upsertLibraryItem({
+        kind: 'draft',
+        snapshot,
+        title_hint: titleHint,
+        item_id: persistId || '',
+        report_ready: false,
+      });
+      notifyDraftsChanged();
+      return mapServerItem(item);
+    } catch {
+      serverAvailable = false;
+    }
+  }
+  const list = loadDraftReportsListLocal();
   const id =
     persistId ||
     (typeof crypto !== "undefined" && crypto.randomUUID
@@ -53,19 +116,32 @@ export function upsertDraftReport(snapshot, titleHint = "", persistId = null) {
     updatedAt: new Date().toISOString(),
     snapshot: { ...snapshot },
   };
-  persistList([entry, ...list.filter((x) => x?.id !== id)].slice(0, 50));
+  persistListLocal([entry, ...list.filter((x) => x?.id !== id)].slice(0, 50));
+  notifyDraftsChanged();
   return entry;
 }
 
 /**
- * Save or update a completed report in Raporlar (keyed by incidentId when provided).
- * @param {{ incidentId: string, snapshot?: object, titleHint?: string, reportReady?: boolean }} params
+ * Save completed report metadata (without HTML) — use finalizeSavedReport for HTML.
  */
-export function upsertSavedReport({ incidentId, snapshot = {}, titleHint = "", reportReady = true }) {
-  if (!incidentId) {
-    throw new Error("incidentId required");
+export async function upsertSavedReport({ incidentId, snapshot = {}, titleHint = "", reportReady = true }) {
+  if (!incidentId) throw new Error("incidentId required");
+  if (serverAvailable) {
+    try {
+      const item = await upsertLibraryItem({
+        kind: 'report',
+        incident_id: incidentId,
+        snapshot,
+        title_hint: titleHint,
+        report_ready: reportReady,
+      });
+      notifyDraftsChanged();
+      return mapServerItem(item);
+    } catch {
+      serverAvailable = false;
+    }
   }
-  const list = loadDraftReportsList();
+  const list = loadDraftReportsListLocal();
   const id = `report-${incidentId}`;
   const existing = list.find((x) => x.id === id || x.incidentId === incidentId);
   const entry = {
@@ -77,16 +153,50 @@ export function upsertSavedReport({ incidentId, snapshot = {}, titleHint = "", r
     snapshot: { ...(existing?.snapshot || {}), ...snapshot },
     reportReady: reportReady !== false,
   };
-  persistList([entry, ...list.filter((x) => x?.id !== id && x.incidentId !== incidentId)].slice(0, 50));
+  persistListLocal([entry, ...list.filter((x) => x.id !== id && x.incidentId !== incidentId)].slice(0, 50));
+  notifyDraftsChanged();
   return entry;
 }
 
-export function deleteDraftReport(id) {
-  persistList(loadDraftReportsList().filter((x) => x.id !== id));
+/**
+ * Generate HTML artifacts on server and persist report + decision tree for the user.
+ */
+export async function finalizeSavedReport({
+  incidentId,
+  snapshot = {},
+  titleHint = '',
+  analysisModelPreset = '',
+}) {
+  if (!incidentId) throw new Error('incidentId required');
+  if (serverAvailable) {
+    try {
+      const item = await finalizeLibraryReport({
+        incidentId,
+        snapshot,
+        titleHint,
+        analysisModelPreset,
+      });
+      notifyDraftsChanged();
+      return mapServerItem(item);
+    } catch (err) {
+      await upsertSavedReport({ incidentId, snapshot, titleHint, reportReady: false });
+      throw err;
+    }
+  }
+  return upsertSavedReport({ incidentId, snapshot, titleHint, reportReady: true });
 }
 
-export function notifyDraftsChanged() {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("deepwhy-drafts-changed"));
+export async function deleteDraftReport(id) {
+  if (serverAvailable) {
+    try {
+      await deleteLibraryItem(id);
+      notifyDraftsChanged();
+      return;
+    } catch {
+      serverAvailable = false;
+    }
   }
+  const list = loadDraftReportsListLocal().filter((x) => x?.id !== id);
+  persistListLocal(list);
+  notifyDraftsChanged();
 }

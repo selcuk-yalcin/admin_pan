@@ -26,6 +26,8 @@ import {
   getHitlChoiceOptionLabels,
   isHitlChoiceMulti,
 } from '../utils/hitlResponseMode';
+import { finalizeSavedReport } from '../utils/draftReportsStorage';
+import { openLibraryArtifact } from '../utils/reportsLibraryApi';
 import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
@@ -101,6 +103,7 @@ function getStageLabel(language, stage, progress) {
  * @param {(status: string) => void} [props.onPipelineStatusChange] - Agent pipeline canlı durum metni
  * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
  * @param {(payload: { incidentId: string, formData?: object, reportReady?: boolean }) => void} [props.onSaveReport]
+ * @param {() => void} [props.onGoToReportsTab]
  */
 const ChatInterface = ({
   language,
@@ -108,14 +111,16 @@ const ChatInterface = ({
   onPipelineStatusChange,
   onHitlFlowComplete,
   onSaveReport,
+  onGoToReportsTab,
 }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentFlow, setCurrentFlow] = useState(null);
   const [sessionId, setSessionId] = useState(null);
-  /** null | 'questions' | 'rca' | 'pdf_prompt' */
+  /** null | 'questions' | 'rca' | 'pdf_prompt' | 'report_saved' */
   const [hitlPhase, setHitlPhase] = useState(null);
+  const [savedLibraryItemId, setSavedLibraryItemId] = useState(null);
   const [hitlAnswers, setHitlAnswers] = useState([]);
   /** @type {import('react').MutableRefObject<string|null>} */
   const processedHitlIdRef = useRef(null);
@@ -155,24 +160,55 @@ const ChatInterface = ({
     setHitlChoiceIdx(new Set());
   }, [hitlApiQuestion?.id]);
 
+  const ensureIncidentReadyForReport = useCallback(async (incidentId) => {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        const res = await getIncident(incidentId);
+        const incident = res?.data || res || {};
+        const hasPart3 = !!incident?.part3 && typeof incident.part3 === 'object';
+        const hasArtifacts =
+          incident?.report_artifacts &&
+          (incident.report_artifacts.html_path || incident.report_artifacts.docx_path);
+        if (hasPart3 || hasArtifacts) return;
+      } catch {
+        // retry
+      }
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+  }, []);
+
   const persistReportToLibrary = useCallback(
-    (reportReady = true) => {
-      if (!hitlSeed?.incidentId || typeof onSaveReport !== 'function') return;
-      onSaveReport({
-        incidentId: hitlSeed.incidentId,
-        formData: hitlSeed.formData,
-        reportReady,
-      });
-      librarySavedRef.current = hitlSeed.incidentId;
+    async (reportReady = true) => {
+      if (!hitlSeed?.incidentId) return null;
+      try {
+        const item = await finalizeSavedReport({
+          incidentId: hitlSeed.incidentId,
+          snapshot: hitlSeed.formData || {},
+          analysisModelPreset: hitlSeed.formData?.analysisModelPreset || '',
+        });
+        setSavedLibraryItemId(item?.id || `report-${hitlSeed.incidentId}`);
+        librarySavedRef.current = hitlSeed.incidentId;
+        if (typeof onSaveReport === 'function') {
+          onSaveReport({
+            incidentId: hitlSeed.incidentId,
+            formData: hitlSeed.formData,
+            reportReady,
+          });
+        }
+        return item;
+      } catch (err) {
+        if (typeof onSaveReport === 'function') {
+          onSaveReport({
+            incidentId: hitlSeed.incidentId,
+            formData: hitlSeed.formData,
+            reportReady: false,
+          });
+        }
+        throw err;
+      }
     },
     [hitlSeed, onSaveReport],
   );
-
-  useEffect(() => {
-    if (hitlPhase !== 'pdf_prompt' || !hitlSeed?.incidentId) return;
-    if (librarySavedRef.current === hitlSeed.incidentId) return;
-    persistReportToLibrary(true);
-  }, [hitlPhase, hitlSeed, persistReportToLibrary]);
 
   const runRcaAfterHitl = useCallback(
     async (answers) => {
@@ -224,13 +260,39 @@ const ChatInterface = ({
             timestamp: new Date(),
           },
         ]);
-        setHitlPhase('pdf_prompt');
-        persistReportToLibrary(true);
-        setLiveRcaStatus(
-          String(language || '').toLowerCase().startsWith('tr')
-            ? 'Analiz tamamlandi, rapor adimina gecildi.'
-            : 'Analysis completed, moved to report stage.',
-        );
+        setIsLoading(true);
+        try {
+          await ensureIncidentReadyForReport(hitlSeed.incidentId);
+          await persistReportToLibrary(true);
+          setHitlPhase('report_saved');
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `report-saved-${Date.now()}`,
+              type: 'assistant',
+              content: getTranslation(language, 'hitl_auto_saved'),
+              timestamp: new Date(),
+            },
+          ]);
+          setLiveRcaStatus(
+            String(language || '').toLowerCase().startsWith('tr')
+              ? 'Rapor ve karar agaci Raporlar klasorune kaydedildi.'
+              : 'Report and decision tree saved to Reports.',
+          );
+        } catch (saveErr) {
+          setHitlPhase('pdf_prompt');
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `save-err-${Date.now()}`,
+              type: 'error',
+              content: `${getTranslation(language, 'error_occurred')}: ${saveErr.message}`,
+              timestamp: new Date(),
+            },
+          ]);
+        } finally {
+          setIsLoading(false);
+        }
       } catch (error) {
         setPipelineResult(null);
         setMessages((prev) => [
@@ -257,7 +319,7 @@ const ChatInterface = ({
         setIsLoading(false);
       }
     },
-    [hitlSeed, language, onPipelineStatusChange, persistReportToLibrary],
+    [hitlSeed, language, onPipelineStatusChange, persistReportToLibrary, ensureIncidentReadyForReport],
   );
 
   const fetchQuestionForState = useCallback(
@@ -434,10 +496,11 @@ const ChatInterface = ({
       onPipelineStatusChange?.('');
       return;
     }
-    if (hitlSeed.resumeAt === 'pdf_prompt') {
+    if (hitlSeed.resumeAt === 'report_saved' || hitlSeed.resumeAt === 'pdf_prompt') {
       processedHitlIdRef.current = hitlSeed.incidentId;
       librarySavedRef.current = hitlSeed.incidentId;
-      setHitlPhase('pdf_prompt');
+      setSavedLibraryItemId(hitlSeed.libraryItemId || `report-${hitlSeed.incidentId}`);
+      setHitlPhase(hitlSeed.resumeAt === 'report_saved' ? 'report_saved' : 'pdf_prompt');
       setHitlQuestionsLoading(false);
       setPipelineResult(null);
       setMessages([
@@ -759,24 +822,6 @@ const ChatInterface = ({
     submitHitlResponse('choice', `${otherLabel}: ${text}`);
   };
 
-  const ensureIncidentReadyForReport = useCallback(async (incidentId) => {
-    // Job "completed" olsa da incident.part3 kısa süre gecikmeli yazılabilir.
-    for (let attempt = 0; attempt < 10; attempt += 1) {
-      try {
-        const res = await getIncident(incidentId);
-        const incident = res?.data || res || {};
-        const hasPart3 = !!incident?.part3 && typeof incident.part3 === 'object';
-        const hasArtifacts =
-          incident?.report_artifacts &&
-          (incident.report_artifacts.html_path || incident.report_artifacts.docx_path);
-        if (hasPart3 || hasArtifacts) return;
-      } catch {
-        // Ağ/timeout hatasında kısa retry yap.
-      }
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    }
-  }, []);
-
   const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
@@ -960,7 +1005,8 @@ const ChatInterface = ({
     hitlQuestionsLoading ||
     hitlPhase === 'questions' ||
     hitlPhase === 'rca' ||
-    hitlPhase === 'pdf_prompt';
+    hitlPhase === 'pdf_prompt' ||
+    hitlPhase === 'report_saved';
   const isTurkish = String(language || '').toLowerCase().startsWith('tr');
   const totalBranches = hitlMode === 'why_probe' ? Math.max(1, probeCodes.length) : 1;
   const branchProgressLabel =
@@ -1010,14 +1056,14 @@ const ChatInterface = ({
               <p>{t('step_2_hitl_desc')}</p>
             </div>
           </div>
-          <div className={`step-item ${hitlPhase === 'rca' ? 'active' : ['pdf_prompt'].includes(hitlPhase) ? 'completed' : ''}`}>
+          <div className={`step-item ${hitlPhase === 'rca' ? 'active' : ['pdf_prompt', 'report_saved'].includes(hitlPhase) ? 'completed' : ''}`}>
             <div className="step-icon">3</div>
             <div className="step-text">
               <h4>{t('step_3')}</h4>
               <p>{hitlPhase === 'rca' ? liveRcaStatus || t('step_3_desc') : t('step_3_desc')}</p>
             </div>
           </div>
-          <div className={`step-item ${hitlPhase === 'pdf_prompt' ? 'active' : ''}`}>
+          <div className={`step-item ${hitlPhase === 'pdf_prompt' || hitlPhase === 'report_saved' ? 'active' : ''}`}>
             <div className="step-icon">4</div>
             <div className="step-text">
               <h4>{t('step_4')}</h4>
@@ -1168,6 +1214,48 @@ const ChatInterface = ({
                   )}
                 </>
               ) : null}
+            </div>
+          )}
+
+          {hitlPhase === 'report_saved' && (
+            <div className="hitl-choice-panel hitl-pdf-panel">
+              <p className="hitl-q">{t('hitl_auto_saved')}</p>
+              <div className="hitl-choices hitl-report-actions">
+                <div className="report-action-card">
+                  <div className="report-action-title">{isTurkish ? 'Rapor' : 'Report'}</div>
+                  <button
+                    type="button"
+                    className="hitl-choice-btn report-open-btn"
+                    disabled={isLoading || !savedLibraryItemId}
+                    onClick={() => openLibraryArtifact(savedLibraryItemId, 'report')}
+                  >
+                    {isTurkish ? 'Raporu Ac (HTML)' : 'Open report (HTML)'}
+                  </button>
+                </div>
+                <div className="report-action-card">
+                  <div className="report-action-title">{isTurkish ? 'Karar Agaci' : 'Decision tree'}</div>
+                  <button
+                    type="button"
+                    className="hitl-choice-btn report-open-btn"
+                    disabled={isLoading || !savedLibraryItemId}
+                    onClick={() => openLibraryArtifact(savedLibraryItemId, 'decision_tree')}
+                  >
+                    {isTurkish ? 'Karar Agacini Ac (HTML)' : 'Open decision tree (HTML)'}
+                  </button>
+                </div>
+              </div>
+              <div className="hitl-choices">
+                <button
+                  type="button"
+                  className="hitl-choice-btn hitl-choice-primary"
+                  onClick={() => onGoToReportsTab?.()}
+                >
+                  {t('hitl_open_reports_tab')}
+                </button>
+                <button type="button" className="hitl-choice-btn" onClick={handlePdfSkip}>
+                  {isTurkish ? 'Kapat' : 'Close'}
+                </button>
+              </div>
             </div>
           )}
 
