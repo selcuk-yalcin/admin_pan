@@ -673,6 +673,18 @@ export async function generatePDFReport(incidentId, options = {}) {
   await downloadHTMLReport(incidentId);
 }
 
+function downloadHtmlBlob(html, filenameFallback) {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filenameFallback;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 async function downloadHtmlLike(action, incidentId, filenameFallback) {
   const response = await fetch(`${API_GATEWAY_URL}`, {
     method: 'POST',
@@ -724,77 +736,100 @@ async function parseGatewayError(response, fallbackMessage) {
 }
 
 export async function openHTMLReport(incidentId, options = {}) {
-  // Open immediately on user gesture to avoid popup blockers.
-  const reportWindow = options.preopenedWindow || window.open('', '_blank');
-  if (!reportWindow) {
-    throw new Error('Popup blocked. Please allow popups for preview.');
+  const filename = `HSG245_Report_${incidentId}.html`;
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getTenantContextHeaders(),
+    },
+    body: JSON.stringify({
+      action: 'view_html_report',
+      data: { incident_id: incidentId },
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(await parseGatewayError(response, 'Failed to load report preview'));
   }
-  if (!options.preopenedWindow) {
-    reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading report...</p>');
-  }
-  try {
-    // Single request is enough: backend view endpoint already ensures artifact generation.
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getTenantContextHeaders(),
-      },
-      body: JSON.stringify({
-        action: 'view_html_report',
-        data: { incident_id: incidentId },
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(await parseGatewayError(response, 'Failed to load report preview'));
+  const html = await response.text();
+
+  const reportWindow = options.preopenedWindow;
+  if (reportWindow && !reportWindow.closed) {
+    try {
+      reportWindow.document.open();
+      reportWindow.document.write(html);
+      reportWindow.document.close();
+      return { mode: 'preview' };
+    } catch {
+      try {
+        reportWindow.close();
+      } catch {
+        /* ignore */
+      }
     }
-    const html = await response.text();
-    reportWindow.document.open();
-    reportWindow.document.write(html);
-    reportWindow.document.close();
-  } catch (error) {
-    try { reportWindow.close(); } catch {}
-    throw error;
   }
+
+  const blobUrl = window.URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  const tab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+  if (tab) {
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
+    return { mode: 'tab' };
+  }
+
+  downloadHtmlBlob(html, filename);
+  return { mode: 'download' };
 }
 
 export async function openDecisionTree(incidentId, options = {}) {
-  // Open immediately on user gesture to avoid popup blockers.
-  const treeWindow = options.preopenedWindow || window.open('', '_blank');
-  if (!treeWindow) {
-    throw new Error('Popup blocked. Please allow popups for preview.');
+  const filename = `HSG245_Report_${incidentId}_decision_tree.html`;
+  const response = await fetch(`${API_GATEWAY_URL}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getTenantContextHeaders(),
+    },
+    body: JSON.stringify({
+      action: 'view_decision_tree',
+      data: { incident_id: incidentId },
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(await parseGatewayError(response, 'Failed to load decision tree preview'));
   }
-  if (!options.preopenedWindow) {
-    treeWindow.document.write('<p style="font-family:sans-serif;padding:16px">Loading decision tree...</p>');
-  }
-  try {
-    // Single request is enough: backend view endpoint already ensures artifact generation.
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getTenantContextHeaders(),
-      },
-      body: JSON.stringify({
-        action: 'view_decision_tree',
-        data: { incident_id: incidentId },
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(await parseGatewayError(response, 'Failed to load decision tree preview'));
+  const html = await response.text();
+
+  const treeWindow = options.preopenedWindow;
+  if (treeWindow && !treeWindow.closed) {
+    try {
+      treeWindow.document.open();
+      treeWindow.document.write(html);
+      treeWindow.document.close();
+    } catch {
+      try {
+        treeWindow.close();
+      } catch {
+        /* ignore */
+      }
     }
-    const html = await response.text();
-    treeWindow.document.open();
-    treeWindow.document.write(html);
-    treeWindow.document.close();
-  } catch (error) {
-    try { treeWindow.close(); } catch {}
-    throw error;
+  } else {
+    const blobUrl = window.URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    const tab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    if (tab) {
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
+    } else {
+      downloadHtmlBlob(html, filename);
+      return { mode: 'download' };
+    }
+  }
+
+  const previewWindow = treeWindow && !treeWindow.closed ? treeWindow : null;
+  if (!previewWindow) {
+    return { mode: 'tab' };
   }
 
   // Enhance decision tree preview: editable text + in-page download action.
   try {
-    const doc = treeWindow.document;
+    const doc = previewWindow.document;
     const toolbar = doc.createElement('div');
     toolbar.id = 'decision-tree-toolbar';
     toolbar.style.position = 'fixed';
@@ -836,7 +871,7 @@ export async function openDecisionTree(incidentId, options = {}) {
     const editableNodes = Array.from(
       doc.querySelectorAll('p, span, li, td, th, h1, h2, h3, h4, h5, h6, text, div'),
     ).filter((el) => {
-      if (!(el instanceof treeWindow.HTMLElement || el instanceof treeWindow.SVGElement)) return false;
+      if (!(el instanceof previewWindow.HTMLElement || el instanceof previewWindow.SVGElement)) return false;
       if (el.closest('#decision-tree-toolbar')) return false;
       if (el.children.length > 0) return false;
       const txt = (el.textContent || '').trim();
@@ -847,7 +882,7 @@ export async function openDecisionTree(incidentId, options = {}) {
     editBtn.onclick = () => {
       editMode = !editMode;
       editableNodes.forEach((el) => {
-        if (el instanceof treeWindow.HTMLElement) {
+        if (el instanceof previewWindow.HTMLElement) {
           el.contentEditable = editMode ? 'true' : 'false';
           el.style.outline = editMode ? '1px dashed rgba(37, 99, 235, 0.55)' : '';
           el.style.outlineOffset = editMode ? '2px' : '';
@@ -862,14 +897,14 @@ export async function openDecisionTree(incidentId, options = {}) {
 
     downloadBtn.onclick = () => {
       const blob = new Blob([`<!doctype html>\n${doc.documentElement.outerHTML}`], { type: 'text/html;charset=utf-8' });
-      const url = treeWindow.URL.createObjectURL(blob);
+      const url = previewWindow.URL.createObjectURL(blob);
       const a = doc.createElement('a');
       a.href = url;
       a.download = `HSG245_Report_${incidentId}_decision_tree_edited.html`;
       doc.body.appendChild(a);
       a.click();
       a.remove();
-      treeWindow.URL.revokeObjectURL(url);
+      previewWindow.URL.revokeObjectURL(url);
     };
 
     toolbar.appendChild(editBtn);
@@ -879,6 +914,7 @@ export async function openDecisionTree(incidentId, options = {}) {
   } catch (enhanceError) {
     console.warn('[WARN] Could not enhance decision tree editor:', enhanceError);
   }
+  return { mode: 'preview' };
 }
 
 /**

@@ -172,14 +172,21 @@ const translations = {
     model_tier_quality_locked_hint: 'Bu analiz seviyesi şu an kullanılamıyor.',
 
     reports_intro:
-      'Manuel formdan kaydettiğiniz rapor taslakları burada listelenir. Veriler sadece bu tarayıcıda saklanır; sunucu raporları ileride eklenecek.',
+      'Tamamlanan analizler ve manuel form taslakları burada listelenir. Veriler bu tarayıcıda saklanır; sunucu senkronu ileride eklenecek.',
     reports_empty: 'Henüz kayıtlı rapor yok.',
-    reports_empty_cta: 'Manuel Form’a geçip formu doldurun ve «Taslak Kaydet» ile ekleyin.',
+    reports_empty_cta:
+      'Manuel formdan taslak kaydedin veya etkileşimli analizde rapor tamamlanınca otomatik eklenir.',
     reports_badge: 'Yerel',
     reports_edit: 'Formda aç',
     reports_delete: 'Sil',
     reports_delete_confirm: 'Bu taslağı silmek istiyor musunuz?',
     draft_saved_toast: 'Taslak kaydedildi',
+    save_report: 'Raporu Kaydet',
+    report_saved_toast: 'Rapor Raporlar listesine kaydedildi.',
+    reports_kind_draft: 'Taslak',
+    reports_kind_report: 'Rapor',
+    reports_open_report: 'Analizi aç',
+    reports_open_draft: 'Formda aç',
 
     submit_for_analysis: 'Analize Gönder',
     btn_create_pdf_report: 'Rapor Oluştur',
@@ -193,6 +200,12 @@ const translations = {
     hitl_ask_pdf: 'Tamamlandı. HTML rapor oluşturulsun mu?',
     hitl_pdf_download: 'HTML Oluştur',
     hitl_pdf_skip: 'Şimdilik Hayır',
+    hitl_html_download_ok:
+      'HTML rapor indirildi ve Raporlar listesine kaydedildi. Önizlemek için aşağıdaki düğmeleri kullanabilirsiniz.',
+    hitl_report_resumed:
+      'Kayıtlı rapor açıldı. HTML indirebilir veya önizleyebilirsiniz.',
+    hitl_report_download_fallback:
+      'Tarayıcı yeni sekme açamadı; rapor dosyası indirme olarak kaydedildi.',
     hitl_answer_prefix: 'Cevap',
     hitl_no_initial_causes: '(Kök neden ilk değerlendirme alanı boş — formu doldurabilirsiniz.)',
     hitl_free_text_placeholder: 'Cevabınızı kısaca yazın (bu soru Evet/Hayır ile sınırlı değil).',
@@ -566,14 +579,21 @@ const translations = {
     model_tier_quality_locked_hint: 'This analysis level is not available yet.',
 
     reports_intro:
-      'Draft reports you save from the manual form appear here. Data stays in this browser only; hosted reports will be linked later.',
+      'Completed analyses and manual form drafts appear here. Data stays in this browser; server sync comes later.',
     reports_empty: 'No saved reports yet.',
-    reports_empty_cta: 'Open Manual Form, fill in the incident, then use Save draft.',
+    reports_empty_cta:
+      'Save a draft from the manual form, or complete interactive analysis to auto-add a report.',
     reports_badge: 'Local',
     reports_edit: 'Open in form',
     reports_delete: 'Delete',
     reports_delete_confirm: 'Delete this draft?',
     draft_saved_toast: 'Draft saved',
+    save_report: 'Save report',
+    report_saved_toast: 'Report saved to your Reports list.',
+    reports_kind_draft: 'Draft',
+    reports_kind_report: 'Report',
+    reports_open_report: 'Open analysis',
+    reports_open_draft: 'Open in form',
 
     submit_for_analysis: 'Submit for Analysis',
     btn_create_pdf_report: 'Create report',
@@ -587,6 +607,12 @@ const translations = {
     hitl_ask_pdf: 'Done. Generate HTML report?',
     hitl_pdf_download: 'Generate HTML',
     hitl_pdf_skip: 'Not now',
+    hitl_html_download_ok:
+      'HTML report downloaded and saved to Reports. Use the buttons below to preview again.',
+    hitl_report_resumed:
+      'Saved report opened. You can download or preview HTML below.',
+    hitl_report_download_fallback:
+      'Your browser blocked a new tab; the report was saved as a download instead.',
     hitl_answer_prefix: 'Answer',
     hitl_no_initial_causes: '(Root cause initial assessment is empty — you can fill it on the form.)',
     hitl_free_text_placeholder: 'Type a short answer (this question is not limited to Yes/No).',

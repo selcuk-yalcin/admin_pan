@@ -6,7 +6,11 @@ import IncidentForm from "./components/IncidentForm";
 import SavedReportsPanel from "./components/SavedReportsPanel";
 import Header from "./components/Header";
 import { getTranslation } from "./utils/translations";
-import { upsertDraftReport } from "./utils/draftReportsStorage";
+import {
+  upsertDraftReport,
+  upsertSavedReport,
+  notifyDraftsChanged,
+} from "./utils/draftReportsStorage";
 import {
   createIncident,
   addAssessment,
@@ -211,11 +215,24 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       setActiveDraftId(entry.id);
       setFormSubmitError("");
       setFormSubmitInfo(translate("draft_saved_toast"));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("deepwhy-drafts-changed"));
-      }
+      notifyDraftsChanged();
     },
     [activeDraftId, translate],
+  );
+
+  const handleSaveToReports = useCallback(
+    ({ incidentId, formData, reportReady = true }) => {
+      if (!incidentId) return;
+      upsertSavedReport({
+        incidentId,
+        snapshot: formData || {},
+        reportReady,
+      });
+      notifyDraftsChanged();
+      setFormSubmitError("");
+      setFormSubmitInfo(translate("report_saved_toast"));
+    },
+    [translate],
   );
 
   const handleLoadDraftEntry = useCallback((entry) => {
@@ -228,6 +245,26 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       }
     }, 0);
   }, []);
+
+  const handleOpenReportEntry = useCallback(
+    (entry) => {
+      if (!entry?.incidentId) {
+        handleLoadDraftEntry(entry);
+        return;
+      }
+      setHitlSeed({
+        incidentId: entry.incidentId,
+        formData: entry.snapshot ? { ...entry.snapshot } : {},
+        resumeAt: "pdf_prompt",
+      });
+      setTab("chat");
+      setFormSubmitError("");
+      setFormSubmitInfo(
+        `${translate("tab_saved_reports")}: ${entry.incidentId}`,
+      );
+    },
+    [handleLoadDraftEntry, translate],
+  );
 
   const handleThemeToggle = () => {
     setIsLightMode((prev) => !prev);
@@ -346,12 +383,14 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             hitlSeed={hitlSeed}
             onPipelineStatusChange={setChatPipelineStatus}
             onHitlFlowComplete={handleHitlFlowComplete}
+            onSaveReport={handleSaveToReports}
           />
         )}
         {activeTab === "reports" && (
           <SavedReportsPanel
             language={selectedLanguage}
             onEditDraft={handleLoadDraftEntry}
+            onOpenReport={handleOpenReportEntry}
           />
         )}
       </main>

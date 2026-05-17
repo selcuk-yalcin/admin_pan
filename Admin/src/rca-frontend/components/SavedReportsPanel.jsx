@@ -6,9 +6,10 @@ import {
   Clock,
   ChevronRight,
   Inbox,
+  FileText,
 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
-import { loadDraftReportsList, deleteDraftReport } from '../utils/draftReportsStorage';
+import { loadDraftReportsList, deleteDraftReport, notifyDraftsChanged } from '../utils/draftReportsStorage';
 import './SavedReportsPanel.css';
 
 function formatDate(iso, lang) {
@@ -27,14 +28,22 @@ function formatDate(iso, lang) {
   }
 }
 
-export default function SavedReportsPanel({ language = 'tr', onEditDraft }) {
+function isReportEntry(entry) {
+  return entry?.kind === 'report' || Boolean(entry?.incidentId);
+}
+
+export default function SavedReportsPanel({
+  language = 'tr',
+  onEditDraft,
+  onOpenReport,
+}) {
   const t = useCallback((k) => getTranslation(language, k), [language]);
-  const [drafts, setDrafts] = useState([]);
+  const [entries, setEntries] = useState([]);
 
   const reload = useCallback(() => {
     const list = loadDraftReportsList();
     list.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-    setDrafts(list);
+    setEntries(list);
   }, []);
 
   useEffect(() => {
@@ -49,15 +58,18 @@ export default function SavedReportsPanel({ language = 'tr', onEditDraft }) {
     if (!window.confirm(t('reports_delete_confirm'))) return;
     deleteDraftReport(id);
     reload();
-    window.dispatchEvent(new Event('deepwhy-drafts-changed'));
+    notifyDraftsChanged();
   };
 
-  const handleEdit = (entry) => {
-    if (typeof onEditDraft !== 'function') return;
-    onEditDraft(entry);
+  const handleOpen = (entry) => {
+    if (isReportEntry(entry)) {
+      if (typeof onOpenReport === 'function') onOpenReport(entry);
+      return;
+    }
+    if (typeof onEditDraft === 'function') onEditDraft(entry);
   };
 
-  const count = drafts.length;
+  const count = entries.length;
 
   return (
     <div className="saved-reports-panel">
@@ -89,51 +101,64 @@ export default function SavedReportsPanel({ language = 'tr', onEditDraft }) {
         </div>
       ) : (
         <ul className="saved-reports-list">
-          {drafts.map((entry) => (
-            <li key={entry.id}>
-              <article className="saved-reports-card">
-                <button
-                  type="button"
-                  className="saved-reports-card-main"
-                  onClick={() => handleEdit(entry)}
-                >
-                  <span className="saved-reports-card-title" title={entry.title}>
-                    {entry.title}
-                  </span>
-                  <span className="saved-reports-card-meta">
-                    <Clock size={14} className="saved-reports-card-clock" aria-hidden />
-                    {formatDate(entry.updatedAt, language)}
-                  </span>
-                </button>
-                <div className="saved-reports-card-actions">
+          {entries.map((entry) => {
+            const report = isReportEntry(entry);
+            return (
+              <li key={entry.id}>
+                <article className={`saved-reports-card ${report ? 'saved-reports-card--report' : ''}`}>
                   <button
                     type="button"
-                    className="icon-btn-reports"
-                    title={t('reports_edit')}
-                    onClick={() => handleEdit(entry)}
+                    className="saved-reports-card-main"
+                    onClick={() => handleOpen(entry)}
                   >
-                    <Pencil size={18} aria-hidden />
+                    <span className="saved-reports-card-title-row">
+                      <span
+                        className={`saved-reports-kind ${report ? 'saved-reports-kind--report' : 'saved-reports-kind--draft'}`}
+                      >
+                        {report ? t('reports_kind_report') : t('reports_kind_draft')}
+                      </span>
+                      <span className="saved-reports-card-title" title={entry.title}>
+                        {entry.title}
+                      </span>
+                    </span>
+                    <span className="saved-reports-card-meta">
+                      <Clock size={14} className="saved-reports-card-clock" aria-hidden />
+                      {formatDate(entry.updatedAt, language)}
+                      {report && entry.incidentId ? (
+                        <span className="saved-reports-incident-id">{entry.incidentId}</span>
+                      ) : null}
+                    </span>
                   </button>
-                  <button
-                    type="button"
-                    className="icon-btn-reports danger"
-                    title={t('reports_delete')}
-                    onClick={(e) => handleRemove(entry.id, e)}
-                  >
-                    <Trash2 size={18} aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    className="saved-reports-card-chevron"
-                    aria-label={t('reports_edit')}
-                    onClick={() => handleEdit(entry)}
-                  >
-                    <ChevronRight size={20} aria-hidden />
-                  </button>
-                </div>
-              </article>
-            </li>
-          ))}
+                  <div className="saved-reports-card-actions">
+                    <button
+                      type="button"
+                      className="icon-btn-reports"
+                      title={report ? t('reports_open_report') : t('reports_open_draft')}
+                      onClick={() => handleOpen(entry)}
+                    >
+                      {report ? <FileText size={18} aria-hidden /> : <Pencil size={18} aria-hidden />}
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn-reports danger"
+                      title={t('reports_delete')}
+                      onClick={(e) => handleRemove(entry.id, e)}
+                    >
+                      <Trash2 size={18} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="saved-reports-card-chevron"
+                      aria-label={report ? t('reports_open_report') : t('reports_open_draft')}
+                      onClick={() => handleOpen(entry)}
+                    >
+                      <ChevronRight size={20} aria-hidden />
+                    </button>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

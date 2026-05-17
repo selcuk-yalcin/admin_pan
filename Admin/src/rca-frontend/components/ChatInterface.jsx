@@ -91,12 +91,14 @@ function getStageLabel(language, stage, progress) {
  * @param {{ incidentId: string, formData: object } | null} props.hitlSeed - manuel formdan gelen HITL oturumu
  * @param {(status: string) => void} [props.onPipelineStatusChange] - Agent pipeline canlı durum metni
  * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
+ * @param {(payload: { incidentId: string, formData?: object, reportReady?: boolean }) => void} [props.onSaveReport]
  */
 const ChatInterface = ({
   language,
   hitlSeed = null,
   onPipelineStatusChange,
   onHitlFlowComplete,
+  onSaveReport,
 }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -108,6 +110,7 @@ const ChatInterface = ({
   const [hitlAnswers, setHitlAnswers] = useState([]);
   /** @type {import('react').MutableRefObject<string|null>} */
   const processedHitlIdRef = useRef(null);
+  const librarySavedRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
   const [hitlAnsweredIds, setHitlAnsweredIds] = useState([]);
@@ -139,6 +142,25 @@ const ChatInterface = ({
     setHitlOtherDraft('');
     setHitlChoiceIdx(new Set());
   }, [hitlApiQuestion?.id]);
+
+  const persistReportToLibrary = useCallback(
+    (reportReady = true) => {
+      if (!hitlSeed?.incidentId || typeof onSaveReport !== 'function') return;
+      onSaveReport({
+        incidentId: hitlSeed.incidentId,
+        formData: hitlSeed.formData,
+        reportReady,
+      });
+      librarySavedRef.current = hitlSeed.incidentId;
+    },
+    [hitlSeed, onSaveReport],
+  );
+
+  useEffect(() => {
+    if (hitlPhase !== 'pdf_prompt' || !hitlSeed?.incidentId) return;
+    if (librarySavedRef.current === hitlSeed.incidentId) return;
+    persistReportToLibrary(true);
+  }, [hitlPhase, hitlSeed, persistReportToLibrary]);
 
   const runRcaAfterHitl = useCallback(
     async (answers) => {
@@ -191,6 +213,7 @@ const ChatInterface = ({
           },
         ]);
         setHitlPhase('pdf_prompt');
+        persistReportToLibrary(true);
         setLiveRcaStatus(
           String(language || '').toLowerCase().startsWith('tr')
             ? 'Analiz tamamlandi, rapor adimina gecildi.'
@@ -222,7 +245,7 @@ const ChatInterface = ({
         setIsLoading(false);
       }
     },
-    [hitlSeed, language, onPipelineStatusChange],
+    [hitlSeed, language, onPipelineStatusChange, persistReportToLibrary],
   );
 
   const fetchQuestionForState = useCallback(
@@ -392,10 +415,38 @@ const ChatInterface = ({
       onPipelineStatusChange?.('');
       return;
     }
+    if (hitlSeed.resumeAt === 'pdf_prompt') {
+      processedHitlIdRef.current = hitlSeed.incidentId;
+      librarySavedRef.current = hitlSeed.incidentId;
+      setHitlPhase('pdf_prompt');
+      setHitlQuestionsLoading(false);
+      setPipelineResult(null);
+      setMessages([
+        {
+          id: 'report-resume',
+          type: 'assistant',
+          content: t('hitl_report_resumed'),
+          timestamp: new Date(),
+        },
+      ]);
+      setLiveRcaStatus(
+        String(language || '').toLowerCase().startsWith('tr')
+          ? 'Kayitli rapor acildi. HTML indirebilir veya onizleyebilirsiniz.'
+          : 'Saved report opened. You can download or preview HTML.',
+      );
+      onPipelineStatusChange?.(
+        String(language || '').toLowerCase().startsWith('tr')
+          ? 'Raporlarimdan acildi'
+          : 'Opened from Reports',
+      );
+      return;
+    }
+
     if (processedHitlIdRef.current === hitlSeed.incidentId) {
       return;
     }
     processedHitlIdRef.current = hitlSeed.incidentId;
+    librarySavedRef.current = null;
 
     const bullets = parseInitialImmediateCauses(hitlSeed.formData?.rootCauseInitial)
       .map(stripCodePrefix)
@@ -673,60 +724,46 @@ const ChatInterface = ({
 
   const ensureIncidentReadyForReport = useCallback(async (incidentId) => {
     // Job "completed" olsa da incident.part3 kısa süre gecikmeli yazılabilir.
-    for (let attempt = 0; attempt < 4; attempt += 1) {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
       try {
         const res = await getIncident(incidentId);
-        const incident = res?.data || {};
+        const incident = res?.data || res || {};
         const hasPart3 = !!incident?.part3 && typeof incident.part3 === 'object';
-        if (hasPart3) return;
+        const hasArtifacts =
+          incident?.report_artifacts &&
+          (incident.report_artifacts.html_path || incident.report_artifacts.docx_path);
+        if (hasPart3 || hasArtifacts) return;
       } catch {
         // Ağ/timeout hatasında kısa retry yap.
       }
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
   }, []);
 
   const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
-    const reportWindow = window.open('', '_blank');
-    if (!reportWindow) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `html-popup-err-${Date.now()}`,
-          type: 'error',
-          content: 'Popup blocked. Please allow popups for preview.',
-          timestamp: new Date(),
-        },
-      ]);
-      setIsLoading(false);
-      return;
-    }
-    reportWindow.document.write('<p style="font-family:sans-serif;padding:16px">Preparing HTML report...</p>');
     try {
       await ensureIncidentReadyForReport(hitlSeed.incidentId);
       await generateHTMLReport(hitlSeed.incidentId);
-      await openHTMLReport(hitlSeed.incidentId, { preopenedWindow: reportWindow });
+      await downloadHTMLReport(hitlSeed.incidentId);
+      persistReportToLibrary(true);
       setMessages((prev) => [
         ...prev,
         {
           id: `html-ok-${Date.now()}`,
           type: 'assistant',
-          content: String(language || '').toLowerCase().startsWith('tr')
-            ? 'HTML rapor ve decision tree hazir. Asagidaki butonlardan goruntuleyebilir veya indirebilirsiniz.'
-            : 'HTML report and decision tree are ready. You can preview or download from the buttons below.',
+          content: t('hitl_html_download_ok'),
           timestamp: new Date(),
         },
       ]);
     } catch (error) {
-      reportWindow.close();
       setMessages((prev) => [
         ...prev,
         {
           id: `html-err-${Date.now()}`,
           type: 'error',
-          content: error.message,
+          content: `${t('error_occurred')}: ${error.message}`,
           timestamp: new Date(),
         },
       ]);
@@ -757,7 +794,18 @@ const ChatInterface = ({
       if (!hitlSeed?.incidentId) return;
       try {
         await ensureIncidentReadyForReport(hitlSeed.incidentId);
-        await fn(hitlSeed.incidentId);
+        const result = await fn(hitlSeed.incidentId);
+        if (result?.mode === 'download') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `report-download-fallback-${Date.now()}`,
+              type: 'assistant',
+              content: t('hitl_report_download_fallback'),
+              timestamp: new Date(),
+            },
+          ]);
+        }
       } catch (error) {
         setMessages((prev) => [
           ...prev,
@@ -770,7 +818,7 @@ const ChatInterface = ({
         ]);
       }
     },
-    [hitlSeed, language],
+    [hitlSeed, language, ensureIncidentReadyForReport, t],
   );
 
   const handleSend = async () => {
@@ -1084,6 +1132,27 @@ const ChatInterface = ({
                 </button>
                 <button type="button" className="hitl-choice-btn" onClick={handlePdfSkip} disabled={isLoading}>
                   {t('hitl_pdf_skip')}
+                </button>
+              </div>
+              <div className="hitl-choices hitl-save-report-row">
+                <button
+                  type="button"
+                  className="hitl-choice-btn hitl-choice-save"
+                  onClick={() => {
+                    persistReportToLibrary(true);
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: `save-report-${Date.now()}`,
+                        type: 'assistant',
+                        content: t('report_saved_toast'),
+                        timestamp: new Date(),
+                      },
+                    ]);
+                  }}
+                  disabled={isLoading}
+                >
+                  {t('save_report')}
                 </button>
               </div>
               <div className="hitl-choices hitl-report-actions">

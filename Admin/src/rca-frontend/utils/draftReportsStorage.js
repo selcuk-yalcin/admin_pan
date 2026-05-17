@@ -1,6 +1,17 @@
 const STORAGE_KEY = "infera_deepwhy_drafts_v1";
 
-/** @typedef {{ id: string; title: string; updatedAt: string; snapshot: object }} SavedDraftEntry */
+/**
+ * @typedef {'draft' | 'report'} SavedEntryKind
+ * @typedef {{
+ *   id: string;
+ *   kind: SavedEntryKind;
+ *   title: string;
+ *   updatedAt: string;
+ *   snapshot: object;
+ *   incidentId?: string;
+ *   reportReady?: boolean;
+ * }} SavedDraftEntry
+ */
 
 /** @returns {SavedDraftEntry[]} */
 export function loadDraftReportsList() {
@@ -19,7 +30,15 @@ function persistList(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
-/** @param {object} snapshot @param {string} titleHint */
+function buildTitle(snapshot, titleHint = "", incidentId = "") {
+  const hint = `${snapshot?.location || ""} ${snapshot?.reportedBy || ""}`.trim();
+  if (titleHint) return titleHint.slice(0, 96);
+  if (hint) return hint.slice(0, 96);
+  if (incidentId) return incidentId.slice(0, 96);
+  return "Kayıt";
+}
+
+/** @param {object} snapshot @param {string} titleHint @param {string|null} persistId */
 export function upsertDraftReport(snapshot, titleHint = "", persistId = null) {
   const list = loadDraftReportsList();
   const id =
@@ -27,11 +46,10 @@ export function upsertDraftReport(snapshot, titleHint = "", persistId = null) {
     (typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `d-${Date.now()}`);
-  const hint = `${snapshot?.location || ""} ${snapshot?.reportedBy || ""}`.trim();
-  const title = (titleHint || hint || "Taslak").slice(0, 96);
   const entry = {
     id,
-    title,
+    kind: "draft",
+    title: buildTitle(snapshot, titleHint),
     updatedAt: new Date().toISOString(),
     snapshot: { ...snapshot },
   };
@@ -39,6 +57,36 @@ export function upsertDraftReport(snapshot, titleHint = "", persistId = null) {
   return entry;
 }
 
+/**
+ * Save or update a completed report in Raporlar (keyed by incidentId when provided).
+ * @param {{ incidentId: string, snapshot?: object, titleHint?: string, reportReady?: boolean }} params
+ */
+export function upsertSavedReport({ incidentId, snapshot = {}, titleHint = "", reportReady = true }) {
+  if (!incidentId) {
+    throw new Error("incidentId required");
+  }
+  const list = loadDraftReportsList();
+  const id = `report-${incidentId}`;
+  const existing = list.find((x) => x.id === id || x.incidentId === incidentId);
+  const entry = {
+    id,
+    kind: "report",
+    incidentId,
+    title: buildTitle(snapshot, titleHint, incidentId),
+    updatedAt: new Date().toISOString(),
+    snapshot: { ...(existing?.snapshot || {}), ...snapshot },
+    reportReady: reportReady !== false,
+  };
+  persistList([entry, ...list.filter((x) => x?.id !== id && x.incidentId !== incidentId)].slice(0, 50));
+  return entry;
+}
+
 export function deleteDraftReport(id) {
   persistList(loadDraftReportsList().filter((x) => x.id !== id));
+}
+
+export function notifyDraftsChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("deepwhy-drafts-changed"));
+  }
 }

@@ -575,6 +575,22 @@
   margin-bottom: 1rem;
 }
 
+.hitl-save-report-row {
+  margin-top: 0.5rem;
+}
+
+.hitl-choice-save {
+  width: 100%;
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+  font-weight: 650;
+}
+
+.hitl-choice-save:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.18);
+}
+
 .hitl-report-actions {
   margin-top: 0.75rem;
   display: grid;
