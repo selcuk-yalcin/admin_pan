@@ -668,10 +668,10 @@ const CreateProjectPage = () => {
   );
 
   const configureStep = (
-    <div className="cp-inner cp-inner--light">
+    <div className="cp-wizard-inner cp-wizard-inner--wide">
       {header}
-      <h1 className="cp-title">Sunumu yapılandırın</h1>
-      <p className="cp-sub">
+      <h1 className="cp-wizard-title">Sunumu yapılandırın</h1>
+      <p className="cp-wizard-lead">
         Şablon, dil, slayt uzunluğu ve model katmanı. Ardından motor işini başlatır.
       </p>
 
@@ -1336,7 +1336,8 @@ const CreateProjectPage = () => {
     </div>
   );
 
-  const skySteps = step === "resource" || step === "processing" || step === "outline";
+  const skySteps =
+    step === "resource" || step === "configure" || step === "processing" || step === "outline";
   return (
     <div className={`cp-page ${skySteps ? "cp-page--sky" : ""}`}>
       {step === "resource" && resourceStep}

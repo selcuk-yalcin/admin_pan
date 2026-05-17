@@ -202,14 +202,7 @@ const SidebarContent = (props) => {
               <Link to="/deep-training">
                 <i className="bx bx-layout"></i>
                 <span>{props.t("Deep Training")}</span>
-              </Link>
-            </li>
-
-            <li>
-              <Link to="/create-project">
-                <i className="bx bx-plus-circle"></i>
-                <span>{props.t("Create Project")}</span>
-                <span className="badge rounded-pill bg-warning float-end">PRO</span>
+                <span className="badge rounded-pill bg-warning float-end">AI</span>
               </Link>
             </li>
 

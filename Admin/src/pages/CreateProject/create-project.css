@@ -183,12 +183,51 @@
   margin-right: auto;
 }
 
-/* Sky / glass wizard (resource, processing, outline) */
+/* Sky / glass wizard (resource, configure, processing, outline) */
 .cp-page--sky {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 40%, rgba(255, 255, 255, 0.2) 100%),
     url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80") center / cover no-repeat fixed;
   min-height: 100vh;
+}
+
+.cp-page--sky .cp-select,
+.cp-page--sky .cp-btn-ghost {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(226, 232, 240, 0.95);
+}
+
+.cp-page--sky .cp-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.cp-page--sky .cp-dropzone {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px dashed rgba(148, 163, 184, 0.65);
+}
+
+.cp-page--sky .cp-options {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.05);
+}
+
+.cp-page--sky .cp-file-chip {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(226, 232, 240, 0.95);
+}
+
+.cp-page--sky .cp-error {
+  background: rgba(254, 242, 242, 0.92);
+  backdrop-filter: blur(8px);
 }
 
 .cp-wizard-header {
