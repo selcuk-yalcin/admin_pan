@@ -121,6 +121,7 @@ const ChatInterface = ({
   const processedHitlIdRef = useRef(null);
   const hitlLoadGenRef = useRef(0);
   const resolveNextQuestionRef = useRef(null);
+  const runRcaAfterHitlRef = useRef(null);
   const librarySavedRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
@@ -400,10 +401,11 @@ const ChatInterface = ({
     [fetchQuestionForState, probeCodes],
   );
 
-  // Keep ref current so the HITL start effect can call the latest version
-  // without including resolveNextQuestion in its own dep array.
+  // Keep refs current every render so HITL start effect always calls the
+  // latest version without including these callbacks in its dep array.
   useEffect(() => {
     resolveNextQuestionRef.current = resolveNextQuestion;
+    runRcaAfterHitlRef.current = runRcaAfterHitl;
   });
 
   useEffect(() => {
@@ -539,45 +541,49 @@ const ChatInterface = ({
           return;
         }
         if (next.done) {
-          void runRcaAfterHitl([]);
+          void runRcaAfterHitlRef.current([]);
           return;
         }
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `hitl-empty-${Date.now()}`,
-            type: 'error',
-            content: getTranslation(language, 'hitl_no_questions'),
-            timestamp: new Date(),
-          },
-        ]);
-        setHitlPhase(null);
-      } catch (error) {
-        if (cancelled) return;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `hitl-err-${Date.now()}`,
-            type: 'error',
-            content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
-            timestamp: new Date(),
-          },
-        ]);
-        setHitlPhase(null);
-      } finally {
         if (!cancelled) {
-          setHitlQuestionsLoading(false);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `hitl-empty-${Date.now()}`,
+              type: 'error',
+              content: getTranslation(language, 'hitl_no_questions'),
+              timestamp: new Date(),
+            },
+          ]);
+          setHitlPhase(null);
         }
+      } catch (error) {
+        if (!cancelled) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `hitl-err-${Date.now()}`,
+              type: 'error',
+              content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
+              timestamp: new Date(),
+            },
+          ]);
+          setHitlPhase(null);
+        }
+      } finally {
+        // Always clear loading — setState on an unmounted component is a no-op
+        // in React 18 and safer than leaving the spinner stuck forever.
+        setHitlQuestionsLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  // resolveNextQuestion intentionally omitted — captured via ref to avoid re-triggering
-  // when setProbeCodes changes probeCodes state mid-effect.
+  // runRcaAfterHitl and resolveNextQuestion intentionally captured via refs —
+  // including them here would re-trigger the effect whenever probeCodes or other
+  // transitive deps change mid-async, leaving hitlQuestionsLoading stuck.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
+  }, [hitlSeed, language, onPipelineStatusChange]);
 
   const submitHitlResponse = (value, displayLabel) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
