@@ -4,11 +4,11 @@ import {
   Trash2,
   Pencil,
   Clock,
-  ChevronRight,
   Inbox,
   FileText,
   GitBranch,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import {
@@ -18,7 +18,12 @@ import {
   isLibraryServerMode,
   getLastLibraryError,
 } from '../utils/draftReportsStorage';
-import { openReportForEntry } from '../utils/reportsLibraryApi';
+import {
+  openReportForEntry,
+  downloadArtifactForEntry,
+  syncReportHtmlToLibrary,
+} from '../utils/reportsLibraryApi';
+import { getCurrentUserId } from '../utils/userContext';
 import './SavedReportsPanel.css';
 
 function formatDate(iso, lang) {
@@ -41,7 +46,17 @@ function isReportEntry(entry) {
   return entry?.kind === 'report' || Boolean(entry?.incidentId);
 }
 
-function ReportList({ entries, language, t, onOpen, onRemove, onViewArtifact }) {
+function ReportList({
+  entries,
+  language,
+  t,
+  onOpen,
+  onRemove,
+  onViewArtifact,
+  onDownloadArtifact,
+  onSyncArtifacts,
+  syncingId,
+}) {
   if (!entries.length) {
     return (
       <p className="saved-reports-folder-empty">
@@ -53,69 +68,102 @@ function ReportList({ entries, language, t, onOpen, onRemove, onViewArtifact }) 
     <ul className="saved-reports-list">
       {entries.map((entry) => {
         const report = isReportEntry(entry);
+        const incidentId = entry.incidentId || '';
+
         return (
-          <li key={entry.id}>
-            <article className={`saved-reports-card ${report ? 'saved-reports-card--report' : ''}`}>
-              <button
-                type="button"
-                className="saved-reports-card-main"
-                onClick={() => onOpen(entry)}
-              >
-                <span className="saved-reports-card-title-row">
-                  <span
-                    className={`saved-reports-kind ${report ? 'saved-reports-kind--report' : 'saved-reports-kind--draft'}`}
-                  >
-                    {report ? t('reports_kind_report') : t('reports_kind_draft')}
+          <li key={entry.id} className="saved-reports-list-item">
+            <article
+              className={`saved-reports-card ${report ? 'saved-reports-card--report' : ''}`}
+            >
+              <div className="saved-reports-card-body">
+                <div className="saved-reports-card-main-static">
+                  <span className="saved-reports-card-title-row">
+                    <span
+                      className={`saved-reports-kind ${report ? 'saved-reports-kind--report' : 'saved-reports-kind--draft'}`}
+                    >
+                      {report ? t('reports_kind_report') : t('reports_kind_draft')}
+                    </span>
+                    <span className="saved-reports-card-title" title={entry.title}>
+                      {entry.title}
+                    </span>
                   </span>
-                  <span className="saved-reports-card-title" title={entry.title}>
-                    {entry.title}
+                  <span className="saved-reports-card-meta">
+                    <Clock size={14} className="saved-reports-card-clock" aria-hidden />
+                    {formatDate(entry.updatedAt, language)}
+                    {report && incidentId ? (
+                      <span className="saved-reports-incident-id">{incidentId}</span>
+                    ) : null}
                   </span>
-                </span>
-                <span className="saved-reports-card-meta">
-                  <Clock size={14} className="saved-reports-card-clock" aria-hidden />
-                  {formatDate(entry.updatedAt, language)}
-                  {report && entry.incidentId ? (
-                    <span className="saved-reports-incident-id">{entry.incidentId}</span>
-                  ) : null}
-                </span>
-              </button>
-              <div className="saved-reports-card-actions">
-                {report && entry.has_report_html ? (
-                  <button
-                    type="button"
-                    className="icon-btn-reports"
-                    title={t('reports_view_html')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewArtifact(entry, 'report');
-                    }}
-                  >
-                    <FileText size={18} aria-hidden />
-                  </button>
+                </div>
+
+                {report && incidentId ? (
+                  <div className="saved-reports-inline-actions" role="group" aria-label={t('reports_actions_title')}>
+                    <button
+                      type="button"
+                      className="saved-reports-link"
+                      onClick={() => onViewArtifact(entry, 'report')}
+                    >
+                      {t('reports_view_html')}
+                    </button>
+                    <span className="saved-reports-link-sep" aria-hidden>·</span>
+                    <button
+                      type="button"
+                      className="saved-reports-link saved-reports-link--primary"
+                      onClick={() => onDownloadArtifact(entry, 'report')}
+                    >
+                      {t('reports_download_html_report')}
+                    </button>
+                    <span className="saved-reports-link-sep" aria-hidden>·</span>
+                    <button
+                      type="button"
+                      className="saved-reports-link"
+                      onClick={() => onViewArtifact(entry, 'decision_tree')}
+                    >
+                      <GitBranch size={14} aria-hidden />
+                      {t('reports_view_tree')}
+                    </button>
+                    <span className="saved-reports-link-sep" aria-hidden>·</span>
+                    <button
+                      type="button"
+                      className="saved-reports-link saved-reports-link--primary"
+                      onClick={() => onDownloadArtifact(entry, 'decision_tree')}
+                    >
+                      {t('reports_download_html_tree')}
+                    </button>
+                    {isLibraryServerMode() ? (
+                      <>
+                        <span className="saved-reports-link-sep" aria-hidden>·</span>
+                        <button
+                          type="button"
+                          className="saved-reports-link saved-reports-link--muted"
+                          disabled={syncingId === entry.id}
+                          onClick={() => onSyncArtifacts(entry)}
+                        >
+                          {syncingId === entry.id ? (
+                            <Loader2 size={14} className="spin" aria-hidden />
+                          ) : (
+                            <RefreshCw size={14} aria-hidden />
+                          )}
+                          {t('reports_sync_artifacts')}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 ) : null}
-                {report && entry.has_decision_tree_html ? (
-                  <button
-                    type="button"
-                    className="icon-btn-reports"
-                    title={t('reports_view_tree')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewArtifact(entry, 'decision_tree');
-                    }}
-                  >
-                    <GitBranch size={18} aria-hidden />
-                  </button>
-                ) : null}
+
                 {!report ? (
                   <button
                     type="button"
-                    className="icon-btn-reports"
-                    title={t('reports_open_draft')}
+                    className="saved-reports-link saved-reports-link--primary"
                     onClick={() => onOpen(entry)}
                   >
-                    <Pencil size={18} aria-hidden />
+                    <Pencil size={14} aria-hidden />
+                    {t('reports_open_draft')}
                   </button>
                 ) : null}
+              </div>
+
+              <div className="saved-reports-card-actions">
                 <button
                   type="button"
                   className="icon-btn-reports danger"
@@ -123,14 +171,6 @@ function ReportList({ entries, language, t, onOpen, onRemove, onViewArtifact }) 
                   onClick={(e) => onRemove(entry.id, e)}
                 >
                   <Trash2 size={18} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="saved-reports-card-chevron"
-                  aria-label={report ? t('reports_open_report') : t('reports_open_draft')}
-                  onClick={() => onOpen(entry)}
-                >
-                  <ChevronRight size={20} aria-hidden />
                 </button>
               </div>
             </article>
@@ -144,13 +184,13 @@ function ReportList({ entries, language, t, onOpen, onRemove, onViewArtifact }) 
 export default function SavedReportsPanel({
   language = 'tr',
   onEditDraft,
-  onOpenReport,
 }) {
   const t = useCallback((k) => getTranslation(language, k), [language]);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [serverMode, setServerMode] = useState(true);
+  const [syncingId, setSyncingId] = useState(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -163,8 +203,6 @@ export default function SavedReportsPanel({
       setServerMode(onServer);
       if (!onServer && list.length) {
         setError(`${getLastLibraryError() || ''} — ${t('reports_mongo_hint')}`.replace(/^ — /, ''));
-      } else if (!onServer) {
-        setError(`${getLastLibraryError() || err?.message || String(err)} — ${t('reports_mongo_hint')}`);
       }
     } catch (err) {
       const msg = getLastLibraryError() || err?.message || String(err);
@@ -173,7 +211,7 @@ export default function SavedReportsPanel({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     reload();
@@ -194,16 +232,7 @@ export default function SavedReportsPanel({
     notifyDraftsChanged();
   };
 
-  const handleOpen = async (entry) => {
-    if (isReportEntry(entry)) {
-      setError('');
-      try {
-        await openReportForEntry(entry, 'report');
-      } catch (err) {
-        setError(err?.message || String(err));
-      }
-      return;
-    }
+  const handleOpenDraft = (entry) => {
     if (typeof onEditDraft === 'function') onEditDraft(entry);
   };
 
@@ -216,9 +245,46 @@ export default function SavedReportsPanel({
     }
   };
 
+  const handleDownloadArtifact = async (entry, artifactType) => {
+    setError('');
+    try {
+      await downloadArtifactForEntry(entry, artifactType);
+    } catch (err) {
+      setError(err?.message || String(err));
+    }
+  };
+
+  const handleSyncArtifacts = async (entry) => {
+    const incidentId = entry?.incidentId || '';
+    if (!incidentId) return;
+    setSyncingId(entry.id);
+    setError('');
+    try {
+      const { generateHTMLReport } = await import('../../services/hsg245Api');
+      await syncReportHtmlToLibrary({
+        incidentId,
+        snapshot: entry.snapshot || {},
+        titleHint: entry.title || '',
+        analysisModelPreset: entry.snapshot?.analysisModelPreset || '',
+        generateHTMLReportFn: generateHTMLReport,
+      });
+      notifyDraftsChanged();
+      await reload();
+    } catch (err) {
+      setError(err?.message || String(err));
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
   const reports = entries.filter(isReportEntry);
   const drafts = entries.filter((e) => !isReportEntry(e));
   const count = entries.length;
+  const userIdShort = (() => {
+    const uid = getCurrentUserId();
+    if (!uid || uid === 'anonymous') return null;
+    return uid.length > 12 ? `${uid.slice(0, 8)}…` : uid;
+  })();
 
   return (
     <div className="saved-reports-panel">
@@ -236,9 +302,17 @@ export default function SavedReportsPanel({
                 {count} {language === 'tr' ? 'kayıt' : 'saved'}
               </span>
             ) : null}
+            {userIdShort && serverMode ? (
+              <span className="saved-reports-user-pill" title={getCurrentUserId()}>
+                {t('reports_your_account')}: {userIdShort}
+              </span>
+            ) : null}
           </div>
           <h2 className="saved-reports-title">{t('tab_saved_reports')}</h2>
           <p className="saved-reports-lead">{t('reports_intro')}</p>
+          {serverMode ? (
+            <p className="saved-reports-tenant-note">{t('reports_multitenant_note')}</p>
+          ) : null}
         </div>
       </header>
 
@@ -269,9 +343,12 @@ export default function SavedReportsPanel({
               entries={reports}
               language={language}
               t={t}
-              onOpen={handleOpen}
+              onOpen={handleOpenDraft}
               onRemove={handleRemove}
               onViewArtifact={handleViewArtifact}
+              onDownloadArtifact={handleDownloadArtifact}
+              onSyncArtifacts={handleSyncArtifacts}
+              syncingId={syncingId}
             />
           </section>
 
@@ -285,9 +362,12 @@ export default function SavedReportsPanel({
               entries={drafts}
               language={language}
               t={t}
-              onOpen={handleOpen}
+              onOpen={handleOpenDraft}
               onRemove={handleRemove}
               onViewArtifact={handleViewArtifact}
+              onDownloadArtifact={handleDownloadArtifact}
+              onSyncArtifacts={handleSyncArtifacts}
+              syncingId={syncingId}
             />
           </section>
         </>

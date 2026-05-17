@@ -127,49 +127,74 @@ export async function fetchIncidentArtifactHtml(incidentId, artifactType = 'repo
   return response.text();
 }
 
-function openHtmlInNewTab(html, artifactType = 'report') {
+function downloadHtmlBlob(html, filename) {
+  if (!html) throw new Error('Empty HTML');
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function artifactFilename(incidentId, artifactType) {
+  const base = `DeepWhy_Report_${incidentId || 'export'}`;
+  return artifactType === 'decision_tree' ? `${base}_decision_tree.html` : `${base}.html`;
+}
+
+function openHtmlInNewTab(html, artifactType = 'report', incidentId = '') {
   if (!html) throw new Error('Empty HTML');
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const w = window.open(url, '_blank', 'noopener,noreferrer');
   if (!w) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = artifactType === 'decision_tree' ? 'decision_tree.html' : 'report.html';
-    a.click();
+    downloadHtmlBlob(html, artifactFilename(incidentId, artifactType));
   }
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-/** Open stored HTML artifact in a new tab (from Mongo). */
-export async function openLibraryArtifact(itemId, artifactType = 'report') {
-  const response = await fetch(API_GATEWAY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-    body: JSON.stringify({
-      action: 'library_artifact',
-      data: { item_id: itemId, artifact_type: artifactType },
-    }),
-  });
-  const result = await handleResponse(response);
-  openHtmlInNewTab(result?.html || '', artifactType);
-}
-
-/** Open report HTML: Mongo first, then live incident artifacts. */
-export async function openReportForEntry(entry, artifactType = 'report') {
+/** Fetch HTML from Mongo library or live incident artifacts. */
+export async function fetchArtifactHtmlForEntry(entry, artifactType = 'report') {
   const incidentId = entry?.incidentId || entry?.incident_id || '';
   const itemId = entry?.id || (incidentId ? `report-${incidentId}` : '');
-  try {
-    if (itemId) {
-      await openLibraryArtifact(itemId, artifactType);
-      return;
+
+  if (itemId) {
+    try {
+      const response = await fetch(API_GATEWAY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
+        body: JSON.stringify({
+          action: 'library_artifact',
+          data: { item_id: itemId, artifact_type: artifactType },
+        }),
+      });
+      const result = await handleResponse(response);
+      const html = (result?.html || '').trim();
+      if (html) return html;
+    } catch {
+      // fall through to incident artifacts
     }
-  } catch {
-    // fall through
   }
+
   if (!incidentId) throw new Error('incidentId missing');
-  const html = await fetchIncidentArtifactHtml(incidentId, artifactType);
-  openHtmlInNewTab(html, artifactType);
+  return fetchIncidentArtifactHtml(incidentId, artifactType);
+}
+
+/** Open report or decision tree HTML in a new tab. */
+export async function openReportForEntry(entry, artifactType = 'report') {
+  const incidentId = entry?.incidentId || entry?.incident_id || '';
+  const html = await fetchArtifactHtmlForEntry(entry, artifactType);
+  openHtmlInNewTab(html, artifactType, incidentId);
+}
+
+/** Download report or decision tree as HTML file. */
+export async function downloadArtifactForEntry(entry, artifactType = 'report') {
+  const incidentId = entry?.incidentId || entry?.incident_id || '';
+  const html = await fetchArtifactHtmlForEntry(entry, artifactType);
+  downloadHtmlBlob(html, artifactFilename(incidentId, artifactType));
 }
 
 /**

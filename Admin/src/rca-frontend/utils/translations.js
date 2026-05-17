@@ -172,7 +172,12 @@ const translations = {
     model_tier_quality_locked_hint: 'Bu analiz seviyesi şu an kullanılamıyor.',
 
     reports_intro:
-      'Tamamlanan analizler ve taslaklar hesabınıza özel saklanır (MongoDB: veritabanı rca, koleksiyon deepwhy_saved_items). Rapor satırına tıklayınca HTML açılır.',
+      'Tamamlanan analizler ve taslaklar yalnızca sizin hesabınıza özel saklanır. Her raporun altından HTML indirebilirsiniz.',
+    reports_multitenant_note:
+      'Çok kiracılı yapı: şirket (tenant) + kullanıcı (Kinde ID) ile ayrılır. Başka kullanıcılar sizin kayıtlarınızı göremez.',
+    reports_your_account: 'Hesabınız',
+    reports_download_html_report: 'İndir HTML (Rapor)',
+    reports_download_html_tree: 'İndir HTML (Karar ağacı)',
     reports_mongo_hint:
       'Kayıtlar sunucuya yazılamadı (Yerel mod). Railway\'de MONGODB_URI tanımlı mı? Atlas: rca → deepwhy_saved_items',
     reports_badge_server: 'Bulut',
@@ -180,8 +185,13 @@ const translations = {
     reports_folder_drafts: 'Taslaklar',
     reports_folder_empty: 'Bu klasörde kayıt yok.',
     reports_loading: 'Kayıtlar yükleniyor...',
-    reports_view_html: 'Raporu HTML olarak aç',
-    reports_view_tree: 'Karar ağacını HTML olarak aç',
+    reports_view_html: 'Raporu görüntüle',
+    reports_view_tree: 'Karar ağacını görüntüle',
+    reports_download_report: 'Raporu indir (HTML)',
+    reports_download_tree: 'Karar ağacını indir (HTML)',
+    reports_toggle_actions: 'İndirme ve görüntüleme seçenekleri',
+    reports_actions_title: 'Rapor işlemleri',
+    reports_sync_artifacts: 'Rapor ve karar ağacını buluta kaydet',
     hitl_auto_saved:
       'Analiz tamamlandı. Rapor ve karar ağacı Raporlar → Oluşturulan Raporlar klasörüne kaydedildi.',
     hitl_open_reports_tab: 'Raporlara git',
@@ -595,14 +605,24 @@ const translations = {
     model_tier_quality_locked_hint: 'This analysis level is not available yet.',
 
     reports_intro:
-      'Completed analyses and drafts are stored on the server for your account. Click to open report or decision tree as HTML.',
+      'Completed analyses and drafts are stored only for your account. Download HTML from the links under each report.',
+    reports_multitenant_note:
+      'Multi-tenant: isolated by company (tenant) and user (Kinde ID). Other users cannot see your records.',
+    reports_your_account: 'Your account',
+    reports_download_html_report: 'Download HTML (Report)',
+    reports_download_html_tree: 'Download HTML (Decision tree)',
     reports_badge_server: 'Cloud',
     reports_folder_created: 'Created Reports',
     reports_folder_drafts: 'Drafts',
     reports_folder_empty: 'No items in this folder.',
     reports_loading: 'Loading saved items...',
-    reports_view_html: 'Open report as HTML',
-    reports_view_tree: 'Open decision tree as HTML',
+    reports_view_html: 'View report',
+    reports_view_tree: 'View decision tree',
+    reports_download_report: 'Download report (HTML)',
+    reports_download_tree: 'Download decision tree (HTML)',
+    reports_toggle_actions: 'Show download and view options',
+    reports_actions_title: 'Report actions',
+    reports_sync_artifacts: 'Save report and decision tree to cloud',
     hitl_auto_saved:
       'Analysis complete. Report and decision tree were saved under Reports → Created Reports.',
     hitl_open_reports_tab: 'Go to Reports',

@@ -246,9 +246,90 @@
   gap: 0.85rem;
 }
 
+.saved-reports-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.saved-reports-card--expanded {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+.saved-reports-expand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  margin-top: -0.35rem;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-top: 1px dashed rgba(226, 232, 240, 0.95);
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, #fff 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-expand {
+  border-color: rgba(71, 85, 105, 0.5);
+  border-top-color: rgba(71, 85, 105, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.saved-reports-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  background: #fff;
+  color: #1e40af;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.saved-reports-expand-btn:hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.saved-reports-expand-btn--tree {
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #047857;
+}
+
+.saved-reports-expand-btn--tree:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.saved-reports-expand-btn--sync {
+  border-color: rgba(100, 116, 139, 0.35);
+  color: #475569;
+  margin-left: auto;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-expand-btn {
+  background: rgba(30, 41, 59, 0.9);
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.25);
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-expand-btn--tree {
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.saved-reports-card-chevron--open {
+  color: var(--primary, #2563eb);
+}
+
 .saved-reports-card {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   border-radius: 14px;
   background: var(--surface, #ffffff);
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -281,19 +362,93 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-.saved-reports-card-main {
+.saved-reports-card-body {
   flex: 1;
-  text-align: left;
-  padding: 1rem 0.25rem 1rem 1.15rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+  min-width: 0;
+  padding: 1rem 0.5rem 1rem 1.15rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
+  gap: 0.55rem;
+}
+
+.saved-reports-card-main-static {
+  display: flex;
+  flex-direction: column;
   gap: 0.4rem;
-  min-width: 0;
+}
+
+.saved-reports-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.35rem;
+  line-height: 1.4;
+}
+
+.saved-reports-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.saved-reports-link:hover {
+  color: #1d4ed8;
+}
+
+.saved-reports-link--primary {
+  color: #047857;
+}
+
+.saved-reports-link--primary:hover {
+  color: #065f46;
+}
+
+.saved-reports-link--muted {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.saved-reports-link-sep {
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-link {
+  color: #93c5fd;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-link--primary {
+  color: #6ee7b7;
+}
+
+.saved-reports-user-pill {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.saved-reports-tenant-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-tenant-note {
+  color: #94a3b8;
 }
 
 .saved-reports-card-title-row {
@@ -368,10 +523,9 @@
 
 .saved-reports-card-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-shrink: 0;
-  padding-right: 0.25rem;
-  border-left: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 0.65rem 0.35rem 0 0;
 }
 
 .rca-frontend-hub.theme-dark .saved-reports-card-actions {
@@ -445,7 +599,11 @@
     justify-content: flex-end;
   }
 
-  .saved-reports-card-chevron {
-    display: none;
+  .saved-reports-expand {
+    flex-direction: column;
+  }
+
+  .saved-reports-expand-btn--sync {
+    margin-left: 0;
   }
 }

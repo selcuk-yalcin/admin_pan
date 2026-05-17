@@ -13,6 +13,14 @@ const KindeCallback = () => {
       // Kullanıcı bilgilerini localStorage'a kaydet
       if (user) {
         localStorage.setItem('authUser', JSON.stringify(user));
+        const orgCode =
+          user?.org_code ||
+          user?.organization?.org_code ||
+          (Array.isArray(user?.organizations) && user.organizations[0]?.code) ||
+          '';
+        if (orgCode) {
+          localStorage.setItem('tenant_id', String(orgCode));
+        }
       }
       navigate(APP_HOME_PATH, { replace: true });
     }
