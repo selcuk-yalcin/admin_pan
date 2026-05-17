@@ -120,6 +120,7 @@ const ChatInterface = ({
   /** @type {import('react').MutableRefObject<string|null>} */
   const processedHitlIdRef = useRef(null);
   const hitlLoadGenRef = useRef(0);
+  const resolveNextQuestionRef = useRef(null);
   const librarySavedRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
@@ -399,6 +400,12 @@ const ChatInterface = ({
     [fetchQuestionForState, probeCodes],
   );
 
+  // Keep ref current so the HITL start effect can call the latest version
+  // without including resolveNextQuestion in its own dep array.
+  useEffect(() => {
+    resolveNextQuestionRef.current = resolveNextQuestion;
+  });
+
   useEffect(() => {
     if (!hitlSeed?.incidentId) {
       setLiveRcaStatus('');
@@ -511,10 +518,10 @@ const ChatInterface = ({
     setHitlMode(mode);
     setProbeCodes(codes);
 
-    const loadGen = ++hitlLoadGenRef.current;
+    let cancelled = false;
     (async () => {
       try {
-        const next = await resolveNextQuestion({
+        const next = await resolveNextQuestionRef.current({
           mode,
           answers: [],
           answeredIds: [],
@@ -523,7 +530,7 @@ const ChatInterface = ({
           previousWhyAnswer: '',
           codes,
         });
-        if (loadGen !== hitlLoadGenRef.current) return;
+        if (cancelled) return;
         if (next.question) {
           setHitlApiQuestion(next.question);
           setProbeBranchIdx(next.nextBranchIdx);
@@ -546,7 +553,7 @@ const ChatInterface = ({
         ]);
         setHitlPhase(null);
       } catch (error) {
-        if (loadGen !== hitlLoadGenRef.current) return;
+        if (cancelled) return;
         setMessages((prev) => [
           ...prev,
           {
@@ -558,17 +565,19 @@ const ChatInterface = ({
         ]);
         setHitlPhase(null);
       } finally {
-        if (loadGen === hitlLoadGenRef.current) {
+        if (!cancelled) {
           setHitlQuestionsLoading(false);
         }
       }
     })();
 
     return () => {
-      hitlLoadGenRef.current += 1;
-      processedHitlIdRef.current = null;
+      cancelled = true;
     };
-  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange, resolveNextQuestion]);
+  // resolveNextQuestion intentionally omitted — captured via ref to avoid re-triggering
+  // when setProbeCodes changes probeCodes state mid-effect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
 
   const submitHitlResponse = (value, displayLabel) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;

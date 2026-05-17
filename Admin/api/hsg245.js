@@ -168,6 +168,7 @@ export default async function handler(req, res) {
             previous_why_answer: data.previous_why_answer || '',
             mode: data.mode || 'global',
             batch_size: data.batch_size ?? 1,
+            known_fields: data.known_fields || [],
           }
           break
 
