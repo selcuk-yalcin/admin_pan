@@ -167,7 +167,7 @@ const translations = {
     model_tier_quality_desc:
       '5-Neden ve kök neden taraması için daha ayrıntılı değerlendirme; yanıt süresi uzayabilir.',
     model_tier_economy_desc:
-      'Kısa sürede özet çıktı; günlük bildirimler ve ilk taslak değerlendirmesi için uygundur.',
+      'Kök neden ve 5-Neden taraması; olay bağlamını yapılandırılmış biçimde derinleştirir, dengeli sürede sonuç üretir.',
     model_tier_quality_soon: 'Yakında',
     model_tier_quality_locked_hint: 'Bu analiz seviyesi şu an kullanılamıyor.',
 
@@ -578,7 +578,7 @@ const translations = {
     model_tier_quality_desc:
       'More detailed 5-Why review and root-cause exploration; responses may take longer.',
     model_tier_economy_desc:
-      'Faster summary output; suited for routine incidents and first-pass drafts.',
+      'Root-cause and 5-Why review that deepens incident context in a structured way, with a balanced turnaround.',
     model_tier_quality_soon: 'Soon',
     model_tier_quality_locked_hint: 'This analysis level is not available yet.',
 
