@@ -8,7 +8,7 @@ const translations = {
     interactive_analysis: 'Etkileşimli Analiz',
     tab_saved_reports: 'Raporlar',
     root_cause_analysis: 'Root Cause Analysis',
-    subtitle: 'HSG245 v2.0 - İş Kazası Kök Neden Analiz Sistemi',
+    subtitle: 'DeepWhy - İş Kazası Kök Neden Analiz Sistemi',
     
     // Chat Interface
     analysis_steps: 'AKIŞ ADIMLARI',
@@ -48,7 +48,7 @@ const translations = {
     
     // Incident Form
     incident_report_form: 'İş Kazası Rapor Formu',
-    form_subtitle: 'HSG245 standartlarına göre detaylı kaza raporu',
+    form_subtitle: 'Detaylı kaza raporu ve kök neden analizi',
     
     // Sections
     section_reporter: 'Bildirim Yapan Kişi',
@@ -194,8 +194,12 @@ const translations = {
     submitting_pdf_pipeline: 'Rapor ve analiz çalışıyor...',
     submitting_hitl_seed: 'Kayıt oluşturuluyor, HITL başlıyor...',
     hitl_intro_title: 'İlk değerlendirme (doğrudan nedenler)',
-    hitl_questions_title: 'HSG245 kontrol soruları',
-    hitl_loading_questions: 'Sunucudan sorular yükleniyor...',
+    step_2_hitl: '2. Derinleştirme soruları',
+    step_2_hitl_desc: 'Kaza bağlamını netleştirme',
+    hitl_questions_title: 'Derinleştirme soruları',
+    hitl_input_locked_placeholder: 'Yanıtları yukarıdaki panelden verin',
+    hitl_loading_questions: 'Sorular hazırlanıyor...',
+    hitl_no_questions: 'Soru üretilemedi. Lütfen formu kontrol edip tekrar deneyin.',
     hitl_running_rca: 'Kök neden analizi ve aksiyon planı çalışıyor...',
     hitl_ask_pdf: 'Tamamlandı. HTML rapor oluşturulsun mu?',
     hitl_pdf_download: 'HTML Oluştur',
@@ -414,7 +418,7 @@ const translations = {
     interactive_analysis: 'Interactive Analysis',
     tab_saved_reports: 'Reports',
     root_cause_analysis: 'Root Cause Analysis',
-    subtitle: 'HSG245 v2.0 - Workplace Incident Root Cause Analysis System',
+    subtitle: 'DeepWhy - Workplace Incident Root Cause Analysis System',
     
     // Chat Interface
     analysis_steps: 'WORKFLOW STEPS',
@@ -454,7 +458,7 @@ const translations = {
     
     // Incident Form
     incident_report_form: 'Incident Report Form',
-    form_subtitle: 'Detailed incident report according to HSG245 standards',
+    form_subtitle: 'Detailed incident report and root cause analysis',
     
     // Sections
     section_reporter: 'Reporter Information',
@@ -601,8 +605,12 @@ const translations = {
     submitting_pdf_pipeline: 'Generating report and analysis...',
     submitting_hitl_seed: 'Saving and starting interactive questions...',
     hitl_intro_title: 'Initial assessment (immediate causes)',
-    hitl_questions_title: 'HSG245 control questions',
-    hitl_loading_questions: 'Loading questions from server...',
+    step_2_hitl: '2. Deepening questions',
+    step_2_hitl_desc: 'Clarifying incident context',
+    hitl_questions_title: 'Deepening questions',
+    hitl_input_locked_placeholder: 'Answer using the panel above',
+    hitl_loading_questions: 'Preparing questions...',
+    hitl_no_questions: 'No questions could be generated. Check the form and try again.',
     hitl_running_rca: 'Running root cause analysis and action plan...',
     hitl_ask_pdf: 'Done. Generate HTML report?',
     hitl_pdf_download: 'Generate HTML',
@@ -820,7 +828,7 @@ const translations = {
     manual_form: 'Manuelles Formular',
     interactive_analysis: 'Interaktive Analyse',
     root_cause_analysis: 'Ursachenanalyse',
-    subtitle: 'HSG245 v2.0 - Arbeitsunfall-Ursachenanalysesystem',
+    subtitle: 'DeepWhy - Arbeitsunfall-Ursachenanalysesystem',
     
     // Chat Interface
     analysis_steps: 'WORKFLOW-SCHRITTE',
@@ -1028,7 +1036,7 @@ const translations = {
     manual_form: 'Formulaire Manuel',
     interactive_analysis: 'Analyse Interactive',
     root_cause_analysis: 'Analyse des Causes Racines',
-    subtitle: 'HSG245 v2.0 - Système d\'Analyse des Causes d\'Accidents du Travail',
+    subtitle: 'DeepWhy - Système d\'Analyse des Causes d\'Accidents du Travail',
     
     // Chat Interface
     analysis_steps: 'ÉTAPES DU FLUX',
@@ -1236,7 +1244,7 @@ const translations = {
     manual_form: 'Formulario Manual',
     interactive_analysis: 'Análisis Interactivo',
     root_cause_analysis: 'Análisis de Causa Raíz',
-    subtitle: 'HSG245 v2.0 - Sistema de Análisis de Causas de Accidentes Laborales',
+    subtitle: 'DeepWhy - Sistema de Análisis de Causas de Accidentes Laborales',
     
     // Chat Interface
     analysis_steps: 'PASOS DEL FLUJO',
@@ -1444,7 +1452,7 @@ const translations = {
     manual_form: 'نموذج يدوي',
     interactive_analysis: 'تحليل تفاعلي',
     root_cause_analysis: 'تحليل السبب الجذري',
-    subtitle: 'HSG245 v2.0 - نظام تحليل الأسباب الجذرية لحوادث العمل',
+    subtitle: 'DeepWhy - نظام تحليل الأسباب الجذرية لحوادث العمل',
     
     // Chat Interface
     analysis_steps: 'خطوات سير العمل',

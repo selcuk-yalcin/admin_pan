@@ -233,29 +233,44 @@ export async function addAssessment(incidentId, data, options = {}) {
  * @param {string} incidentId
  * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, immediate_code?: string, why_level?: number, current_why_question?: string, previous_why_answer?: string, mode?: 'global'|'why_probe', batch_size?: number, known_fields?: string[] }} body
  */
-export async function fetchHitlQuestions(incidentId, body) {
-  const response = await fetch(`${API_GATEWAY_URL}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
-    body: JSON.stringify({
-      action: 'hitl_questions',
-      data: {
-        incident_id: incidentId,
-        how_happened: body.how_happened || '',
-        root_cause_initial: body.root_cause_initial || '',
-        answered_ids: body.answered_ids || [],
-        immediate_causes: body.immediate_causes ?? null,
-        immediate_code: body.immediate_code || '',
-        why_level: body.why_level ?? 0,
-        current_why_question: body.current_why_question || '',
-        previous_why_answer: body.previous_why_answer || '',
-        mode: body.mode || 'global',
-        batch_size: body.batch_size ?? 1,
-        known_fields: body.known_fields || [],
-      },
-    }),
-  });
-  return handleResponse(response);
+const HITL_QUESTIONS_TIMEOUT_MS = 120_000;
+
+export async function fetchHitlQuestions(incidentId, body, options = {}) {
+  const timeoutMs = options.timeoutMs ?? HITL_QUESTIONS_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
+      signal: controller.signal,
+      body: JSON.stringify({
+        action: 'hitl_questions',
+        data: {
+          incident_id: incidentId,
+          how_happened: body.how_happened || '',
+          root_cause_initial: body.root_cause_initial || '',
+          answered_ids: body.answered_ids || [],
+          immediate_causes: body.immediate_causes ?? null,
+          immediate_code: body.immediate_code || '',
+          why_level: body.why_level ?? 0,
+          current_why_question: body.current_why_question || '',
+          previous_why_answer: body.previous_why_answer || '',
+          mode: body.mode || 'global',
+          batch_size: body.batch_size ?? 1,
+          known_fields: body.known_fields || [],
+        },
+      }),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function startPipelineJob(incidentId, data, options = {}) {

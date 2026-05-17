@@ -63,6 +63,15 @@ function stripCodePrefix(line) {
     .trim();
 }
 
+/** Panelde HSG245 markası ve gereksiz kod öneklerini gizle. */
+function formatHitlHint(hint) {
+  return String(hint || '')
+    .replace(/HSG\s*245/gi, '')
+    .replace(/\bKB\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function getStageLabel(language, stage, progress) {
   const isTr = String(language || '').toLowerCase().startsWith('tr');
   const pctNum = Number(progress);
@@ -110,6 +119,7 @@ const ChatInterface = ({
   const [hitlAnswers, setHitlAnswers] = useState([]);
   /** @type {import('react').MutableRefObject<string|null>} */
   const processedHitlIdRef = useRef(null);
+  const hitlLoadGenRef = useRef(0);
   const librarySavedRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
@@ -491,8 +501,8 @@ const ChatInterface = ({
     setSessionId(Date.now().toString());
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
-        ? `HITL sorulari basladi (Incident: ${hitlSeed.incidentId})`
-        : `HITL questions started (Incident: ${hitlSeed.incidentId})`,
+        ? `Derinlestirme sorulari basladi (Incident: ${hitlSeed.incidentId})`
+        : `Deepening questions started (Incident: ${hitlSeed.incidentId})`,
     );
 
     const rci = hitlSeed.formData?.rootCauseInitial || '';
@@ -501,7 +511,7 @@ const ChatInterface = ({
     setHitlMode(mode);
     setProbeCodes(codes);
 
-    let cancelled = false;
+    const loadGen = ++hitlLoadGenRef.current;
     (async () => {
       try {
         const next = await resolveNextQuestion({
@@ -513,7 +523,7 @@ const ChatInterface = ({
           previousWhyAnswer: '',
           codes,
         });
-        if (cancelled) return;
+        if (loadGen !== hitlLoadGenRef.current) return;
         if (next.question) {
           setHitlApiQuestion(next.question);
           setProbeBranchIdx(next.nextBranchIdx);
@@ -523,9 +533,20 @@ const ChatInterface = ({
         }
         if (next.done) {
           void runRcaAfterHitl([]);
+          return;
         }
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `hitl-empty-${Date.now()}`,
+            type: 'error',
+            content: getTranslation(language, 'hitl_no_questions'),
+            timestamp: new Date(),
+          },
+        ]);
+        setHitlPhase(null);
       } catch (error) {
-        if (cancelled) return;
+        if (loadGen !== hitlLoadGenRef.current) return;
         setMessages((prev) => [
           ...prev,
           {
@@ -537,16 +558,17 @@ const ChatInterface = ({
         ]);
         setHitlPhase(null);
       } finally {
-        if (!cancelled) {
+        if (loadGen === hitlLoadGenRef.current) {
           setHitlQuestionsLoading(false);
         }
       }
     })();
 
     return () => {
-      cancelled = true;
+      hitlLoadGenRef.current += 1;
+      processedHitlIdRef.current = null;
     };
-  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange]);
+  }, [hitlSeed, language, runRcaAfterHitl, onPipelineStatusChange, resolveNextQuestion]);
 
   const submitHitlResponse = (value, displayLabel) => {
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
@@ -969,8 +991,8 @@ const ChatInterface = ({
           <div className={`step-item ${hitlPhase === 'questions' ? 'active' : hitlPhase ? 'completed' : ''}`}>
             <div className="step-icon">{hitlPhase === 'questions' ? '2' : hitlPhase ? '✓' : '2'}</div>
             <div className="step-text">
-              <h4>{t('hitl_questions_title')}</h4>
-              <p>HSG245 / KB</p>
+              <h4>{t('step_2_hitl')}</h4>
+              <p>{t('step_2_hitl_desc')}</p>
             </div>
           </div>
           <div className={`step-item ${hitlPhase === 'rca' ? 'active' : ['pdf_prompt'].includes(hitlPhase) ? 'completed' : ''}`}>
@@ -1016,11 +1038,22 @@ const ChatInterface = ({
                 <p className="hitl-q">{t('hitl_loading_questions')}</p>
               ) : hitlApiQuestion ? (
                 <>
-                  <div className="hitl-hint">
-                    {hitlMode === 'why_probe'
-                      ? `Branch ${probeBranchIdx + 1}/${Math.max(1, probeCodes.length)} • Why-${probeWhyLevel} • ${hitlApiQuestion.hsg_hint || currentProbeCode}`
-                      : hitlApiQuestion.hsg_hint}
-                  </div>
+                  {(() => {
+                    const hintRaw =
+                      hitlMode === 'why_probe'
+                        ? formatHitlHint(hitlApiQuestion.hsg_hint) || currentProbeCode
+                        : formatHitlHint(hitlApiQuestion.hsg_hint);
+                    if (!hintRaw) return null;
+                    return (
+                      <div className="hitl-hint">
+                        {hitlMode === 'why_probe'
+                          ? isTurkish
+                            ? `Dal ${probeBranchIdx + 1}/${Math.max(1, probeCodes.length)} • Why-${probeWhyLevel} • ${hintRaw}`
+                            : `Branch ${probeBranchIdx + 1}/${Math.max(1, probeCodes.length)} • Why-${probeWhyLevel} • ${hintRaw}`
+                          : hintRaw}
+                      </div>
+                    );
+                  })()}
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
                   {showHitlChips ? (
                     <div className="hitl-choice-chips-wrap">
@@ -1210,7 +1243,7 @@ const ChatInterface = ({
 
             <textarea
               className="chat-input"
-              placeholder={inputLocked ? t('hitl_questions_title') : t('input_placeholder')}
+              placeholder={inputLocked ? t('hitl_input_locked_placeholder') : t('input_placeholder')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
