@@ -219,6 +219,12 @@ export default async function handler(req, res) {
           method = 'GET'
           break
 
+        case 'download_docx_report':
+          endpoint = `/api/v1/reports/generate`
+          method = 'POST'
+          payload = { incident_id: data.incident_id }
+          break
+
         case 'view_html_report':
           endpoint = `/api/v1/reports/${data.incident_id}/html?download=0`
           method = 'GET'
@@ -344,7 +350,11 @@ export default async function handler(req, res) {
         })
       }
 
-      if (action === 'download_html_report' || action === 'download_decision_tree') {
+      if (
+        action === 'download_html_report' ||
+        action === 'download_decision_tree' ||
+        action === 'download_docx_report'
+      ) {
         const fileBuffer = await response.arrayBuffer()
         const contentType = response.headers.get('content-type') || 'text/html; charset=utf-8'
         const disposition = response.headers.get('content-disposition') || 'attachment'

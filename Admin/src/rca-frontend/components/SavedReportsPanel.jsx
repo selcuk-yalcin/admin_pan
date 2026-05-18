@@ -9,6 +9,8 @@ import {
   GitBranch,
   Loader2,
   RefreshCw,
+  Eye,
+  Download,
 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import {
@@ -21,6 +23,7 @@ import {
 import {
   openReportForEntry,
   downloadArtifactForEntry,
+  downloadDocxForEntry,
   syncReportHtmlToLibrary,
 } from '../utils/reportsLibraryApi';
 import { getCurrentUserId } from '../utils/userContext';
@@ -54,8 +57,10 @@ function ReportList({
   onRemove,
   onViewArtifact,
   onDownloadArtifact,
+  onDownloadDocx,
   onSyncArtifacts,
   syncingId,
+  downloadingId,
 }) {
   if (!entries.length) {
     return (
@@ -97,56 +102,92 @@ function ReportList({
                 </div>
 
                 {report && incidentId ? (
-                  <div className="saved-reports-inline-actions" role="group" aria-label={t('reports_actions_title')}>
-                    <button
-                      type="button"
-                      className="saved-reports-link"
-                      onClick={() => onViewArtifact(entry, 'report')}
-                    >
-                      {t('reports_view_html')}
-                    </button>
-                    <span className="saved-reports-link-sep" aria-hidden>·</span>
-                    <button
-                      type="button"
-                      className="saved-reports-link saved-reports-link--primary"
-                      onClick={() => onDownloadArtifact(entry, 'report')}
-                    >
-                      {t('reports_download_html_report')}
-                    </button>
-                    <span className="saved-reports-link-sep" aria-hidden>·</span>
-                    <button
-                      type="button"
-                      className="saved-reports-link"
-                      onClick={() => onViewArtifact(entry, 'decision_tree')}
-                    >
-                      <GitBranch size={14} aria-hidden />
-                      {t('reports_view_tree')}
-                    </button>
-                    <span className="saved-reports-link-sep" aria-hidden>·</span>
-                    <button
-                      type="button"
-                      className="saved-reports-link saved-reports-link--primary"
-                      onClick={() => onDownloadArtifact(entry, 'decision_tree')}
-                    >
-                      {t('reports_download_html_tree')}
-                    </button>
-                    {isLibraryServerMode() ? (
-                      <>
-                        <span className="saved-reports-link-sep" aria-hidden>·</span>
+                  <div className="saved-reports-actions-panel" role="group" aria-label={t('reports_actions_title')}>
+                    <div className="saved-reports-action-row">
+                      <span className="saved-reports-action-label">
+                        <FileText size={15} aria-hidden />
+                        {t('reports_section_report')}
+                      </span>
+                      <div className="saved-reports-action-chips">
                         <button
                           type="button"
-                          className="saved-reports-link saved-reports-link--muted"
-                          disabled={syncingId === entry.id}
-                          onClick={() => onSyncArtifacts(entry)}
+                          className="saved-reports-chip saved-reports-chip--view"
+                          onClick={() => onViewArtifact(entry, 'report')}
                         >
-                          {syncingId === entry.id ? (
+                          <Eye size={14} aria-hidden />
+                          {t('reports_view_short')}
+                        </button>
+                        <button
+                          type="button"
+                          className="saved-reports-chip saved-reports-chip--html"
+                          disabled={downloadingId === `${entry.id}-html-report`}
+                          onClick={() => onDownloadArtifact(entry, 'report')}
+                        >
+                          {downloadingId === `${entry.id}-html-report` ? (
                             <Loader2 size={14} className="spin" aria-hidden />
                           ) : (
-                            <RefreshCw size={14} aria-hidden />
+                            <Download size={14} aria-hidden />
                           )}
-                          {t('reports_sync_artifacts')}
+                          HTML
                         </button>
-                      </>
+                        <button
+                          type="button"
+                          className="saved-reports-chip saved-reports-chip--word"
+                          disabled={downloadingId === `${entry.id}-docx`}
+                          onClick={() => onDownloadDocx(entry)}
+                        >
+                          {downloadingId === `${entry.id}-docx` ? (
+                            <Loader2 size={14} className="spin" aria-hidden />
+                          ) : (
+                            <Download size={14} aria-hidden />
+                          )}
+                          Word
+                        </button>
+                      </div>
+                    </div>
+                    <div className="saved-reports-action-row">
+                      <span className="saved-reports-action-label">
+                        <GitBranch size={15} aria-hidden />
+                        {t('reports_section_tree')}
+                      </span>
+                      <div className="saved-reports-action-chips">
+                        <button
+                          type="button"
+                          className="saved-reports-chip saved-reports-chip--view"
+                          onClick={() => onViewArtifact(entry, 'decision_tree')}
+                        >
+                          <Eye size={14} aria-hidden />
+                          {t('reports_view_short')}
+                        </button>
+                        <button
+                          type="button"
+                          className="saved-reports-chip saved-reports-chip--html"
+                          disabled={downloadingId === `${entry.id}-html-tree`}
+                          onClick={() => onDownloadArtifact(entry, 'decision_tree')}
+                        >
+                          {downloadingId === `${entry.id}-html-tree` ? (
+                            <Loader2 size={14} className="spin" aria-hidden />
+                          ) : (
+                            <Download size={14} aria-hidden />
+                          )}
+                          HTML
+                        </button>
+                      </div>
+                    </div>
+                    {isLibraryServerMode() ? (
+                      <button
+                        type="button"
+                        className="saved-reports-chip saved-reports-chip--sync"
+                        disabled={syncingId === entry.id}
+                        onClick={() => onSyncArtifacts(entry)}
+                      >
+                        {syncingId === entry.id ? (
+                          <Loader2 size={14} className="spin" aria-hidden />
+                        ) : (
+                          <RefreshCw size={14} aria-hidden />
+                        )}
+                        {t('reports_sync_artifacts')}
+                      </button>
                     ) : null}
                   </div>
                 ) : null}
@@ -191,6 +232,7 @@ export default function SavedReportsPanel({
   const [error, setError] = useState('');
   const [serverMode, setServerMode] = useState(true);
   const [syncingId, setSyncingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -246,11 +288,28 @@ export default function SavedReportsPanel({
   };
 
   const handleDownloadArtifact = async (entry, artifactType) => {
+    const key = `${entry.id}-html-${artifactType === 'decision_tree' ? 'tree' : 'report'}`;
+    setDownloadingId(key);
     setError('');
     try {
       await downloadArtifactForEntry(entry, artifactType);
     } catch (err) {
       setError(err?.message || String(err));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleDownloadDocx = async (entry) => {
+    const key = `${entry.id}-docx`;
+    setDownloadingId(key);
+    setError('');
+    try {
+      await downloadDocxForEntry(entry);
+    } catch (err) {
+      setError(err?.message || String(err));
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -310,9 +369,6 @@ export default function SavedReportsPanel({
           </div>
           <h2 className="saved-reports-title">{t('tab_saved_reports')}</h2>
           <p className="saved-reports-lead">{t('reports_intro')}</p>
-          {serverMode ? (
-            <p className="saved-reports-tenant-note">{t('reports_multitenant_note')}</p>
-          ) : null}
         </div>
       </header>
 
@@ -347,8 +403,10 @@ export default function SavedReportsPanel({
               onRemove={handleRemove}
               onViewArtifact={handleViewArtifact}
               onDownloadArtifact={handleDownloadArtifact}
+              onDownloadDocx={handleDownloadDocx}
               onSyncArtifacts={handleSyncArtifacts}
               syncingId={syncingId}
+              downloadingId={downloadingId}
             />
           </section>
 
@@ -366,8 +424,10 @@ export default function SavedReportsPanel({
               onRemove={handleRemove}
               onViewArtifact={handleViewArtifact}
               onDownloadArtifact={handleDownloadArtifact}
+              onDownloadDocx={handleDownloadDocx}
               onSyncArtifacts={handleSyncArtifacts}
               syncingId={syncingId}
+              downloadingId={downloadingId}
             />
           </section>
         </>

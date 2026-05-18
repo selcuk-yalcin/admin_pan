@@ -173,11 +173,13 @@ const translations = {
 
     reports_intro:
       'Tamamlanan analizler ve taslaklar yalnızca sizin hesabınıza özel saklanır. Her raporun altından HTML indirebilirsiniz.',
-    reports_multitenant_note:
-      'Çok kiracılı yapı: şirket (tenant) + kullanıcı (Kinde ID) ile ayrılır. Başka kullanıcılar sizin kayıtlarınızı göremez.',
     reports_your_account: 'Hesabınız',
+    reports_section_report: 'Rapor',
+    reports_section_tree: 'Karar ağacı',
+    reports_view_short: 'Görüntüle',
     reports_download_html_report: 'İndir HTML (Rapor)',
     reports_download_html_tree: 'İndir HTML (Karar ağacı)',
+    reports_download_word: 'Word (.docx)',
     reports_mongo_hint:
       'Kayıtlar sunucuya yazılamadı (Yerel mod). Railway\'de MONGODB_URI tanımlı mı? Atlas: rca → deepwhy_saved_items',
     reports_badge_server: 'Bulut',
@@ -606,11 +608,13 @@ const translations = {
 
     reports_intro:
       'Completed analyses and drafts are stored only for your account. Download HTML from the links under each report.',
-    reports_multitenant_note:
-      'Multi-tenant: isolated by company (tenant) and user (Kinde ID). Other users cannot see your records.',
     reports_your_account: 'Your account',
+    reports_section_report: 'Report',
+    reports_section_tree: 'Decision tree',
+    reports_view_short: 'View',
     reports_download_html_report: 'Download HTML (Report)',
     reports_download_html_tree: 'Download HTML (Decision tree)',
+    reports_download_word: 'Word (.docx)',
     reports_badge_server: 'Cloud',
     reports_folder_created: 'Created Reports',
     reports_folder_drafts: 'Drafts',

@@ -204,6 +204,36 @@ export async function downloadArtifactForEntry(entry, artifactType = 'report') {
   downloadHtmlBlob(html, artifactFilename(incidentId, artifactType));
 }
 
+/** Download Word (.docx) report for incident (generates on backend if needed). */
+export async function downloadDocxForEntry(entry) {
+  const incidentId = entry?.incidentId || entry?.incident_id || '';
+  if (!incidentId) throw new Error('incidentId missing');
+
+  const response = await fetch(API_GATEWAY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
+    body: JSON.stringify({
+      action: 'download_docx_report',
+      data: { incident_id: incidentId },
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.details || payload?.error || `HTTP ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `DeepWhy_Report_${incidentId}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 /**
  * Persist report + decision tree HTML to user library.
  * Tries fast save-html path after generating artifacts via gateway.
