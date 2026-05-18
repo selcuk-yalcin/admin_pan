@@ -183,6 +183,13 @@ export async function fetchArtifactHtmlForEntry(entry, artifactType = 'report') 
   return fetchIncidentArtifactHtml(incidentId, artifactType);
 }
 
+/** Open stored HTML artifact in a new tab (Mongo library by item id). */
+export async function openLibraryArtifact(itemId, artifactType = 'report') {
+  const id = String(itemId || '').trim();
+  const incidentId = id.replace(/^report-/, '');
+  await openReportForEntry({ id, incidentId }, artifactType);
+}
+
 /** Open report or decision tree HTML in a new tab. */
 export async function openReportForEntry(entry, artifactType = 'report') {
   const incidentId = entry?.incidentId || entry?.incident_id || '';
