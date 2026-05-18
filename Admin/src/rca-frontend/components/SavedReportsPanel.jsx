@@ -144,6 +144,7 @@ function ReportList({
   syncingId,
   downloadingId,
   renamingId,
+  compact = false,
 }) {
   if (!entries.length) {
     return (
@@ -161,7 +162,7 @@ function ReportList({
         return (
           <li key={entry.id} className="saved-reports-list-item">
             <article
-              className={`saved-reports-card ${report ? 'saved-reports-card--report' : ''}`}
+              className={`saved-reports-card ${report ? 'saved-reports-card--report' : 'saved-reports-card--draft'} ${compact ? 'saved-reports-card--compact' : ''}`}
             >
               <div className="saved-reports-card-body">
                 <div className="saved-reports-card-main-static">
@@ -187,7 +188,7 @@ function ReportList({
                   </span>
                 </div>
 
-                {report && incidentId ? (
+                {report && incidentId && !compact ? (
                   <div className="saved-reports-actions-panel" role="group" aria-label={t('reports_actions_title')}>
                     <div className="saved-reports-action-row">
                       <span className="saved-reports-action-label">
@@ -281,7 +282,7 @@ function ReportList({
                 {!report ? (
                   <button
                     type="button"
-                    className="saved-reports-link saved-reports-link--primary"
+                    className={`saved-reports-open-draft-btn ${compact ? 'saved-reports-open-draft-btn--block' : ''}`}
                     onClick={() => onOpen(entry)}
                   >
                     <Pencil size={14} aria-hidden />
@@ -447,7 +448,7 @@ export default function SavedReportsPanel({
 
   return (
     <div className="saved-reports-panel">
-      <header className="saved-reports-hero">
+      <header className="saved-reports-hero saved-reports-hero--compact">
         <div className="saved-reports-hero-visual" aria-hidden>
           <FolderOpen size={26} strokeWidth={1.75} />
         </div>
@@ -488,9 +489,9 @@ export default function SavedReportsPanel({
           <p className="saved-reports-empty-hint">{t('reports_empty_cta')}</p>
         </div>
       ) : (
-        <>
-          <section className="saved-reports-folder">
-            <h3 className="saved-reports-folder-title">
+        <div className="saved-reports-layout">
+          <section className="saved-reports-folder saved-reports-folder--reports" aria-labelledby="reports-created-heading">
+            <h3 id="reports-created-heading" className="saved-reports-folder-title">
               <FileText size={18} aria-hidden />
               {t('reports_folder_created')}
               <span className="saved-reports-folder-count">{reports.length}</span>
@@ -509,15 +510,17 @@ export default function SavedReportsPanel({
               syncingId={syncingId}
               downloadingId={downloadingId}
               renamingId={renamingId}
+              compact={false}
             />
           </section>
 
-          <section className="saved-reports-folder">
-            <h3 className="saved-reports-folder-title">
+          <aside className="saved-reports-folder saved-reports-folder--drafts" aria-labelledby="reports-drafts-heading">
+            <h3 id="reports-drafts-heading" className="saved-reports-folder-title">
               <Pencil size={18} aria-hidden />
               {t('reports_folder_drafts')}
               <span className="saved-reports-folder-count">{drafts.length}</span>
             </h3>
+            <p className="saved-reports-drafts-hint">{t('reports_drafts_sidebar_hint')}</p>
             <ReportList
               entries={drafts}
               language={language}
@@ -532,9 +535,10 @@ export default function SavedReportsPanel({
               syncingId={syncingId}
               downloadingId={downloadingId}
               renamingId={renamingId}
+              compact
             />
-          </section>
-        </>
+          </aside>
+        </div>
       )}
     </div>
   );

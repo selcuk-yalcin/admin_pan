@@ -1,13 +1,59 @@
 /* ── Reports tab (DeepWhy) — polished list + empty state ── */
 
 .saved-reports-panel {
-  max-width: 720px;
+  width: 100%;
+  max-width: min(1140px, 100%);
   margin: 0 auto;
-  padding: 0.5rem 1rem 2.5rem;
+  padding: 0.75rem 1.25rem 2rem;
+  box-sizing: border-box;
+}
+
+.saved-reports-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.saved-reports-folder--reports {
+  min-width: 0;
+}
+
+.saved-reports-folder--drafts {
+  position: sticky;
+  top: 0.75rem;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+  max-height: calc(100vh - 12rem);
+  overflow-y: auto;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-folder--drafts {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(71, 85, 105, 0.55);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.saved-reports-drafts-hint {
+  margin: -0.35rem 0 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-drafts-hint {
+  color: #94a3b8;
 }
 
 .saved-reports-folder {
-  margin-bottom: 1.75rem;
+  margin-bottom: 0;
+}
+
+.saved-reports-folder--reports .saved-reports-folder-title {
+  margin-bottom: 1rem;
 }
 
 .saved-reports-folder-title {
@@ -72,7 +118,7 @@
   display: flex;
   align-items: flex-start;
   gap: 1.125rem;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
   padding: 1.35rem 1.5rem;
   border-radius: 16px;
   background: linear-gradient(
@@ -93,6 +139,26 @@
   );
   border-color: rgba(148, 163, 184, 0.2);
   box-shadow: 0 4px 28px rgba(0, 0, 0, 0.25);
+}
+
+.saved-reports-hero--compact {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1.15rem;
+}
+
+.saved-reports-hero--compact .saved-reports-hero-visual {
+  width: 44px;
+  height: 44px;
+}
+
+.saved-reports-hero--compact .saved-reports-title {
+  font-size: 1.15rem;
+  margin-bottom: 0.25rem;
+}
+
+.saved-reports-hero--compact .saved-reports-lead {
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .saved-reports-hero-visual {
@@ -642,6 +708,49 @@
   border-color: rgba(16, 185, 129, 0.22);
 }
 
+.saved-reports-card--draft {
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+.saved-reports-card--compact {
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.saved-reports-card--compact .saved-reports-card-body {
+  padding: 0.75rem 0.5rem 0.75rem 0.9rem;
+}
+
+.saved-reports-card--compact .saved-reports-card-title {
+  font-size: 0.88rem;
+  -webkit-line-clamp: 3;
+}
+
+.saved-reports-open-draft-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.saved-reports-open-draft-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.saved-reports-open-draft-btn--block {
+  width: 100%;
+}
+
 .rca-frontend-hub.theme-dark .saved-reports-card-title {
   color: #f1f5f9;
 }
@@ -718,7 +827,23 @@
   transform: translateX(2px);
 }
 
+@media (max-width: 960px) {
+  .saved-reports-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-reports-folder--drafts {
+    position: static;
+    max-height: none;
+    order: -1;
+  }
+}
+
 @media (max-width: 520px) {
+  .saved-reports-panel {
+    padding: 0.5rem 0.75rem 1.5rem;
+  }
+
   .saved-reports-hero {
     flex-direction: column;
     align-items: center;
@@ -738,11 +863,7 @@
     justify-content: flex-end;
   }
 
-  .saved-reports-expand {
-    flex-direction: column;
-  }
-
-  .saved-reports-expand-btn--sync {
-    margin-left: 0;
+  .saved-reports-action-chips {
+    width: 100%;
   }
 }
