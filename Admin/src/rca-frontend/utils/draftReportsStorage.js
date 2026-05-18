@@ -200,6 +200,42 @@ export async function finalizeSavedReport({
   return upsertSavedReport({ incidentId, snapshot, titleHint, reportReady: true });
 }
 
+/** Rename a saved report or draft (persists title to Mongo or localStorage). */
+export async function renameSavedReportEntry(entry, newTitle) {
+  const title = String(newTitle || '').trim();
+  if (!title) throw new Error('Title required');
+  const kind = entry?.kind === 'report' ? 'report' : 'draft';
+  const incidentId = entry?.incidentId || '';
+
+  if (serverAvailable) {
+    try {
+      const item = await upsertLibraryItem({
+        kind,
+        item_id: entry.id,
+        incident_id: incidentId,
+        snapshot: entry.snapshot || {},
+        title_hint: title,
+        report_ready: Boolean(entry.reportReady),
+        analysis_model_preset: entry.snapshot?.analysisModelPreset || '',
+      });
+      notifyDraftsChanged();
+      return mapServerItem(item);
+    } catch {
+      serverAvailable = false;
+    }
+  }
+
+  const list = loadDraftReportsListLocal();
+  const next = list.map((x) =>
+    x?.id === entry.id
+      ? { ...x, title: title.slice(0, 96), updatedAt: new Date().toISOString() }
+      : x,
+  );
+  persistListLocal(next);
+  notifyDraftsChanged();
+  return next.find((x) => x?.id === entry.id) || null;
+}
+
 export async function deleteDraftReport(id) {
   if (serverAvailable) {
     try {

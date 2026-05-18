@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   FolderOpen,
   Trash2,
@@ -16,6 +16,7 @@ import { getTranslation } from '../utils/translations';
 import {
   loadDraftReportsList,
   deleteDraftReport,
+  renameSavedReportEntry,
   notifyDraftsChanged,
   isLibraryServerMode,
   getLastLibraryError,
@@ -49,6 +50,86 @@ function isReportEntry(entry) {
   return entry?.kind === 'report' || Boolean(entry?.incidentId);
 }
 
+function EditableReportTitle({ entry, t, onRename, renamingId }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(entry.title || '');
+  const inputRef = useRef(null);
+  const saving = renamingId === entry.id;
+
+  useEffect(() => {
+    setDraft(entry.title || '');
+  }, [entry.title, entry.id]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = async () => {
+    const next = draft.trim();
+    if (!next) {
+      setDraft(entry.title || '');
+      setEditing(false);
+      return;
+    }
+    if (next === (entry.title || '').trim()) {
+      setEditing(false);
+      return;
+    }
+    await onRename(entry, next);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(entry.title || '');
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <span className="saved-reports-title-edit-wrap">
+        <input
+          ref={inputRef}
+          type="text"
+          className="saved-reports-title-input"
+          value={draft}
+          maxLength={96}
+          disabled={saving}
+          aria-label={t('reports_rename_label')}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            if (!saving) commit();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+        />
+        {saving ? <Loader2 size={14} className="spin saved-reports-title-saving" aria-hidden /> : null}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="saved-reports-card-title saved-reports-card-title--editable"
+      title={t('reports_rename_hint')}
+      onClick={() => setEditing(true)}
+    >
+      {entry.title}
+      <Pencil size={13} className="saved-reports-title-edit-icon" aria-hidden />
+    </button>
+  );
+}
+
 function ReportList({
   entries,
   language,
@@ -59,8 +140,10 @@ function ReportList({
   onDownloadArtifact,
   onDownloadDocx,
   onSyncArtifacts,
+  onRenameTitle,
   syncingId,
   downloadingId,
+  renamingId,
 }) {
   if (!entries.length) {
     return (
@@ -88,9 +171,12 @@ function ReportList({
                     >
                       {report ? t('reports_kind_report') : t('reports_kind_draft')}
                     </span>
-                    <span className="saved-reports-card-title" title={entry.title}>
-                      {entry.title}
-                    </span>
+                    <EditableReportTitle
+                      entry={entry}
+                      t={t}
+                      renamingId={renamingId}
+                      onRename={onRenameTitle}
+                    />
                   </span>
                   <span className="saved-reports-card-meta">
                     <Clock size={14} className="saved-reports-card-clock" aria-hidden />
@@ -233,6 +319,7 @@ export default function SavedReportsPanel({
   const [serverMode, setServerMode] = useState(true);
   const [syncingId, setSyncingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [renamingId, setRenamingId] = useState(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -310,6 +397,19 @@ export default function SavedReportsPanel({
       setError(err?.message || String(err));
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleRenameTitle = async (entry, newTitle) => {
+    setRenamingId(entry.id);
+    setError('');
+    try {
+      await renameSavedReportEntry(entry, newTitle);
+      await reload();
+    } catch (err) {
+      setError(err?.message || String(err));
+    } finally {
+      setRenamingId(null);
     }
   };
 
@@ -404,9 +504,11 @@ export default function SavedReportsPanel({
               onViewArtifact={handleViewArtifact}
               onDownloadArtifact={handleDownloadArtifact}
               onDownloadDocx={handleDownloadDocx}
+              onRenameTitle={handleRenameTitle}
               onSyncArtifacts={handleSyncArtifacts}
               syncingId={syncingId}
               downloadingId={downloadingId}
+              renamingId={renamingId}
             />
           </section>
 
@@ -425,9 +527,11 @@ export default function SavedReportsPanel({
               onViewArtifact={handleViewArtifact}
               onDownloadArtifact={handleDownloadArtifact}
               onDownloadDocx={handleDownloadDocx}
+              onRenameTitle={handleRenameTitle}
               onSyncArtifacts={handleSyncArtifacts}
               syncingId={syncingId}
               downloadingId={downloadingId}
+              renamingId={renamingId}
             />
           </section>
         </>
