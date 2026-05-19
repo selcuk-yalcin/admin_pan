@@ -68,6 +68,20 @@
   padding-left: 0.5rem;
 }
 
+/* Flex child must shrink so main-content scrolls (reports list not clipped) */
+.app.rca-frontend-hub.fullscreen-mode .main-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app.rca-frontend-hub.fullscreen-mode .main-content--reports-tab {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Tab Navigation */
 .tab-navigation {
   display: flex;

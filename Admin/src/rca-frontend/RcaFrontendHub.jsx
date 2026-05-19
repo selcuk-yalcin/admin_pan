@@ -315,18 +315,20 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </button>
       </div>
 
-      <div className="info-banner">
-        <div className="info-banner-icon">RCA</div>
-        <div className="info-banner-content">
-          <h2>{translate("root_cause_analysis")}</h2>
-          <p>
-            <strong>DeepWhy</strong>
-            {subtitleText ? ` - ${subtitleText}` : ""}
-          </p>
+      {activeTab !== "reports" ? (
+        <div className="info-banner">
+          <div className="info-banner-icon">RCA</div>
+          <div className="info-banner-content">
+            <h2>{translate("root_cause_analysis")}</h2>
+            <p>
+              <strong>DeepWhy</strong>
+              {subtitleText ? ` - ${subtitleText}` : ""}
+            </p>
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      <main className="main-content">
+      <main className={`main-content${activeTab === "reports" ? " main-content--reports-tab" : ""}`}>
         {formSubmitInfo && activeTab !== "reports" && (
           <div className="info-banner" style={{ marginBottom: "16px" }}>
             <div className="info-banner-icon">AI</div>
