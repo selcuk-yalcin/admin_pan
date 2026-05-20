@@ -1,6 +1,7 @@
 /**
  * Form verisinden olay metni ve investigate API payload üretir (RcaFrontendHub ile uyumlu).
  */
+import { formatWitnessesBlock, witnessNamesJoined, normalizeWitnesses } from './witnessRows';
 
 const EVIDENCE_TEXT_MAX = 12000;
 
@@ -51,10 +52,16 @@ export function buildHowHappenedText(formData, outputLanguage = "tr") {
     .map((row) => `- ${row.time || "??:??"}: ${row.event || ""}`)
     .join("\n");
 
+  const witnesses = normalizeWitnesses(formData);
+  const witnessBlock = formatWitnessesBlock(witnesses);
+  const isTr = String(outputLanguage || "").toLowerCase().startsWith("tr");
+  const witnessTitle = isTr ? "Taniklar" : "Witnesses";
+
   const parts = [
     formData.incidentDescription || "",
     formData.emergencyMeasures ? `Acil Onlemler: ${formData.emergencyMeasures}` : "",
     timelineRows ? `Olay Kronolojisi:\n${timelineRows}` : "",
+    witnessBlock ? `${witnessTitle}:\n${witnessBlock}` : "",
     formData.additionalNotes ? `Ek Notlar: ${formData.additionalNotes}` : "",
   ];
 
@@ -93,7 +100,9 @@ export function buildInvestigationPayload(formData, hitlAppendix = "", outputLan
 
   return {
     location: `${formData.location || ""} ${formData.department ? `| ${formData.department}` : ""}`.trim(),
-    who_involved: [formData.reportedBy, formData.witnessNames].filter(Boolean).join(" | "),
+    who_involved: [formData.reportedBy, witnessNamesJoined(normalizeWitnesses(formData))]
+      .filter(Boolean)
+      .join(" | "),
     how_happened: description,
     activities: [formData.workType, formData.workDuration, formData.shiftTime].filter(Boolean).join(" | "),
     working_conditions: [

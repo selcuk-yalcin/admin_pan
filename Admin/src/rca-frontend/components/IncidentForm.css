@@ -297,6 +297,14 @@ html {
   cursor: not-allowed;
 }
 
+.witness-row {
+  grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(0, 1.4fr) auto;
+}
+
+.witness-statement-col input {
+  width: 100%;
+}
+
 /* Form Rows & Fields */
 .form-row {
   display: grid;
@@ -521,7 +529,8 @@ html {
     font-size: 1.5rem;
   }
 
-  .timeline-row {
+  .timeline-row,
+  .witness-row {
     grid-template-columns: 1fr;
   }
 

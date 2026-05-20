@@ -3,6 +3,10 @@ import { Calendar, Clock, MapPin, User, AlertTriangle, FileText, Users, Shield, 
 import { getTranslation } from '../utils/translations';
 import { getTestScenarioList, loadTestScenario } from '../utils/testScenarios';
 import { DEFAULT_REPORTER_NAME } from '../constants/formDefaults';
+import {
+  createDefaultWitnesses,
+  normalizeWitnesses,
+} from '../utils/witnessRows';
 import './IncidentForm.css';
 
 const createDefaultTimeline = () => ([
@@ -103,8 +107,7 @@ const IncidentForm = ({
     
     // Witnesses
     witnessesPresent: '',
-    witnessNames: '',
-    witnessStatements: '',
+    witnesses: createDefaultWitnesses(),
     
     // Environmental Conditions
     weatherConditions: '',
@@ -146,11 +149,13 @@ const IncidentForm = ({
       Array.isArray(snap.timeline) && snap.timeline.length > 0
         ? snap.timeline
         : createDefaultTimeline();
+    const witnesses = normalizeWitnesses(snap);
     setAttachmentError('');
     setFormData((prev) => ({
       ...prev,
       ...snap,
       timeline,
+      witnesses,
       evidenceAttachments: Array.isArray(snap.evidenceAttachments)
         ? snap.evidenceAttachments
         : prev.evidenceAttachments,
@@ -197,6 +202,7 @@ const IncidentForm = ({
           Array.isArray(scenarioData.timeline) && scenarioData.timeline.length > 0
             ? scenarioData.timeline
             : createDefaultTimeline(),
+        witnesses: normalizeWitnesses(scenarioData),
       }));
     }
   };
@@ -242,6 +248,39 @@ const IncidentForm = ({
     });
   };
 
+  const handleWitnessChange = (index, field, value) => {
+    setFormData((prev) => {
+      const witnesses = [...prev.witnesses];
+      witnesses[index] = { ...witnesses[index], [field]: value };
+      return { ...prev, witnesses };
+    });
+  };
+
+  const handleAddWitnessRow = () => {
+    setFormData((prev) => ({
+      ...prev,
+      witnesses: [...prev.witnesses, { name: '', roleContact: '', statement: '' }],
+    }));
+  };
+
+  const handleRemoveWitnessRow = (index) => {
+    setFormData((prev) => {
+      if (prev.witnesses.length <= 1) return prev;
+      const witnesses = prev.witnesses.filter((_, i) => i !== index);
+      return { ...prev, witnesses };
+    });
+  };
+
+  const handleWitnessesPresentChange = (value) => {
+    setFormData((prev) => {
+      const next = { ...prev, witnessesPresent: value };
+      if (value === 'yes' && (!prev.witnesses || prev.witnesses.length === 0)) {
+        next.witnesses = createDefaultWitnesses();
+      }
+      return next;
+    });
+  };
+
   const handleClearForm = () => {
     setFormData({
       reportedBy: DEFAULT_REPORTER_NAME,
@@ -260,8 +299,7 @@ const IncidentForm = ({
       safetyTraining: '',
       ppeUsed: '',
       witnessesPresent: '',
-      witnessNames: '',
-      witnessStatements: '',
+      witnesses: createDefaultWitnesses(),
       weatherConditions: '',
       lightingConditions: '',
       noiseLevel: '',
@@ -757,16 +795,23 @@ const IncidentForm = ({
 
         {/* SECTION 6: WITNESSES */}
         <div className="form-section" ref={(el) => (sectionRefs.current[5] = el)}>
-          <div className="section-header">
-            <Users size={20} />
-            <h2>{t('section_witnesses')}</h2>
+          <div className="section-header section-header-between">
+            <div className="section-title-wrap">
+              <Users size={20} />
+              <h2>{t('section_witnesses')}</h2>
+            </div>
+            {formData.witnessesPresent === 'yes' && (
+              <button type="button" className="timeline-add-btn" onClick={handleAddWitnessRow}>
+                {t('add_witness')}
+              </button>
+            )}
           </div>
           
           <div className="form-field">
             <label>{t('witnesses_present')}</label>
             <select
               value={formData.witnessesPresent}
-              onChange={(e) => handleChange('witnessesPresent', e.target.value)}
+              onChange={(e) => handleWitnessesPresentChange(e.target.value)}
             >
               <option value="">{t('select_option')}</option>
               {yesNoOptions.map(opt => (
@@ -776,27 +821,49 @@ const IncidentForm = ({
           </div>
           
           {formData.witnessesPresent === 'yes' && (
-            <>
-              <div className="form-field full-width">
-                <label>{t('witness_names')}</label>
-                <textarea
-                  value={formData.witnessNames}
-                  onChange={(e) => handleChange('witnessNames', e.target.value)}
-                  placeholder={t('witness_names_placeholder')}
-                  rows={2}
-                />
-              </div>
-              
-              <div className="form-field full-width">
-                <label>{t('witness_statements')}</label>
-                <textarea
-                  value={formData.witnessStatements}
-                  onChange={(e) => handleChange('witnessStatements', e.target.value)}
-                  placeholder={t('witness_statements_placeholder')}
-                  rows={4}
-                />
-              </div>
-            </>
+            <div className="timeline-list witness-list">
+              {(formData.witnesses || []).map((witness, index) => (
+                <div className="timeline-row witness-row" key={`witness-${index}`}>
+                  <div className="timeline-event">
+                    <label>{`${t('witness_name_short')} ${index + 1}`}</label>
+                    <input
+                      type="text"
+                      value={witness.name}
+                      onChange={(e) => handleWitnessChange(index, 'name', e.target.value)}
+                      placeholder={t('witness_name_placeholder')}
+                    />
+                  </div>
+                  <div className="timeline-event">
+                    <label>{t('witness_role_label')}</label>
+                    <input
+                      type="text"
+                      value={witness.roleContact}
+                      onChange={(e) => handleWitnessChange(index, 'roleContact', e.target.value)}
+                      placeholder={t('witness_role_placeholder')}
+                    />
+                  </div>
+                  <div className="timeline-event witness-statement-col">
+                    <label>{t('witness_statement_label')}</label>
+                    <input
+                      type="text"
+                      value={witness.statement}
+                      onChange={(e) => handleWitnessChange(index, 'statement', e.target.value)}
+                      placeholder={t('witness_statement_placeholder')}
+                    />
+                  </div>
+                  <div className="timeline-actions">
+                    <button
+                      type="button"
+                      className="timeline-remove-btn"
+                      onClick={() => handleRemoveWitnessRow(index)}
+                      disabled={(formData.witnesses || []).length <= 1}
+                    >
+                      {t('remove_row')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
