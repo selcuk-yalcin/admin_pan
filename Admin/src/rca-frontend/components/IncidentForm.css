@@ -297,12 +297,40 @@ html {
   cursor: not-allowed;
 }
 
-.witness-row {
-  grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(0, 1.4fr) auto;
+.witness-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-.witness-statement-col input {
+.witness-card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.witness-row-top {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(140px, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.witness-row-actions {
+  display: flex;
+  align-items: end;
+  padding-bottom: 2px;
+}
+
+.witness-statement-block {
+  margin-top: 0.85rem;
+}
+
+.witness-statement-block textarea {
   width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
 }
 
 /* Form Rows & Fields */
@@ -529,9 +557,16 @@ html {
     font-size: 1.5rem;
   }
 
-  .timeline-row,
-  .witness-row {
+  .timeline-row {
     grid-template-columns: 1fr;
+  }
+
+  .witness-row-top {
+    grid-template-columns: 1fr;
+  }
+
+  .witness-row-actions {
+    justify-content: flex-end;
   }
 
   .timeline-actions {

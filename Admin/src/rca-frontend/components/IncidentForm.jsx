@@ -5,6 +5,7 @@ import { getTestScenarioList, loadTestScenario } from '../utils/testScenarios';
 import { DEFAULT_REPORTER_NAME } from '../constants/formDefaults';
 import {
   createDefaultWitnesses,
+  createWitnessRow,
   normalizeWitnesses,
 } from '../utils/witnessRows';
 import './IncidentForm.css';
@@ -259,7 +260,7 @@ const IncidentForm = ({
   const handleAddWitnessRow = () => {
     setFormData((prev) => ({
       ...prev,
-      witnesses: [...prev.witnesses, { name: '', roleContact: '', statement: '' }],
+      witnesses: [...prev.witnesses, createWitnessRow(prev.witnesses.length)],
     }));
   };
 
@@ -821,45 +822,47 @@ const IncidentForm = ({
           </div>
           
           {formData.witnessesPresent === 'yes' && (
-            <div className="timeline-list witness-list">
+            <div className="witness-list">
               {(formData.witnesses || []).map((witness, index) => (
-                <div className="timeline-row witness-row" key={`witness-${index}`}>
-                  <div className="timeline-event">
-                    <label>{`${t('witness_name_short')} ${index + 1}`}</label>
-                    <input
-                      type="text"
-                      value={witness.name}
-                      onChange={(e) => handleWitnessChange(index, 'name', e.target.value)}
-                      placeholder={t('witness_name_placeholder')}
-                    />
+                <div className="witness-card" key={`witness-${index}`}>
+                  <div className="witness-row-top">
+                    <div className="form-field">
+                      <label>{`${t('witness_name_short')} ${index + 1}`}</label>
+                      <input
+                        type="text"
+                        value={witness.name}
+                        onChange={(e) => handleWitnessChange(index, 'name', e.target.value)}
+                        placeholder={t('witness_name_placeholder')}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label>{t('witness_role_label')}</label>
+                      <input
+                        type="text"
+                        value={witness.role ?? witness.roleContact ?? ''}
+                        onChange={(e) => handleWitnessChange(index, 'role', e.target.value)}
+                        placeholder={t('witness_role_placeholder')}
+                      />
+                    </div>
+                    <div className="witness-row-actions">
+                      <button
+                        type="button"
+                        className="timeline-remove-btn"
+                        onClick={() => handleRemoveWitnessRow(index)}
+                        disabled={(formData.witnesses || []).length <= 1}
+                      >
+                        {t('remove_row')}
+                      </button>
+                    </div>
                   </div>
-                  <div className="timeline-event">
-                    <label>{t('witness_role_label')}</label>
-                    <input
-                      type="text"
-                      value={witness.roleContact}
-                      onChange={(e) => handleWitnessChange(index, 'roleContact', e.target.value)}
-                      placeholder={t('witness_role_placeholder')}
-                    />
-                  </div>
-                  <div className="timeline-event witness-statement-col">
+                  <div className="witness-statement-block form-field full-width">
                     <label>{t('witness_statement_label')}</label>
-                    <input
-                      type="text"
+                    <textarea
                       value={witness.statement}
                       onChange={(e) => handleWitnessChange(index, 'statement', e.target.value)}
                       placeholder={t('witness_statement_placeholder')}
+                      rows={3}
                     />
-                  </div>
-                  <div className="timeline-actions">
-                    <button
-                      type="button"
-                      className="timeline-remove-btn"
-                      onClick={() => handleRemoveWitnessRow(index)}
-                      disabled={(formData.witnesses || []).length <= 1}
-                    >
-                      {t('remove_row')}
-                    </button>
                   </div>
                 </div>
               ))}

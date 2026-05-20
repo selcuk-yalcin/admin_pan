@@ -78,7 +78,7 @@ const translations = {
     
     incident_description: 'Olay Açıklaması',
     what_where_when_who: 'Ne oldu, Nerede, Ne zaman',
-    reporter_name_hint: 'Rapor oluşturulduktan sonra rapor içinde değiştirebilirsiniz.',
+    reporter_name_hint: 'Şablon isimdir. Rapor oluşturulduktan sonra raporda bildiren adını değiştirin.',
     describe_incident_detail: 'Kazayı detaylı bir şekilde anlatın...',
     include_details_hint: 'Lütfen ne, nerede, ne zaman, kim, nasıl ve neden bilgilerini ekleyin',
     
@@ -108,8 +108,8 @@ const translations = {
     add_witness: '+ Tanık Ekle',
     witness_name_short: 'Tanık',
     witness_name_placeholder: 'Ad soyad',
-    witness_role_label: 'Görev / iletişim',
-    witness_role_placeholder: 'Örn. işçi, usta, tel.',
+    witness_role_label: 'Görev',
+    witness_role_placeholder: 'Örn. işçi, usta, şef',
     witness_statement_label: 'İfade',
     witness_statement_placeholder: 'Tanığın gözlemi',
     remove_row: 'Sil',
@@ -524,7 +524,7 @@ const translations = {
     
     incident_description: 'Incident Description',
     what_where_when_who: 'What, Where, When',
-    reporter_name_hint: 'You can change this in the report after it is generated.',
+    reporter_name_hint: 'Template name only. Change the reporter name in the report after it is generated.',
     describe_incident_detail: 'Describe the incident in detail...',
     include_details_hint: 'Please include what, where, when, who, how and why',
     
@@ -554,7 +554,7 @@ const translations = {
     add_witness: '+ Add witness',
     witness_name_short: 'Witness',
     witness_name_placeholder: 'Full name',
-    witness_role_label: 'Role / contact',
+    witness_role_label: 'Role',
     witness_role_placeholder: 'e.g. operator, supervisor',
     witness_statement_label: 'Statement',
     witness_statement_placeholder: 'What they observed',
