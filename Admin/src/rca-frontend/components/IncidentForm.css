@@ -364,6 +364,19 @@ html {
   cursor: pointer;
 }
 
+.field-hint {
+  margin: 6px 0 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.input-readonly {
+  background: #f1f5f9 !important;
+  color: #334155;
+  cursor: not-allowed;
+}
+
 /* Info Box */
 .info-box {
   display: flex;

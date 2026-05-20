@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Clock, MapPin, User, AlertTriangle, FileText, Users, Shield, Cloud, Briefcase, Heart, Search, Upload, X, Lock } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import { getTestScenarioList, loadTestScenario } from '../utils/testScenarios';
+import { DEFAULT_REPORTER_NAME } from '../constants/formDefaults';
 import './IncidentForm.css';
 
 const createDefaultTimeline = () => ([
@@ -76,7 +77,7 @@ const IncidentForm = ({
   
   const [formData, setFormData] = useState({
     // Reporter Info
-    reportedBy: '',
+    reportedBy: DEFAULT_REPORTER_NAME,
     reportDate: '',
     reportTime: '',
     
@@ -190,6 +191,7 @@ const IncidentForm = ({
       setFormData(prev => ({
         ...prev,
         ...scenarioData,
+        reportedBy: DEFAULT_REPORTER_NAME,
         evidenceAttachments: [],
         timeline:
           Array.isArray(scenarioData.timeline) && scenarioData.timeline.length > 0
@@ -242,7 +244,7 @@ const IncidentForm = ({
 
   const handleClearForm = () => {
     setFormData({
-      reportedBy: '',
+      reportedBy: DEFAULT_REPORTER_NAME,
       reportDate: '',
       reportTime: '',
       incidentDate: '',
@@ -509,11 +511,13 @@ const IncidentForm = ({
               <label>{t('reported_by')} *</label>
               <input
                 type="text"
-                value={formData.reportedBy}
-                onChange={(e) => handleChange('reportedBy', e.target.value)}
-                placeholder={t('enter_name')}
+                value={formData.reportedBy || DEFAULT_REPORTER_NAME}
+                readOnly
+                aria-readonly="true"
+                className="input-readonly"
                 required
               />
+              <p className="field-hint">{t('reporter_name_hint')}</p>
             </div>
             
             <div className="form-field">

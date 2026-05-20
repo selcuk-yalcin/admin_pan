@@ -77,7 +77,8 @@ const translations = {
     property_damage: 'Maddi Hasar',
     
     incident_description: 'Olay Açıklaması',
-    what_where_when_who: 'Ne oldu, Nerede, Ne zaman, Kim',
+    what_where_when_who: 'Ne oldu, Nerede, Ne zaman',
+    reporter_name_hint: 'Rapor oluşturulduktan sonra rapor içinde değiştirebilirsiniz.',
     describe_incident_detail: 'Kazayı detaylı bir şekilde anlatın...',
     include_details_hint: 'Lütfen ne, nerede, ne zaman, kim, nasıl ve neden bilgilerini ekleyin',
     
@@ -251,7 +252,7 @@ const translations = {
     
     // Report Content Hint
     report_content_hint_title: 'Lütfen belirtin:',
-    report_content_hint_body: 'Ne oldu? Nerede oldu? Ne zaman oldu? Kimler dahil oldu? Olay sırasını net şekilde açıklayın.',
+    report_content_hint_body: 'Ne oldu? Nerede oldu? Ne zaman oldu? Olay sırasını net şekilde açıklayın.',
     
     // Test Scenarios
     load_test_scenario: 'Test Senaryosu Yükle (Test Amaçlı)',
@@ -514,7 +515,8 @@ const translations = {
     property_damage: 'Property Damage',
     
     incident_description: 'Incident Description',
-    what_where_when_who: 'What, Where, When, Who',
+    what_where_when_who: 'What, Where, When',
+    reporter_name_hint: 'You can change this in the report after it is generated.',
     describe_incident_detail: 'Describe the incident in detail...',
     include_details_hint: 'Please include what, where, when, who, how and why',
     
@@ -687,7 +689,7 @@ const translations = {
     
     // Report Content Hint
     report_content_hint_title: 'Please include:',
-    report_content_hint_body: 'What happened? Where did it happen? When did it happen? Who was involved? Describe the sequence of events clearly.',
+    report_content_hint_body: 'What happened? Where did it happen? When did it happen? Describe the sequence of events clearly.',
     
     // Weather Options
     weather_sunny: 'Sunny',

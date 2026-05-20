@@ -28,6 +28,7 @@ import {
 } from '../utils/hitlResponseMode';
 import { finalizeSavedReport } from '../utils/draftReportsStorage';
 import { openLibraryArtifact } from '../utils/reportsLibraryApi';
+import { createSmoothPipelineProgress } from '../utils/pipelineProgressSmooth';
 import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
@@ -259,6 +260,17 @@ const ChatInterface = ({
       setHitlPhase('rca');
       setHitlApiQuestion(null);
       setIsLoading(true);
+      const smoothProgress = createSmoothPipelineProgress({
+        onTick: (displayPct, stage) => {
+          const statusLabel = getStageLabel(language, stage, displayPct);
+          setLiveRcaStatus(statusLabel);
+          onPipelineStatusChange?.(statusLabel);
+        },
+      });
+      const kickoffLabel = getStageLabel(language, 'investigate', 1);
+      setLiveRcaStatus(kickoffLabel);
+      onPipelineStatusChange?.(kickoffLabel);
+      smoothProgress.update({ stage: 'investigate', progress: 1 });
       try {
         const appendix = formatHitlAnswersBlock(answers);
         const inv = buildInvestigationPayload(hitlSeed.formData, appendix, language);
@@ -278,15 +290,12 @@ const ChatInterface = ({
             timeoutMs: PIPELINE_TIMEOUT_MS,
             pollIntervalMs: 2000,
             onUpdate: (job) => {
-              const stage = job?.stage || job?.status || 'running';
-              const progress = job?.progress ?? 0;
-              const statusLabel = getStageLabel(language, stage, progress);
-              setLiveRcaStatus(statusLabel);
-              onPipelineStatusChange?.(statusLabel);
+              smoothProgress.update(job);
             },
           },
         );
 
+        smoothProgress.finish(true);
         const resolvedPipelineResult = pipelineResponse?.data || pipelineResponse?.job?.result || null;
         setPipelineResult(resolvedPipelineResult);
         onPipelineStatusChange?.(
@@ -337,6 +346,7 @@ const ChatInterface = ({
           setIsLoading(false);
         }
       } catch (error) {
+        smoothProgress.stop();
         setPipelineResult(null);
         setMessages((prev) => [
           ...prev,
@@ -359,6 +369,7 @@ const ChatInterface = ({
             : `Pipeline error: ${error.message}`,
         );
       } finally {
+        smoothProgress.stop();
         setIsLoading(false);
       }
     },
