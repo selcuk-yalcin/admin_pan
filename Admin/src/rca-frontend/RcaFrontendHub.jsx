@@ -14,6 +14,7 @@ import {
 import {
   createIncident,
   addAssessment,
+  addAssessmentFromForm,
   investigateIncident,
   generateActionPlan,
   generatePDFReport,
@@ -147,6 +148,26 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         throw new Error("Incident ID donmedi.");
       }
       setCreatedIncidentId(incidentId);
+
+      if (mode === "interactive") {
+        setFormSubmitInfo(
+          `Hazir: ${incidentId}. Etkilesimli analiz sekmesine geciliyor...`,
+        );
+        await addAssessmentFromForm(
+          incidentId,
+          {
+            event_type: mapEventCategoryToEventType(formData.eventCategory),
+            actual_harm: mapInjurySeverityToActualHarm(formData.injurySeverity),
+            riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
+          },
+          { signal: controller.signal },
+        );
+        setChatPipelineStatus("");
+        setHitlSeed({ incidentId, formData });
+        setTab("chat");
+        return;
+      }
+
       setFormSubmitInfo(`Incident olusturuldu (${incidentId}). Assessment calisiyor...`);
 
       await addAssessment(incidentId, {
@@ -154,16 +175,6 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         actual_harm: mapInjurySeverityToActualHarm(formData.injurySeverity),
         riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
       }, { signal: controller.signal });
-
-      if (mode === "interactive") {
-        setFormSubmitInfo(
-          `Hazir: ${incidentId}. Etkilesimli analiz sekmesinde HITL sorulari ve kok neden akisi basliyor.`,
-        );
-        setChatPipelineStatus("");
-        setHitlSeed({ incidentId, formData });
-        setTab("chat");
-        return;
-      }
 
       setFormSubmitInfo("Assessment tamamlandi. Kök neden analizi calisiyor...");
 

@@ -122,6 +122,16 @@ export default async function handler(req, res) {
           }
           break
 
+        case 'add_assessment_form':
+          endpoint = `/api/v1/incidents/${data.incident_id}/assessment/form`
+          payload = {
+            incident_id: data.incident_id,
+            event_type: data.event_type,
+            actual_harm: data.actual_harm,
+            riddor_reportable: data.riddor_reportable
+          }
+          break
+
         case 'investigate':
           endpoint = `/api/v1/incidents/${data.incident_id}/investigate`
           payload = {

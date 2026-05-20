@@ -195,6 +195,40 @@ export async function addAssessment(incidentId, data, options = {}) {
 }
 
 /**
+ * Part 2 from form fields only (no LLM). Fast path for interactive HITL.
+ */
+export async function addAssessmentFromForm(incidentId, data, options = {}) {
+  console.log(`[INFO] Form assessment (fast) for ${incidentId}...`);
+
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getTenantContextHeaders(),
+      },
+      signal: options.signal,
+      body: JSON.stringify({
+        action: 'add_assessment_form',
+        data: {
+          incident_id: incidentId,
+          event_type: data.event_type,
+          actual_harm: data.actual_harm,
+          riddor_reportable: data.riddor_reportable,
+        },
+      }),
+    });
+
+    const result = await handleResponse(response);
+    console.log('[SUCCESS] Form assessment saved');
+    return result;
+  } catch (error) {
+    console.error('[ERROR] Failed to save form assessment:', error.message);
+    throw error;
+  }
+}
+
+/**
  * ============================================================================
  * PART 3: INVESTIGATE INCIDENT - Root Cause Analizi
  * ============================================================================
@@ -962,6 +996,7 @@ export default {
   checkHealth,
   createIncident,
   addAssessment,
+  addAssessmentFromForm,
   fetchHitlQuestions,
   startPipelineJob,
   getPipelineJobStatus,
