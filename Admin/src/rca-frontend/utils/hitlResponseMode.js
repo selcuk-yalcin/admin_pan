@@ -86,29 +86,74 @@ export function isHitlChoiceMulti(q) {
  */
 export function hitlQuestionNeedsFreeText(q) {
   if (!q) return false;
-  if (hitlQuestionNeedsChoice(q) && (q.choice_options || []).length >= 2) return false;
+  if (hitlQuestionNeedsChoice(q)) return false;
   const m = String(q.response_mode || '').toLowerCase();
-  if (m === 'free_text' || m === 'freetext') return true;
-  if (m === 'yes_no_unknown' || m === 'choice' || m === 'options') return false;
-  return inferFreeTextHeuristic(
-    q.soru || q.question_tr || q.question_en || q.question || '',
-  );
+  if (m === 'free_text' || m === 'freetext' || m === 'text') return true;
+  if (m === 'choice' || m === 'options' || m === 'multi_choice') return false;
+  const text = q.soru || q.question_tr || q.question_en || q.question || '';
+  return inferFreeTextHeuristic(text);
 }
 
-function inferFreeTextHeuristic(t) {
+/**
+ * Evet/Hayır düğmeleri göster (serbest metin veya chip listesi değilse).
+ * @param {object} q
+ */
+export function hitlQuestionShowsYesNo(q) {
+  if (!q) return false;
+  return !hitlQuestionNeedsFreeText(q) && !hitlQuestionNeedsChoice(q);
+}
+
+/**
+ * Soru metninden serbest metin gerekip gerekmediğini çıkarır (backend ile uyumlu).
+ * @param {string} t
+ */
+export function inferFreeTextHeuristic(t) {
   if (!t || t.length < 8) return false;
+  const low = t.toLowerCase();
+
+  if (
+    /\b(kaç|kac|ne\s+kadar|ne\s+zaman|hangi\s+tarih|kim(dir|in|i)?|nerede|nereden|nereye)\b/i.test(
+      low,
+    )
+  ) {
+    return true;
+  }
+  if (/\bkaç\s*(yıl|ay|gün|saat|dakika|metre|kg|ton|adet)\b/i.test(low)) return true;
+  if (/\b(yıllık|aylık)\s+deneyim\b/i.test(low)) return true;
+  if (/\bkaç\s+yıllık\b/i.test(low)) return true;
+  if (/\bdeneyim\S*\s+(var|yok)\b/i.test(low) && /\bkaç\b/i.test(low)) return true;
+  if (/\b(miktar|sayı|adet|süre|mesafe|yükseklik|derinlik|genişlik)\b/i.test(low)) return true;
+  if (/\b(listele|belirt|açıkla|acikla|detaylandır|tanımla|tarif\s+et|yazın|yazin)\b/i.test(low)) {
+    return true;
+  }
+
   const tr = t.match(/\b(mı|mi|mu|mü)\b/gi) || [];
   if (tr.length >= 2) return true;
-  if (t.includes('—') && (t.match(/\b(mı|mi|mu|mü)\b/gi) || []).length >= 1) {
-    if (t.includes(',') || t.split(/\b(mı|mi|mu|mü)\b/gi).length > 2) return true;
+  if (t.includes('—') && tr.length >= 1) {
+    if (t.includes(',') || tr.length > 2) return true;
   }
-  const low = t.toLowerCase();
   if ((low.includes(' veya ') || /\b(or|versus)\b/i.test(t)) && t.includes('?') && t.length > 35) {
     return true;
   }
   if (/\byoksa\b/i.test(t) && t.includes('?') && t.length > 20) return true;
-  if (/(hangi|açıkla|açikla|detay|açıkça|acikca)/i.test(t) && t.includes('?') && !PPE_TR_MARKERS.test(t)) {
+  if (
+    /(hangi|açıkla|açikla|detay|açıkça|acikca)/i.test(t) &&
+    t.includes('?') &&
+    !PPE_TR_MARKERS.test(t)
+  ) {
     return true;
   }
   return false;
+}
+
+/**
+ * Enter ile gönderim için textarea key handler.
+ * @param {React.KeyboardEvent} e
+ * @param {() => void} submit
+ */
+export function handleHitlTextareaEnter(e, submit) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    submit();
+  }
 }

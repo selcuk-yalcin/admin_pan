@@ -23,8 +23,10 @@ import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQue
 import {
   hitlQuestionNeedsFreeText,
   hitlQuestionNeedsChoice,
+  hitlQuestionShowsYesNo,
   getHitlChoiceOptionLabels,
   isHitlChoiceMulti,
+  handleHitlTextareaEnter,
 } from '../utils/hitlResponseMode';
 import { finalizeSavedReport } from '../utils/draftReportsStorage';
 import { openLibraryArtifact } from '../utils/reportsLibraryApi';
@@ -1088,7 +1090,11 @@ const ChatInterface = ({
     hitlApiQuestion && hitlQuestionNeedsChoice(hitlApiQuestion) && displayChoiceLabels.length >= 2;
   const hitlOtherIdx = showHitlChips ? getOtherChoiceIndex() : -1;
   const hitlOtherSelected = showHitlChips && hitlOtherIdx >= 0 && hitlChoiceIdx.has(hitlOtherIdx);
-  const showHitlFree = hitlApiQuestion && !showHitlChips && hitlQuestionNeedsFreeText(hitlApiQuestion);
+  const showHitlFree =
+    hitlApiQuestion && !showHitlChips && hitlQuestionNeedsFreeText(hitlApiQuestion);
+  const showHitlYesNo =
+    hitlApiQuestion && !showHitlChips && hitlQuestionShowsYesNo(hitlApiQuestion);
+  const showHitlTextArea = hitlApiQuestion && !showHitlChips && (showHitlFree || showHitlYesNo);
   return (
     <div className="chat-interface">
       <div className="chat-sidebar">
@@ -1235,36 +1241,71 @@ const ChatInterface = ({
                         </button>
                       )}
                     </div>
-                  ) : showHitlFree ? (
-                    <div className="hitl-free-text-wrap">
-                      <textarea
-                        className="hitl-free-text-input"
-                        value={hitlTextDraft}
-                        onChange={(e) => setHitlTextDraft(e.target.value)}
-                        rows={3}
-                        placeholder={t('hitl_free_text_placeholder')}
-                      />
-                      <button
-                        type="button"
-                        className="hitl-choice-btn hitl-choice-primary"
-                        onClick={handleHitlFreeTextSubmit}
-                        disabled={!hitlTextDraft.trim() || isLoading || hitlQuestionsLoading}
-                      >
-                        {t('hitl_submit_text_answer')}
-                      </button>
-                    </div>
                   ) : (
-                    <div className="hitl-choices">
-                      <button type="button" className="hitl-choice-btn" onClick={() => handleHitlAnswer('yes')}>
-                        {t('yes')}
-                      </button>
-                      <button type="button" className="hitl-choice-btn hitl-choice-no" onClick={() => handleHitlAnswer('no')}>
-                        {t('no')}
-                      </button>
-                      <button type="button" className="hitl-choice-btn hitl-choice-un" onClick={() => handleHitlAnswer('unknown')}>
-                        {t('unknown')}
-                      </button>
-                    </div>
+                    <>
+                      {showHitlYesNo && (
+                        <div className="hitl-choices">
+                          <button
+                            type="button"
+                            className="hitl-choice-btn"
+                            onClick={() => handleHitlAnswer('yes')}
+                            disabled={isLoading || hitlQuestionsLoading}
+                          >
+                            {t('yes')}
+                          </button>
+                          <button
+                            type="button"
+                            className="hitl-choice-btn hitl-choice-no"
+                            onClick={() => handleHitlAnswer('no')}
+                            disabled={isLoading || hitlQuestionsLoading}
+                          >
+                            {t('no')}
+                          </button>
+                          <button
+                            type="button"
+                            className="hitl-choice-btn hitl-choice-un"
+                            onClick={() => handleHitlAnswer('unknown')}
+                            disabled={isLoading || hitlQuestionsLoading}
+                          >
+                            {t('unknown')}
+                          </button>
+                        </div>
+                      )}
+                      {showHitlTextArea && (
+                        <div className={`hitl-free-text-wrap${showHitlYesNo ? ' hitl-free-text-wrap--hybrid' : ''}`}>
+                          <textarea
+                            className="hitl-free-text-input"
+                            value={hitlTextDraft}
+                            onChange={(e) => setHitlTextDraft(e.target.value)}
+                            onKeyDown={(e) =>
+                              handleHitlTextareaEnter(e, () => {
+                                if (hitlTextDraft.trim()) handleHitlFreeTextSubmit();
+                              })
+                            }
+                            rows={showHitlFree ? 3 : 2}
+                            placeholder={
+                              showHitlFree
+                                ? t('hitl_free_text_placeholder')
+                                : t('hitl_optional_text_placeholder')
+                            }
+                            disabled={isLoading || hitlQuestionsLoading}
+                          />
+                          <p className="hitl-text-hint">
+                            {showHitlFree ? t('hitl_text_enter_hint') : t('hitl_hybrid_text_hint')}
+                          </p>
+                          {showHitlFree && (
+                            <button
+                              type="button"
+                              className="hitl-choice-btn hitl-choice-primary"
+                              onClick={handleHitlFreeTextSubmit}
+                              disabled={!hitlTextDraft.trim() || isLoading || hitlQuestionsLoading}
+                            >
+                              {t('hitl_submit_text_answer')}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               ) : null}

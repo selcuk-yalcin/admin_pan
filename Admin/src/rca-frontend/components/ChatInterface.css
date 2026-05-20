@@ -429,6 +429,17 @@
   gap: 0.6rem;
 }
 
+.hitl-free-text-wrap--hybrid {
+  margin-top: 0.75rem;
+}
+
+.hitl-text-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.35;
+}
+
 .hitl-free-text-input {
   width: 100%;
   min-width: 0;
