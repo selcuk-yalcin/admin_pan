@@ -18,6 +18,36 @@
   --info: #2563eb;
 }
 
+.token-usage-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+}
+
+.token-usage-strip--warning {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.token-usage-strip--critical,
+.token-usage-strip--blocked {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.token-usage-strip-warn {
+  font-weight: 600;
+}
+
 .rca-frontend-hub.theme-dark {
   --primary: #667eea;
   --primary-dark: #5568d3;

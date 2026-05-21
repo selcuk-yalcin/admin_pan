@@ -308,6 +308,36 @@ export default async function handler(req, res) {
           payload = undefined
           break
 
+        case 'usage_summary':
+          endpoint = '/api/v1/usage/summary'
+          method = 'GET'
+          payload = undefined
+          break
+
+        case 'usage_timeseries': {
+          const d = data.days != null ? Number(data.days) : 7
+          endpoint = `/api/v1/usage/timeseries?days=${encodeURIComponent(d)}`
+          method = 'GET'
+          payload = undefined
+          break
+        }
+
+        case 'usage_by_module': {
+          const d = data.days != null ? Number(data.days) : 30
+          endpoint = `/api/v1/usage/by-module?days=${encodeURIComponent(d)}`
+          method = 'GET'
+          payload = undefined
+          break
+        }
+
+        case 'usage_recent': {
+          const lim = data.limit != null ? Number(data.limit) : 20
+          endpoint = `/api/v1/usage/recent?limit=${encodeURIComponent(lim)}`
+          method = 'GET'
+          payload = undefined
+          break
+        }
+
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` })
       }

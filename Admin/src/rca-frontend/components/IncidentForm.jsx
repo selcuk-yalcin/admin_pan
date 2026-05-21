@@ -69,6 +69,7 @@ const IncidentForm = ({
   language,
   onSubmit,
   isSubmitting = false,
+  tokensBlocked = false,
   activeSubmitMode = null,
   seedSnapshot = null,
   onSeedConsumed,
@@ -1189,13 +1190,13 @@ const IncidentForm = ({
               type="button"
               className="btn-secondary btn-interactive"
               onClick={handleInteractive}
-              disabled={isSubmitting}
+              disabled={isSubmitting || tokensBlocked}
             >
               {isSubmitting && activeSubmitMode === 'interactive'
                 ? t('submitting_hitl_seed')
                 : t('btn_interactive_hitl')}
             </button>
-            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            <button type="submit" className="btn-primary" disabled={isSubmitting || tokensBlocked}>
               {isSubmitting && activeSubmitMode === 'report'
                 ? t('submitting_pdf_pipeline')
                 : t('btn_create_pdf_report')}

@@ -1,0 +1,43 @@
+.dashboard-usage-page .dash-stat-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.usage-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  min-height: 160px;
+  padding-top: 8px;
+}
+
+.usage-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 36px;
+}
+
+.usage-bar-fill {
+  width: 100%;
+  max-width: 48px;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 6px 6px 2px 2px;
+  min-height: 8px;
+}
+
+.usage-bar-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+.module-usage-list li {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.module-usage-list li:last-child {
+  border-bottom: none;
+}
