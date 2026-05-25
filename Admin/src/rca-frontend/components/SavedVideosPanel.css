@@ -310,3 +310,82 @@
 .main-content--videos-tab .saved-videos-panel {
   min-height: 0;
 }
+
+/* Raporlar sekmesi — yan klasör (Taslaklar gibi) */
+.saved-videos-panel--embedded {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.saved-videos-panel--embedded .saved-videos-upload {
+  padding: 0;
+  margin-bottom: 0.75rem;
+  border: none;
+  background: transparent;
+}
+
+.saved-videos-panel--embedded .saved-videos-folder-title--embedded {
+  margin-bottom: 0.65rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-input--compact {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-upload-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.saved-videos-panel--embedded .saved-videos-btn {
+  justify-content: center;
+  width: 100%;
+}
+
+.saved-videos-panel--embedded .saved-videos-url-row {
+  flex-direction: column;
+}
+
+.saved-videos-panel--embedded .saved-videos-hint--embedded {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-folder--embedded-list {
+  margin-top: 0;
+}
+
+.saved-videos-panel--embedded .saved-videos-list {
+  gap: 0.5rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-card {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.65rem 0.75rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-card-actions {
+  justify-content: flex-end;
+  margin-top: 0.35rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-player {
+  max-height: 200px;
+}
+
+.saved-videos-panel--embedded .saved-videos-player-wrap {
+  margin-bottom: 0.75rem;
+  padding: 0.65rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-empty {
+  padding: 1rem 0.5rem;
+}
+
+.saved-videos-panel--embedded .saved-videos-empty svg {
+  width: 28px;
+  height: 28px;
+}

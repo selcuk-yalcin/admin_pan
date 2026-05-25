@@ -28,6 +28,7 @@ import {
   syncReportHtmlToLibrary,
 } from '../utils/reportsLibraryApi';
 import { getCurrentUserId } from '../utils/userContext';
+import SavedVideosPanel from './SavedVideosPanel';
 import './SavedReportsPanel.css';
 
 function formatDate(iso, lang) {
@@ -480,38 +481,34 @@ export default function SavedReportsPanel({
           <Loader2 size={28} className="spin" aria-hidden />
           <span>{t('reports_loading')}</span>
         </div>
-      ) : count === 0 ? (
-        <div className="saved-reports-empty">
-          <div className="saved-reports-empty-icon" aria-hidden>
-            <Inbox size={40} strokeWidth={1.25} />
-          </div>
-          <p className="saved-reports-empty-title">{t('reports_empty')}</p>
-          <p className="saved-reports-empty-hint">{t('reports_empty_cta')}</p>
-        </div>
       ) : (
-        <div className="saved-reports-layout">
+        <div className="saved-reports-layout saved-reports-layout--with-videos">
           <section className="saved-reports-folder saved-reports-folder--reports" aria-labelledby="reports-created-heading">
             <h3 id="reports-created-heading" className="saved-reports-folder-title">
               <FileText size={18} aria-hidden />
               {t('reports_folder_created')}
               <span className="saved-reports-folder-count">{reports.length}</span>
             </h3>
-            <ReportList
-              entries={reports}
-              language={language}
-              t={t}
-              onOpen={handleOpenDraft}
-              onRemove={handleRemove}
-              onViewArtifact={handleViewArtifact}
-              onDownloadArtifact={handleDownloadArtifact}
-              onDownloadDocx={handleDownloadDocx}
-              onRenameTitle={handleRenameTitle}
-              onSyncArtifacts={handleSyncArtifacts}
-              syncingId={syncingId}
-              downloadingId={downloadingId}
-              renamingId={renamingId}
-              compact={false}
-            />
+            {reports.length === 0 ? (
+              <p className="saved-reports-folder-empty">{t('reports_folder_empty')}</p>
+            ) : (
+              <ReportList
+                entries={reports}
+                language={language}
+                t={t}
+                onOpen={handleOpenDraft}
+                onRemove={handleRemove}
+                onViewArtifact={handleViewArtifact}
+                onDownloadArtifact={handleDownloadArtifact}
+                onDownloadDocx={handleDownloadDocx}
+                onRenameTitle={handleRenameTitle}
+                onSyncArtifacts={handleSyncArtifacts}
+                syncingId={syncingId}
+                downloadingId={downloadingId}
+                renamingId={renamingId}
+                compact={false}
+              />
+            )}
           </section>
 
           <aside className="saved-reports-folder saved-reports-folder--drafts" aria-labelledby="reports-drafts-heading">
@@ -521,22 +518,33 @@ export default function SavedReportsPanel({
               <span className="saved-reports-folder-count">{drafts.length}</span>
             </h3>
             <p className="saved-reports-drafts-hint">{t('reports_drafts_sidebar_hint')}</p>
-            <ReportList
-              entries={drafts}
-              language={language}
-              t={t}
-              onOpen={handleOpenDraft}
-              onRemove={handleRemove}
-              onViewArtifact={handleViewArtifact}
-              onDownloadArtifact={handleDownloadArtifact}
-              onDownloadDocx={handleDownloadDocx}
-              onRenameTitle={handleRenameTitle}
-              onSyncArtifacts={handleSyncArtifacts}
-              syncingId={syncingId}
-              downloadingId={downloadingId}
-              renamingId={renamingId}
-              compact
-            />
+            {drafts.length === 0 ? (
+              <p className="saved-reports-folder-empty">{t('reports_folder_empty')}</p>
+            ) : (
+              <ReportList
+                entries={drafts}
+                language={language}
+                t={t}
+                onOpen={handleOpenDraft}
+                onRemove={handleRemove}
+                onViewArtifact={handleViewArtifact}
+                onDownloadArtifact={handleDownloadArtifact}
+                onDownloadDocx={handleDownloadDocx}
+                onRenameTitle={handleRenameTitle}
+                onSyncArtifacts={handleSyncArtifacts}
+                syncingId={syncingId}
+                downloadingId={downloadingId}
+                renamingId={renamingId}
+                compact
+              />
+            )}
+          </aside>
+
+          <aside
+            className="saved-reports-folder saved-reports-folder--videos"
+            aria-labelledby="reports-videos-heading"
+          >
+            <SavedVideosPanel language={language} embedded />
           </aside>
         </div>
       )}

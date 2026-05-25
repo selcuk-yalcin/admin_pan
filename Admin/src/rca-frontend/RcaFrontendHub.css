@@ -121,6 +121,12 @@
   padding: 0.75rem 1.5rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-navigation .tab-btn {
+  flex-shrink: 0;
 }
 
 .tab-btn {

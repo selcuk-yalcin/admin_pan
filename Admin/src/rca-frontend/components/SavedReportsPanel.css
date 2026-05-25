@@ -26,6 +26,45 @@
   min-height: 0;
 }
 
+.saved-reports-layout--with-videos {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px) minmax(220px, 280px);
+}
+
+@media (max-width: 1100px) {
+  .saved-reports-layout--with-videos {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 240px);
+  }
+
+  .saved-reports-folder--videos {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .saved-reports-layout--with-videos {
+    grid-template-columns: 1fr;
+  }
+}
+
+.saved-reports-folder--videos {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100%;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffbeb 0%, #fff7ed 100%);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rca-frontend-hub.theme-dark .saved-reports-folder--videos {
+  background: linear-gradient(180deg, rgba(69, 26, 3, 0.35) 0%, rgba(30, 41, 59, 0.9) 100%);
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
 .saved-reports-folder--reports {
   min-width: 0;
   min-height: 0;

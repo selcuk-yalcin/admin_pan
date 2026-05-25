@@ -41,7 +41,12 @@ function formatDate(iso, lang) {
   }
 }
 
-export default function SavedVideosPanel({ language }) {
+/**
+ * @param {object} props
+ * @param {string} props.language
+ * @param {boolean} [props.embedded] Raporlar sekmesinde yan sütun (klasör) modu
+ */
+export default function SavedVideosPanel({ language, embedded = false }) {
   const t = (key) => getTranslation(language, key);
   const isTr = String(language || '').toLowerCase().startsWith('tr');
   const [entries, setEntries] = useState([]);
@@ -170,39 +175,65 @@ export default function SavedVideosPanel({ language }) {
     }
   };
 
-  return (
-    <div className="saved-videos-panel">
-      <header className="saved-videos-hero">
-        <div className="saved-videos-hero-visual" aria-hidden>
-          <Video size={28} />
-        </div>
-        <div className="saved-videos-hero-copy">
-          <h2 className="saved-videos-title">{t('tab_videos')}</h2>
-          <p className="saved-videos-lead">{t('videos_intro')}</p>
-        </div>
-      </header>
+  const uploadHeadingId = embedded ? 'videos-upload-heading-embedded' : 'videos-upload-heading';
+  const listHeadingId = embedded ? 'videos-list-heading-embedded' : 'videos-list-heading';
 
-      <section className="saved-videos-upload" aria-labelledby="videos-upload-heading">
-        <h3 id="videos-upload-heading" className="saved-videos-folder-title">
-          <Upload size={18} aria-hidden />
-          {t('videos_upload_section')}
-        </h3>
-        <div className="saved-videos-upload-fields">
+  return (
+    <div className={`saved-videos-panel${embedded ? ' saved-videos-panel--embedded' : ''}`}>
+      {!embedded ? (
+        <header className="saved-videos-hero">
+          <div className="saved-videos-hero-visual" aria-hidden>
+            <Video size={28} />
+          </div>
+          <div className="saved-videos-hero-copy">
+            <h2 className="saved-videos-title">{t('tab_videos')}</h2>
+            <p className="saved-videos-lead">{t('videos_intro')}</p>
+          </div>
+        </header>
+      ) : null}
+
+      <section
+        className="saved-videos-upload"
+        aria-labelledby={uploadHeadingId}
+      >
+        {embedded ? (
+          <h3 id={uploadHeadingId} className="saved-videos-folder-title saved-videos-folder-title--embedded">
+            <Video size={18} aria-hidden />
+            {t('reports_folder_videos')}
+            <span className="saved-videos-folder-count">{entries.length}</span>
+          </h3>
+        ) : (
+          <h3 id={uploadHeadingId} className="saved-videos-folder-title">
+            <Upload size={18} aria-hidden />
+            {t('videos_upload_section')}
+          </h3>
+        )}
+        {!embedded ? (
+          <div className="saved-videos-upload-fields">
+            <input
+              type="text"
+              className="saved-videos-input"
+              placeholder={t('videos_title_placeholder')}
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+            />
+            <input
+              type="text"
+              className="saved-videos-input"
+              placeholder={t('videos_incident_placeholder')}
+              value={incidentDraft}
+              onChange={(e) => setIncidentDraft(e.target.value)}
+            />
+          </div>
+        ) : (
           <input
             type="text"
-            className="saved-videos-input"
+            className="saved-videos-input saved-videos-input--compact"
             placeholder={t('videos_title_placeholder')}
             value={titleDraft}
             onChange={(e) => setTitleDraft(e.target.value)}
           />
-          <input
-            type="text"
-            className="saved-videos-input"
-            placeholder={t('videos_incident_placeholder')}
-            value={incidentDraft}
-            onChange={(e) => setIncidentDraft(e.target.value)}
-          />
-        </div>
+        )}
         <div className="saved-videos-upload-actions">
           <input
             ref={fileInputRef}
@@ -251,7 +282,11 @@ export default function SavedVideosPanel({ language }) {
             </button>
           </div>
         ) : null}
-        <p className="saved-videos-hint">{t('videos_storage_hint')}</p>
+        {!embedded ? (
+          <p className="saved-videos-hint">{t('videos_storage_hint')}</p>
+        ) : (
+          <p className="saved-videos-hint saved-videos-hint--embedded">{t('reports_videos_sidebar_hint')}</p>
+        )}
       </section>
 
       {error ? <p className="saved-videos-error">{error}</p> : null}
@@ -278,12 +313,17 @@ export default function SavedVideosPanel({ language }) {
         </section>
       ) : null}
 
-      <section className="saved-videos-folder" aria-labelledby="videos-list-heading">
-        <h3 id="videos-list-heading" className="saved-videos-folder-title">
-          <Video size={18} aria-hidden />
-          {t('videos_folder_created')}
-          <span className="saved-videos-folder-count">{entries.length}</span>
-        </h3>
+      <section
+        className={`saved-videos-folder${embedded ? ' saved-videos-folder--embedded-list' : ''}`}
+        aria-labelledby={listHeadingId}
+      >
+        {!embedded ? (
+          <h3 id={listHeadingId} className="saved-videos-folder-title">
+            <Video size={18} aria-hidden />
+            {t('videos_folder_created')}
+            <span className="saved-videos-folder-count">{entries.length}</span>
+          </h3>
+        ) : null}
 
         {loading ? (
           <div className="saved-videos-loading">
