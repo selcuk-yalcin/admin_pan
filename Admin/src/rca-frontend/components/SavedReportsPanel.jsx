@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Eye,
   Download,
+  CirclePlay,
 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import {
@@ -28,7 +29,6 @@ import {
   syncReportHtmlToLibrary,
 } from '../utils/reportsLibraryApi';
 import { getCurrentUserId } from '../utils/userContext';
-import SavedVideosPanel from './SavedVideosPanel';
 import './SavedReportsPanel.css';
 
 function formatDate(iso, lang) {
@@ -313,6 +313,7 @@ function ReportList({
 export default function SavedReportsPanel({
   language = 'tr',
   onEditDraft,
+  onOpenGuideTab,
 }) {
   const t = useCallback((k) => getTranslation(language, k), [language]);
   const [entries, setEntries] = useState([]);
@@ -471,6 +472,12 @@ export default function SavedReportsPanel({
           </div>
           <h2 className="saved-reports-title">{t('tab_saved_reports')}</h2>
           <p className="saved-reports-lead">{t('reports_intro')}</p>
+          {typeof onOpenGuideTab === 'function' ? (
+            <button type="button" className="saved-reports-guide-link" onClick={onOpenGuideTab}>
+              <CirclePlay size={18} aria-hidden />
+              {t('reports_open_guide')}
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -538,13 +545,6 @@ export default function SavedReportsPanel({
                 compact
               />
             )}
-          </aside>
-
-          <aside
-            className="saved-reports-folder saved-reports-folder--videos"
-            aria-labelledby="reports-videos-heading"
-          >
-            <SavedVideosPanel language={language} embedded />
           </aside>
         </div>
       )}

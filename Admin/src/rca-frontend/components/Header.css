@@ -129,6 +129,27 @@
   color: var(--primary);
 }
 
+.header-new-analysis-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.header-new-analysis-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .icon-btn {
   width: 36px;
   height: 36px;

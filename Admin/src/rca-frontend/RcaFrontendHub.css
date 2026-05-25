@@ -88,10 +88,110 @@
   margin: 0;
   padding: 0;
   z-index: 999;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Üst şerit (Header + sekmeler) asla ezilmesin — sekmeler kaybolma sorunu */
+.rca-hub-sticky-top {
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 100%;
+  background: var(--background);
+  z-index: 30;
+  border-bottom: 1px solid var(--border);
+}
+
+.rca-hub-sticky-top .header {
+  flex-shrink: 0;
+}
+
+.rca-hub-sticky-top .tab-navigation {
+  flex-shrink: 0;
+  border-bottom: none;
+}
+
+.rca-hub-sticky-top .token-usage-strip {
+  margin: 0 1rem 0.75rem !important;
+}
+
+.rca-hub-sticky-top > .info-banner {
+  margin: 0 1rem 0.75rem !important;
+  border-radius: 10px;
 }
 
 .app.rca-frontend-hub.fullscreen-mode .tab-navigation {
-  padding-left: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.rca-completion-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin: 0 1rem 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #eff6ff 100%);
+  border: 1px solid #86efac;
+  flex-shrink: 0;
+}
+
+.rca-frontend-hub.theme-dark .rca-completion-cta {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.35) 0%, rgba(30, 58, 138, 0.25) 100%);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.rca-completion-cta-text {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.rca-completion-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rca-btn-new-analysis {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rca-btn-new-analysis:hover {
+  opacity: 0.92;
+}
+
+.rca-btn-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rca-btn-secondary-action:hover {
+  border-color: var(--primary);
 }
 
 .app.rca-frontend-hub.fullscreen-mode .info-banner {
@@ -108,7 +208,7 @@
 }
 
 .app.rca-frontend-hub.fullscreen-mode .main-content--reports-tab,
-.app.rca-frontend-hub.fullscreen-mode .main-content--videos-tab {
+.app.rca-frontend-hub.fullscreen-mode .main-content--guide-tab {
   display: flex;
   flex-direction: column;
 }

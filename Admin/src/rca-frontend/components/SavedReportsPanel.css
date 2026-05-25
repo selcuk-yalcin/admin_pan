@@ -306,6 +306,26 @@
   color: var(--text-secondary, #64748b);
 }
 
+.saved-reports-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e8eaef);
+  background: var(--surface, #fff);
+  color: var(--primary, #2563eb);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.saved-reports-guide-link:hover {
+  border-color: var(--primary, #2563eb);
+}
+
 .rca-frontend-hub.theme-dark .saved-reports-title {
   color: #f1f5f9;
 }

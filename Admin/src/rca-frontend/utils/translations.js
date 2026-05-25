@@ -7,7 +7,18 @@ const translations = {
     manual_form: 'Manuel Form',
     interactive_analysis: 'Etkileşimli Analiz',
     tab_saved_reports: 'Raporlar',
-    tab_videos: 'Videolar',
+    tab_report_guide: 'Rapor Rehberi',
+    tab_videos: 'Rapor Rehberi',
+    guide_intro:
+      'DeepWhy raporunun nasıl hazırlandığını adım adım anlatan bilgilendirme videosu. Tam ekran için sağ üstteki düğmeyi kullanın.',
+    guide_video_title: 'Rapor hazırlama rehberi',
+    guide_footer: 'Bu video yalnızca bilgilendirme amaçlıdır; kullanıcı video yükleyemez.',
+    guide_enter_theater: 'Tam ekran',
+    guide_exit_theater: 'Tam ekrandan çık',
+    guide_video_missing: 'Bilgilendirme videosu henüz yüklenmemiş.',
+    guide_video_missing_hint:
+      'MP4 dosyasını public/media/rca-report-guide/report-guide.mp4 konumuna koyun veya VITE_RCA_GUIDE_VIDEO_URL tanımlayın.',
+    reports_open_guide: 'Rehberi izle',
     videos_intro:
       'Olay analizi veya eğitim için oluşturduğunuz videoları bu klasöre ekleyin. Dosya yükleyebilir veya harici bağlantı kaydedebilirsiniz.',
     videos_upload_section: 'Video ekle',
@@ -244,6 +255,9 @@ const translations = {
     draft_saved_toast: 'Taslak kaydedildi',
     save_report: 'Raporu Kaydet',
     report_saved_toast: 'Rapor Raporlar listesine kaydedildi.',
+    btn_new_analysis: 'Yeni Analiz Yap',
+    analysis_complete_banner:
+      'Analiz tamamlandı. Rapor kaydedildi — yeni bir olay için formu sıfırlamak için «Yeni Analiz Yap» seçin.',
     reports_kind_draft: 'Taslak',
     reports_kind_report: 'Rapor',
     reports_open_report: 'Analizi aç',
@@ -494,7 +508,18 @@ const translations = {
     manual_form: 'Manual Form',
     interactive_analysis: 'Interactive Analysis',
     tab_saved_reports: 'Reports',
-    tab_videos: 'Videos',
+    tab_report_guide: 'Report Guide',
+    tab_videos: 'Report Guide',
+    guide_intro:
+      'Informational video explaining how DeepWhy prepares your report, step by step. Use the button top-right for fullscreen.',
+    guide_video_title: 'How reports are prepared',
+    guide_footer: 'This video is for information only; users cannot upload videos.',
+    guide_enter_theater: 'Fullscreen',
+    guide_exit_theater: 'Exit fullscreen',
+    guide_video_missing: 'Guide video has not been uploaded yet.',
+    guide_video_missing_hint:
+      'Place an MP4 at public/media/rca-report-guide/report-guide.mp4 or set VITE_RCA_GUIDE_VIDEO_URL.',
+    reports_open_guide: 'Watch guide',
     videos_intro:
       'Add videos you created for incident analysis or training. Upload a file or save an external link.',
     videos_upload_section: 'Add video',
@@ -730,6 +755,9 @@ const translations = {
     draft_saved_toast: 'Draft saved',
     save_report: 'Save report',
     report_saved_toast: 'Report saved to your Reports list.',
+    btn_new_analysis: 'Start New Analysis',
+    analysis_complete_banner:
+      'Analysis complete. Report saved — use «Start New Analysis» to reset the form for a new incident.',
     reports_kind_draft: 'Draft',
     reports_kind_report: 'Report',
     reports_open_report: 'Open analysis',

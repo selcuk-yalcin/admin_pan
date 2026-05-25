@@ -104,6 +104,8 @@ function getStageLabel(language, stage, progress) {
  * @param {{ incidentId: string, formData: object } | null} props.hitlSeed - manuel formdan gelen HITL oturumu
  * @param {(status: string) => void} [props.onPipelineStatusChange] - Agent pipeline canlı durum metni
  * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
+ * @param {() => void} [props.onStartNewAnalysis] - Yeni analiz / ana forma dön
+ * @param {(payload: { incidentId?: string }) => void} [props.onAnalysisComplete] - Rapor kaydedildiğinde
  * @param {(payload: { incidentId: string, formData?: object, reportReady?: boolean }) => void} [props.onSaveReport]
  * @param {() => void} [props.onGoToReportsTab]
  * @param {() => void} [props.onGoToFormTab]
@@ -113,6 +115,8 @@ const ChatInterface = ({
   hitlSeed = null,
   onPipelineStatusChange,
   onHitlFlowComplete,
+  onStartNewAnalysis,
+  onAnalysisComplete,
   onSaveReport,
   onGoToReportsTab,
   onGoToFormTab,
@@ -228,6 +232,7 @@ const ChatInterface = ({
         await persistReportToLibrary(true);
         if (cancelled) return;
         setHitlPhase('report_saved');
+        onAnalysisComplete?.({ incidentId: hitlSeed.incidentId });
         setMessages((prev) => [
           ...prev,
           {
@@ -381,6 +386,7 @@ const ChatInterface = ({
           await ensureIncidentReadyForReport(hitlSeed.incidentId);
           await persistReportToLibrary(true);
           setHitlPhase('report_saved');
+          onAnalysisComplete?.({ incidentId: hitlSeed.incidentId });
           setMessages((prev) => [
             ...prev,
             {
@@ -988,7 +994,13 @@ const ChatInterface = ({
     }
   };
 
-  const handlePdfSkip = () => {
+  const notifyAnalysisComplete = useCallback(() => {
+    if (hitlSeed?.incidentId) {
+      onAnalysisComplete?.({ incidentId: hitlSeed.incidentId });
+    }
+  }, [hitlSeed, onAnalysisComplete]);
+
+  const handleCloseHitlPanel = () => {
     setLiveRcaStatus('');
     setHitlPhase(null);
     processedHitlIdRef.current = null;
@@ -996,6 +1008,11 @@ const ChatInterface = ({
     setMessages([]);
     setSessionId(null);
     onPipelineStatusChange?.('');
+    onGoToFormTab?.();
+  };
+
+  const handlePdfSkip = () => {
+    handleCloseHitlPanel();
   };
 
   const runReportAction = useCallback(
@@ -1396,7 +1413,28 @@ const ChatInterface = ({
                 >
                   {t('hitl_open_reports_tab')}
                 </button>
-                <button type="button" className="hitl-choice-btn" onClick={handlePdfSkip}>
+                <button
+                  type="button"
+                  className="hitl-choice-btn hitl-choice-primary"
+                  onClick={() => {
+                    notifyAnalysisComplete();
+                    if (typeof onStartNewAnalysis === 'function') {
+                      onStartNewAnalysis();
+                    } else {
+                      handlePdfSkip();
+                    }
+                  }}
+                >
+                  {t('btn_new_analysis')}
+                </button>
+                <button
+                  type="button"
+                  className="hitl-choice-btn"
+                  onClick={() => {
+                    notifyAnalysisComplete();
+                    handleCloseHitlPanel();
+                  }}
+                >
                   {isTurkish ? 'Kapat' : 'Close'}
                 </button>
               </div>

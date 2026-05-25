@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, FolderOpen, Video } from "lucide-react";
+import { Lock, FolderOpen, CirclePlay } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
 import SavedReportsPanel from "./components/SavedReportsPanel";
-import SavedVideosPanel from "./components/SavedVideosPanel";
+import ReportGuideVideoPanel from "./components/ReportGuideVideoPanel";
 import Header from "./components/Header";
 import { getTranslation } from "./utils/translations";
 import {
@@ -25,12 +25,12 @@ import { fetchUsageSummary, formatToken } from "../services/usageApi";
 import "./RcaFrontendHub.css";
 import "./rcaEmbedLayout.css";
 
-const TAB_KEYS = ["form", "chat", "reports", "videos"];
-const LIBRARY_TABS = new Set(["reports", "videos"]);
+const TAB_KEYS = ["form", "chat", "reports", "guide"];
+const LIBRARY_TABS = new Set(["reports", "guide"]);
 
 /**
- * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports|videos).
- * Eski ?tab=smart bağlantıları form sekmesine yönlendirilir.
+ * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports|guide).
+ * Eski ?tab=smart → form; ?tab=videos → guide.
  */
 export default function RcaFrontendHub({ showAdminReturn = false }) {
   const navigate = useNavigate();
@@ -48,6 +48,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [activeDraftId, setActiveDraftId] = useState(null);
   const [formDraftSeed, setFormDraftSeed] = useState(null);
   const [tokenSummary, setTokenSummary] = useState(null);
+  const [flowComplete, setFlowComplete] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
   const submitAbortRef = useRef(null);
 
   const tokensBlocked =
@@ -58,6 +60,11 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     const raw = searchParams.get("tab");
     if (raw === "smart") {
       setSearchParams({ tab: "form" }, { replace: true });
+      return;
+    }
+    if (raw === "videos") {
+      setSearchParams({ tab: "guide" }, { replace: true });
+      setActiveTab("guide");
       return;
     }
     if (raw === "chat" && !hitlSeed) {
@@ -259,6 +266,39 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setChatPipelineStatus("");
   };
 
+  const handleStartNewAnalysis = useCallback(() => {
+    if (submitAbortRef.current) {
+      submitAbortRef.current.abort();
+      submitAbortRef.current = null;
+    }
+    setFlowComplete(false);
+    setHitlSeed(null);
+    setFormSubmitInfo("");
+    setFormSubmitError("");
+    setCreatedIncidentId("");
+    setActiveDraftId(null);
+    setFormDraftSeed(null);
+    setChatPipelineStatus("");
+    setIsSubmittingForm(false);
+    setActiveSubmitMode(null);
+    setFormResetKey((k) => k + 1);
+    setActiveTab("form");
+    setSearchParams({ tab: "form" }, { replace: true });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [setSearchParams]);
+
+  const handleAnalysisComplete = useCallback(
+    ({ incidentId } = {}) => {
+      setFlowComplete(true);
+      if (incidentId) setCreatedIncidentId(incidentId);
+      setFormSubmitInfo(translate("report_saved_toast"));
+      setFormSubmitError("");
+    },
+    [translate],
+  );
+
   const handlePersistDraft = useCallback(
     async (formData) => {
       const entry = await upsertDraftReport(formData, "", activeDraftId);
@@ -324,11 +364,13 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
   return (
     <div className={hubClassName}>
+      <div className="rca-hub-sticky-top">
       <Header
         selectedLanguage={selectedLanguage}
         onLanguageChange={setSelectedLanguage}
         showAdminReturn={showAdminReturn}
         onAdminReturn={() => navigate("/dashboard")}
+        onNewAnalysis={handleStartNewAnalysis}
         isLightMode={isLightMode}
         onThemeToggle={handleThemeToggle}
       />
@@ -403,12 +445,35 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </div>
       ) : null}
 
+      {flowComplete && !LIBRARY_TABS.has(activeTab) ? (
+        <div className="rca-completion-cta" role="status">
+          <p className="rca-completion-cta-text">{translate("analysis_complete_banner")}</p>
+          <div className="rca-completion-cta-actions">
+            <button
+              type="button"
+              className="rca-btn-new-analysis"
+              onClick={handleStartNewAnalysis}
+            >
+              {translate("btn_new_analysis")}
+            </button>
+            <button
+              type="button"
+              className="rca-btn-secondary-action"
+              onClick={() => setTab("reports")}
+            >
+              {translate("hitl_open_reports_tab")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      </div>
+
       <main
         className={`main-content${
           activeTab === "reports"
             ? " main-content--reports-tab"
-            : activeTab === "videos"
-              ? " main-content--videos-tab"
+            : activeTab === "guide"
+              ? " main-content--guide-tab"
               : ""
         }`}
       >
@@ -453,6 +518,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         )}
         {activeTab === "form" && (
           <IncidentForm
+            key={formResetKey}
             language={selectedLanguage}
             onSubmit={handleFormSubmit}
             isSubmitting={isSubmittingForm}
@@ -469,6 +535,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             hitlSeed={hitlSeed}
             onPipelineStatusChange={setChatPipelineStatus}
             onHitlFlowComplete={handleHitlFlowComplete}
+            onStartNewAnalysis={handleStartNewAnalysis}
+            onAnalysisComplete={handleAnalysisComplete}
             onSaveReport={handleSaveToReports}
             onGoToReportsTab={() => setTab("reports")}
             onGoToFormTab={() => setTab("form")}
@@ -479,9 +547,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             language={selectedLanguage}
             onEditDraft={handleLoadDraftEntry}
             onOpenReport={handleOpenReportEntry}
+            onOpenGuideTab={() => setTab("guide")}
           />
         )}
-        {activeTab === "videos" && <SavedVideosPanel language={selectedLanguage} />}
+        {activeTab === "guide" && <ReportGuideVideoPanel language={selectedLanguage} />}
       </main>
 
     </div>
