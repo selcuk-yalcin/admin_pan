@@ -305,6 +305,12 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setSearchParams({ tab: "form" }, { replace: true });
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => {
+        document.querySelector(".rca-frontend-hub .main-content")?.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }, 0);
     }
   }, [clearHitlSession, setSearchParams]);
 
