@@ -107,7 +107,8 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.app.rca-frontend-hub.fullscreen-mode .main-content--reports-tab {
+.app.rca-frontend-hub.fullscreen-mode .main-content--reports-tab,
+.app.rca-frontend-hub.fullscreen-mode .main-content--videos-tab {
   display: flex;
   flex-direction: column;
 }
@@ -144,6 +145,16 @@
 
 .tab-lock-icon {
   opacity: 0.9;
+}
+
+.tab-btn--locked {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.tab-btn--locked:hover {
+  background: transparent;
+  color: var(--text-secondary);
 }
 
 .tab-btn:hover {

@@ -3,7 +3,13 @@ import { Send, Paperclip, RotateCcw, Download, AlertCircle } from 'lucide-react'
 import Message from './Message';
 import QuestionFlow from './QuestionFlow';
 import { getTranslation } from '../utils/translations';
-import { sendMessage } from '../utils/api';
+import { streamHitlIntro } from '../utils/streamHitlIntro';
+import {
+  appendNewActivityLines,
+  buildPipelineResultMarkdown,
+  pipelineKickoffLine,
+  splitMarkdownForStream,
+} from '../utils/formatPipelineChat';
 import {
   runPipelineJobWithPolling,
   generateHTMLReport,
@@ -16,7 +22,6 @@ import {
 } from '../../services/hsg245Api';
 import {
   buildInvestigationPayload,
-  parseInitialImmediateCauses,
   buildHowHappenedText,
 } from '../utils/investigationPayload';
 import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
@@ -37,6 +42,7 @@ const MAX_PROBE_CODES = 3;
 const MAX_WHY_LEVEL = 5;
 /** Uzun RCA + thinking modeller; 6 dk önce UI "Pipeline timeout" veriyordu. */
 const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
+const RCA_STREAM_MSG_ID = 'rca-pipeline-stream';
 
 function extractHsgCodes(text) {
   const matches = String(text || '').match(/[ABCD]\d+\.\d+/gi) || [];
@@ -59,13 +65,6 @@ function deriveKnownFields(formData = {}) {
   if (formData.lightingConditions) out.push('lighting_known');
   if (formData.workType || formData.rootCauseInitial) out.push('risk_assessment');
   return out;
-}
-
-function stripCodePrefix(line) {
-  return String(line || '')
-    .replace(/^\s*\d+[\.)-]?\s*/, '')
-    .replace(/^\s*[ABCD]\d+\.\d+\s*[-:)]?\s*/i, '')
-    .trim();
 }
 
 /** Panelde HSG245 markası ve gereksiz kod öneklerini gizle. */
@@ -107,6 +106,7 @@ function getStageLabel(language, stage, progress) {
  * @param {() => void} [props.onHitlFlowComplete] - HITL akışı bittiğinde
  * @param {(payload: { incidentId: string, formData?: object, reportReady?: boolean }) => void} [props.onSaveReport]
  * @param {() => void} [props.onGoToReportsTab]
+ * @param {() => void} [props.onGoToFormTab]
  */
 const ChatInterface = ({
   language,
@@ -115,19 +115,21 @@ const ChatInterface = ({
   onHitlFlowComplete,
   onSaveReport,
   onGoToReportsTab,
+  onGoToFormTab,
 }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentFlow, setCurrentFlow] = useState(null);
   const [sessionId, setSessionId] = useState(null);
-  /** null | 'questions' | 'rca' | 'pdf_prompt' | 'report_saved' */
+  /** null | 'intro_streaming' | 'questions' | 'rca' | 'pdf_prompt' | 'report_saved' */
   const [hitlPhase, setHitlPhase] = useState(null);
   const [savedLibraryItemId, setSavedLibraryItemId] = useState(null);
   const [hitlAnswers, setHitlAnswers] = useState([]);
   /** @type {import('react').MutableRefObject<string|null>} */
   const processedHitlIdRef = useRef(null);
   const hitlLoadGenRef = useRef(0);
+  const pipelineActivitySeenRef = useRef(new Set());
   const resolveNextQuestionRef = useRef(null);
   const runRcaAfterHitlRef = useRef(null);
   const librarySavedRef = useRef(null);
@@ -262,6 +264,18 @@ const ChatInterface = ({
       setHitlPhase('rca');
       setHitlApiQuestion(null);
       setIsLoading(true);
+      pipelineActivitySeenRef.current = new Set();
+      const streamHeader = `**${pipelineKickoffLine(language)}**`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: RCA_STREAM_MSG_ID,
+          type: 'assistant',
+          content: streamHeader,
+          timestamp: new Date(),
+          isStreaming: true,
+        },
+      ]);
       const smoothProgress = createSmoothPipelineProgress({
         onTick: (displayPct, stage) => {
           const statusLabel = getStageLabel(language, stage, displayPct);
@@ -293,6 +307,27 @@ const ChatInterface = ({
             pollIntervalMs: 2000,
             onUpdate: (job) => {
               smoothProgress.update(job);
+              const lines = Array.isArray(job?.activity_lines)
+                ? job.activity_lines
+                : job?.latest_activity
+                  ? [job.latest_activity]
+                  : [];
+              if (!lines.length) return;
+              setMessages((prev) =>
+                prev.map((m) => {
+                  if (m.id !== RCA_STREAM_MSG_ID) return m;
+                  const body = appendNewActivityLines(
+                    '',
+                    lines,
+                    pipelineActivitySeenRef.current,
+                  );
+                  return {
+                    ...m,
+                    content: body ? `${streamHeader}\n\n${body}` : streamHeader,
+                    isStreaming: true,
+                  };
+                }),
+              );
             },
           },
         );
@@ -305,15 +340,42 @@ const ChatInterface = ({
             ? 'Pipeline tamamlandi. Rapor adimina gecildi.'
             : 'Pipeline completed. Moved to report stage.',
         );
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `rca-done-${Date.now()}`,
-            type: 'assistant',
-            content: `${getTranslation(language, 'hitl_running_rca')} ✓\nIncident ID: ${hitlSeed.incidentId}`,
-            timestamp: new Date(),
-          },
-        ]);
+
+        const summaryMd = buildPipelineResultMarkdown(resolvedPipelineResult, language);
+        const summaryChunks = splitMarkdownForStream(summaryMd);
+        let streamBody = appendNewActivityLines(
+          '',
+          Array.isArray(pipelineResponse?.job?.activity_lines)
+            ? pipelineResponse.job.activity_lines
+            : [],
+          pipelineActivitySeenRef.current,
+        );
+        let builtContent = streamBody ? `${streamHeader}\n\n${streamBody}` : streamHeader;
+        for (const chunk of summaryChunks) {
+          builtContent = `${builtContent}\n\n${chunk}`;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === RCA_STREAM_MSG_ID
+                ? { ...m, content: builtContent, isStreaming: true }
+                : m,
+            ),
+          );
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((r) => setTimeout(r, 280));
+        }
+        const incidentLine = `\n\n*Incident ID: ${hitlSeed.incidentId}*`;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === RCA_STREAM_MSG_ID
+              ? {
+                  ...m,
+                  content: `${builtContent}${incidentLine}`,
+                  isStreaming: false,
+                  timestamp: new Date(),
+                }
+              : m,
+          ),
+        );
         setIsLoading(true);
         try {
           await ensureIncidentReadyForReport(hitlSeed.incidentId);
@@ -540,15 +602,8 @@ const ChatInterface = ({
       setProbeBranchIdx(0);
       setProbeWhyLevel(1);
       setPipelineResult(null);
-      setMessages([
-        {
-          id: '1',
-          type: 'assistant',
-          content: getTranslation(language, 'welcome_message'),
-          timestamp: new Date(),
-        },
-      ]);
-      setSessionId(Date.now().toString());
+      setMessages([]);
+      setSessionId(null);
       onPipelineStatusChange?.('');
       return;
     }
@@ -586,51 +641,28 @@ const ChatInterface = ({
     processedHitlIdRef.current = hitlSeed.incidentId;
     librarySavedRef.current = null;
 
-    const bullets = parseInitialImmediateCauses(hitlSeed.formData?.rootCauseInitial)
-      .map(stripCodePrefix)
-      .filter(Boolean)
-      .slice(0, MAX_PROBE_CODES);
-    const bulletText = bullets.length
-      ? bullets.map((b, i) => `${i + 1}. ${b}`).join('\n')
-      : getTranslation(language, 'hitl_no_initial_causes');
-
-    const intro = [
-      String(language || '').toLowerCase().startsWith('tr')
-        ? 'İlk bulunan dogrudan nedenler'
-        : 'Initial immediate causes',
-      '',
-      bulletText,
-      '',
-      String(language || '').toLowerCase().startsWith('tr')
-        ? 'Simdi daha derin arastirma icin sorulari birlikte yanitlayacagiz.'
-        : 'Now we will answer deeper investigation questions together.',
-      '',
-      `Incident ID: ${hitlSeed.incidentId}`,
-      '',
-      `${getTranslation(language, 'hitl_questions_title')} — ${getTranslation(language, 'input_hint')}`,
-    ].join('\n');
-
-    setMessages([
-      {
-        id: 'hitl-start',
-        type: 'assistant',
-        content: intro,
-        timestamp: new Date(),
-      },
-    ]);
-    setHitlPhase('questions');
+    setHitlPhase('intro_streaming');
     setHitlAnswers([]);
     setHitlAnsweredIds([]);
     setHitlApiQuestion(null);
-    setHitlQuestionsLoading(true);
+    setHitlQuestionsLoading(false);
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setPipelineResult(null);
     setSessionId(Date.now().toString());
+    setMessages([
+      {
+        id: 'hitl-stream',
+        type: 'assistant',
+        content: `**${getTranslation(language, 'hitl_determining_causes')}**`,
+        timestamp: new Date(),
+        isStreaming: true,
+      },
+    ]);
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
-        ? `Derinlestirme sorulari basladi (Incident: ${hitlSeed.incidentId})`
-        : `Deepening questions started (Incident: ${hitlSeed.incidentId})`,
+        ? `Dogrudan nedenler belirleniyor (Incident: ${hitlSeed.incidentId})`
+        : `Determining immediate causes (Incident: ${hitlSeed.incidentId})`,
     );
 
     const rci = hitlSeed.formData?.rootCauseInitial || '';
@@ -639,8 +671,17 @@ const ChatInterface = ({
     setHitlMode(mode);
     setProbeCodes(codes);
 
+    const abortController = new AbortController();
     let cancelled = false;
-    (async () => {
+
+    const loadFirstQuestion = async () => {
+      setHitlPhase('questions');
+      setHitlQuestionsLoading(true);
+      onPipelineStatusChange?.(
+        String(language || '').toLowerCase().startsWith('tr')
+          ? `Derinlestirme sorulari basladi (Incident: ${hitlSeed.incidentId})`
+          : `Deepening questions started (Incident: ${hitlSeed.incidentId})`,
+      );
       try {
         const next = await resolveNextQuestionRef.current({
           mode,
@@ -689,14 +730,51 @@ const ChatInterface = ({
           setHitlPhase(null);
         }
       } finally {
-        // Always clear loading — setState on an unmounted component is a no-op
-        // in React 18 and safer than leaving the spinner stuck forever.
         setHitlQuestionsLoading(false);
+      }
+    };
+
+    (async () => {
+      try {
+        await streamHitlIntro({
+          language,
+          formData: hitlSeed.formData || {},
+          incidentId: hitlSeed.incidentId,
+          signal: abortController.signal,
+          onUpdate: (content, isStreaming) => {
+            if (cancelled) return;
+            setMessages([
+              {
+                id: 'hitl-stream',
+                type: 'assistant',
+                content,
+                timestamp: new Date(),
+                isStreaming,
+              },
+            ]);
+          },
+        });
+        if (cancelled) return;
+        await loadFirstQuestion();
+      } catch (error) {
+        if (!cancelled) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `hitl-stream-err-${Date.now()}`,
+              type: 'error',
+              content: `${getTranslation(language, 'error_occurred')}: ${error.message}`,
+              timestamp: new Date(),
+            },
+          ]);
+          setHitlPhase(null);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
+      abortController.abort();
     };
   // runRcaAfterHitl and resolveNextQuestion intentionally captured via refs —
   // including them here would re-trigger the effect whenever probeCodes or other
@@ -915,15 +993,8 @@ const ChatInterface = ({
     setHitlPhase(null);
     processedHitlIdRef.current = null;
     onHitlFlowComplete?.();
-    setMessages([
-      {
-        id: '1',
-        type: 'assistant',
-        content: getTranslation(language, 'welcome_message'),
-        timestamp: new Date(),
-      },
-    ]);
-    setSessionId(Date.now().toString());
+    setMessages([]);
+    setSessionId(null);
     onPipelineStatusChange?.('');
   };
 
@@ -960,53 +1031,15 @@ const ChatInterface = ({
   );
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-    if (hitlPhase === 'questions' || hitlPhase === 'rca') {
+    if (!hitlSeed?.incidentId || !input.trim() || isLoading) return;
+    if (
+      hitlPhase === 'intro_streaming' ||
+      hitlPhase === 'questions' ||
+      hitlPhase === 'rca' ||
+      hitlPhase === 'pdf_prompt' ||
+      hitlPhase === 'report_saved'
+    ) {
       return;
-    }
-
-    const userMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    const text = input;
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      const response = await sendMessage({
-        message: text,
-        sessionId,
-        language,
-      });
-
-      const assistantMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: response.message,
-        suggestions: response.suggestions,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      if (response.startFlow) {
-        setCurrentFlow(response.flowType);
-      }
-    } catch (error) {
-      const errorMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'error',
-        content: t('error_occurred') + ': ' + error.message,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -1034,15 +1067,8 @@ const ChatInterface = ({
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setPipelineResult(null);
-    setMessages([
-      {
-        id: '1',
-        type: 'assistant',
-        content: getTranslation(language, 'welcome_message'),
-        timestamp: new Date(),
-      },
-    ]);
-    setSessionId(Date.now().toString());
+    setMessages([]);
+    setSessionId(null);
     onPipelineStatusChange?.('');
   };
 
@@ -1056,9 +1082,14 @@ const ChatInterface = ({
     setMessages((prev) => [...prev, userMessage]);
   };
 
+  const hitlSessionActive = Boolean(hitlSeed?.incidentId);
+  const showFreeTextInput =
+    hitlPhase === 'pdf_prompt' || hitlPhase === 'report_saved' || hitlPhase === null;
   const inputLocked =
+    !hitlSessionActive ||
     isLoading ||
     hitlQuestionsLoading ||
+    hitlPhase === 'intro_streaming' ||
     hitlPhase === 'questions' ||
     hitlPhase === 'rca' ||
     hitlPhase === 'pdf_prompt' ||
@@ -1102,14 +1133,22 @@ const ChatInterface = ({
           <h3>{t('analysis_steps')}</h3>
         </div>
         <div className="sidebar-content">
-          <div className={`step-item ${hitlSeed ? 'completed' : 'completed'}`}>
-            <div className="step-icon">✓</div>
+          <div className={`step-item ${hitlSeed ? 'completed' : ''}`}>
+            <div className="step-icon">{hitlSeed ? '✓' : '1'}</div>
             <div className="step-text">
               <h4>{t('step_1')}</h4>
               <p>{t('step_1_desc')}</p>
             </div>
           </div>
-          <div className={`step-item ${hitlPhase === 'questions' ? 'active' : hitlPhase ? 'completed' : ''}`}>
+          <div
+            className={`step-item ${
+              hitlPhase === 'intro_streaming' || hitlPhase === 'questions'
+                ? 'active'
+                : hitlPhase && hitlPhase !== 'intro_streaming'
+                  ? 'completed'
+                  : ''
+            }`}
+          >
             <div className="step-icon">{hitlPhase === 'questions' ? '2' : hitlPhase ? '✓' : '2'}</div>
             <div className="step-text">
               <h4>{t('step_2_hitl')}</h4>
@@ -1136,9 +1175,19 @@ const ChatInterface = ({
 
       <div className="chat-main">
         <div className="chat-messages">
-          {messages.map((message) => (
-            <Message key={message.id} message={message} language={language} />
-          ))}
+          {!hitlSeed?.incidentId ? (
+            <div className="chat-form-gate">
+              <h3>{t('chat_requires_form_title')}</h3>
+              <p>{t('chat_requires_form_body')}</p>
+              <button type="button" className="chat-form-gate-btn" onClick={() => onGoToFormTab?.()}>
+                {t('chat_go_to_form')}
+              </button>
+            </div>
+          ) : (
+            messages.map((message) => (
+              <Message key={message.id} message={message} language={language} />
+            ))
+          )}
 
           {currentFlow && (
             <QuestionFlow
@@ -1422,48 +1471,45 @@ const ChatInterface = ({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="chat-input-container">
-          <div className="chat-actions">
-            <button className="action-btn" onClick={handleReset} title={t('reset')} type="button">
-              <RotateCcw size={18} />
-              <span>{t('reset')}</span>
-            </button>
-            <button className="action-btn" title={t('export')} type="button">
-              <Download size={18} />
-              <span>{t('export')}</span>
-            </button>
+        {hitlSessionActive ? (
+          <div className="chat-input-container">
+            <div className="chat-actions">
+              <button className="action-btn" onClick={handleReset} title={t('reset')} type="button">
+                <RotateCcw size={18} />
+                <span>{t('reset')}</span>
+              </button>
+              <button className="action-btn" title={t('export')} type="button">
+                <Download size={18} />
+                <span>{t('export')}</span>
+              </button>
+            </div>
+
+            {showFreeTextInput ? (
+              <>
+                <div className="chat-input-wrapper">
+                  <button className="attach-btn" title={t('attach_file')} type="button" disabled>
+                    <Paperclip size={20} />
+                  </button>
+                  <textarea
+                    className="chat-input"
+                    placeholder={t('hitl_input_locked_placeholder')}
+                    value=""
+                    rows={1}
+                    disabled
+                    readOnly
+                  />
+                  <button className="send-btn" disabled type="button" aria-hidden>
+                    <Send size={20} />
+                  </button>
+                </div>
+                <div className="input-hint">
+                  <AlertCircle size={14} />
+                  <span>{t('hitl_input_locked_placeholder')}</span>
+                </div>
+              </>
+            ) : null}
           </div>
-
-          <div className="chat-input-wrapper">
-            <button className="attach-btn" title={t('attach_file')} type="button">
-              <Paperclip size={20} />
-            </button>
-
-            <textarea
-              className="chat-input"
-              placeholder={inputLocked ? t('hitl_input_locked_placeholder') : t('input_placeholder')}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows={1}
-              disabled={inputLocked}
-            />
-
-            <button
-              className="send-btn"
-              onClick={handleSend}
-              disabled={!input.trim() || inputLocked}
-              type="button"
-            >
-              <Send size={20} />
-            </button>
-          </div>
-
-          <div className="input-hint">
-            <AlertCircle size={14} />
-            <span>{t('input_hint')}</span>
-          </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );

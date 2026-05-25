@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, FolderOpen } from "lucide-react";
+import { Lock, FolderOpen, Video } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
 import SavedReportsPanel from "./components/SavedReportsPanel";
+import SavedVideosPanel from "./components/SavedVideosPanel";
 import Header from "./components/Header";
 import { getTranslation } from "./utils/translations";
 import {
@@ -24,10 +25,11 @@ import { fetchUsageSummary, formatToken } from "../services/usageApi";
 import "./RcaFrontendHub.css";
 import "./rcaEmbedLayout.css";
 
-const TAB_KEYS = ["form", "chat", "reports"];
+const TAB_KEYS = ["form", "chat", "reports", "videos"];
+const LIBRARY_TABS = new Set(["reports", "videos"]);
 
 /**
- * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports).
+ * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports|videos).
  * Eski ?tab=smart bağlantıları form sekmesine yönlendirilir.
  */
 export default function RcaFrontendHub({ showAdminReturn = false }) {
@@ -58,12 +60,17 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       setSearchParams({ tab: "form" }, { replace: true });
       return;
     }
+    if (raw === "chat" && !hitlSeed) {
+      setSearchParams({ tab: "form" }, { replace: true });
+      setActiveTab("form");
+      return;
+    }
     if (raw && TAB_KEYS.includes(raw)) {
       setActiveTab(raw);
     } else {
       setActiveTab("form");
     }
-  }, [navigate, searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, hitlSeed]);
 
   useEffect(() => {
     syncTabFromUrl();
@@ -88,6 +95,12 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
   const setTab = (tab) => {
     if (!TAB_KEYS.includes(tab)) return;
+    if (tab === "chat" && !hitlSeed) {
+      setFormSubmitError(translate("chat_requires_form_error"));
+      setActiveTab("form");
+      setSearchParams({ tab: "form" }, { replace: true });
+      return;
+    }
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
   };
@@ -333,8 +346,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </button>
         <button
           type="button"
-          className={`tab-btn ${activeTab === "chat" ? "active" : ""}`}
+          className={`tab-btn ${activeTab === "chat" ? "active" : ""}${!hitlSeed ? " tab-btn--locked" : ""}`}
           onClick={() => setTab("chat")}
+          title={!hitlSeed ? translate("chat_tab_locked_hint") : undefined}
+          aria-disabled={!hitlSeed}
         >
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -350,9 +365,17 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           <FolderOpen size={20} aria-hidden />
           <span>{translate("tab_saved_reports")}</span>
         </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === "videos" ? "active" : ""}`}
+          onClick={() => setTab("videos")}
+        >
+          <Video size={20} aria-hidden />
+          <span>{translate("tab_videos")}</span>
+        </button>
       </div>
 
-      {tokenSummary && activeTab !== "reports" ? (
+      {tokenSummary && !LIBRARY_TABS.has(activeTab) ? (
         <div
           className={`token-usage-strip token-usage-strip--${tokenSummary.warn_level || "ok"}`}
           style={{ marginBottom: 12 }}
@@ -367,7 +390,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </div>
       ) : null}
 
-      {activeTab !== "reports" ? (
+      {!LIBRARY_TABS.has(activeTab) ? (
         <div className="info-banner">
           <div className="info-banner-icon">RCA</div>
           <div className="info-banner-content">
@@ -380,8 +403,16 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </div>
       ) : null}
 
-      <main className={`main-content${activeTab === "reports" ? " main-content--reports-tab" : ""}`}>
-        {formSubmitInfo && activeTab !== "reports" && (
+      <main
+        className={`main-content${
+          activeTab === "reports"
+            ? " main-content--reports-tab"
+            : activeTab === "videos"
+              ? " main-content--videos-tab"
+              : ""
+        }`}
+      >
+        {formSubmitInfo && !LIBRARY_TABS.has(activeTab) && (
           <div className="info-banner" style={{ marginBottom: "16px" }}>
             <div className="info-banner-icon">AI</div>
             <div className="info-banner-content">
@@ -411,7 +442,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             </div>
           </div>
         )}
-        {formSubmitError && activeTab !== "reports" && (
+        {formSubmitError && !LIBRARY_TABS.has(activeTab) && (
           <div className="info-banner" style={{ marginBottom: "16px", borderColor: "#ef4444" }}>
             <div className="info-banner-icon">!</div>
             <div className="info-banner-content">
@@ -440,6 +471,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             onHitlFlowComplete={handleHitlFlowComplete}
             onSaveReport={handleSaveToReports}
             onGoToReportsTab={() => setTab("reports")}
+            onGoToFormTab={() => setTab("form")}
           />
         )}
         {activeTab === "reports" && (
@@ -449,6 +481,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             onOpenReport={handleOpenReportEntry}
           />
         )}
+        {activeTab === "videos" && <SavedVideosPanel language={selectedLanguage} />}
       </main>
 
     </div>

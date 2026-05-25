@@ -255,6 +255,49 @@
   }
 }
 
+/* Manuel form gerekli — etkileşimli sekme kilidi */
+.chat-form-gate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  gap: 1rem;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.chat-form-gate h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.chat-form-gate p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.chat-form-gate-btn {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chat-form-gate-btn:hover {
+  opacity: 0.92;
+}
+
 /* Input Area */
 .chat-input-container {
   width: 100%;

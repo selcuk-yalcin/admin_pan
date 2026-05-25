@@ -80,6 +80,47 @@ export function parseInitialImmediateCauses(text) {
     .filter(Boolean);
 }
 
+function stripCauseLine(line) {
+  return String(line || "")
+    .replace(/^\s*\d+[\.)-]?\s*/, "")
+    .replace(/^\s*[ABCD]\d+\.\d+\s*[-:)]?\s*/i, "")
+    .trim();
+}
+
+function sentencesFromNarrative(text, max = 3) {
+  const raw = String(text || "").trim();
+  if (!raw) return [];
+  const parts = raw
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 12);
+  const out = [];
+  for (const part of parts) {
+    const clipped = part.length > 160 ? `${part.slice(0, 157)}…` : part;
+    if (!out.includes(clipped)) out.push(clipped);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/**
+ * Olaya özel doğrudan neden satırları (form → HITL intro akışı).
+ * @param {object} formData
+ * @param {number} [maxLines]
+ */
+export function deriveImmediateCauseLines(formData = {}, maxLines = 5) {
+  const fromInitial = parseInitialImmediateCauses(formData?.rootCauseInitial)
+    .map(stripCauseLine)
+    .filter(Boolean);
+  if (fromInitial.length) return fromInitial.slice(0, maxLines);
+
+  const fromDesc = sentencesFromNarrative(formData?.incidentDescription, maxLines);
+  if (fromDesc.length) return fromDesc;
+
+  const narrative = buildHowHappenedText(formData, "tr");
+  return sentencesFromNarrative(narrative, Math.min(2, maxLines));
+}
+
 /**
  * @param {object} formData
  * @param {string} [hitlAppendix] - HITL soru-cevap özeti (how_happened sonuna eklenir)

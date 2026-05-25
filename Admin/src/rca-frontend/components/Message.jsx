@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import './Message.css';
 
 const Message = ({ message, language }) => {
-  const { type, content, timestamp, suggestions, analysisId } = message;
+  const { type, content, timestamp, suggestions, analysisId, isStreaming } = message;
 
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString(language === 'tr' ? 'tr-TR' : 'en-US', {
@@ -35,8 +35,9 @@ const Message = ({ message, language }) => {
       </div>
       
       <div className="message-content">
-        <div className="message-bubble">
+        <div className={`message-bubble${isStreaming ? ' message-bubble--streaming' : ''}`}>
           <ReactMarkdown>{content}</ReactMarkdown>
+          {isStreaming ? <span className="message-stream-cursor" aria-hidden="true" /> : null}
           
           {suggestions && suggestions.length > 0 && (
             <div className="message-suggestions">

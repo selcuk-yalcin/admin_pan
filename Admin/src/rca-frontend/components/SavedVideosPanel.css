@@ -1,0 +1,312 @@
+.saved-videos-panel {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 0 2rem;
+}
+
+.saved-videos-hero {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #fff7ed 100%);
+  border: 1px solid var(--border);
+}
+
+.rca-frontend-hub.theme-dark .saved-videos-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #312e81 40%);
+}
+
+.saved-videos-hero-visual {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+.saved-videos-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.saved-videos-lead {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.saved-videos-upload {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.saved-videos-folder-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.saved-videos-upload-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .saved-videos-upload-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.saved-videos-input {
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.saved-videos-input--wide {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-videos-file-input {
+  display: none;
+}
+
+.saved-videos-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.saved-videos-url-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.saved-videos-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.saved-videos-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.saved-videos-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saved-videos-btn--primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: #fff;
+  border: none;
+}
+
+.saved-videos-btn--ghost {
+  background: transparent;
+}
+
+.saved-videos-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.saved-videos-error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.saved-videos-player-wrap {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #0f172a;
+  border: 1px solid var(--border);
+}
+
+.saved-videos-player-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e2e8f0;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.saved-videos-player {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 8px;
+  background: #000;
+}
+
+.saved-videos-external-link {
+  color: #93c5fd;
+  word-break: break-all;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.saved-videos-folder-count {
+  margin-left: auto;
+  font-size: 0.8rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+}
+
+.saved-videos-loading,
+.saved-videos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.saved-videos-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.saved-videos-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.saved-videos-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.saved-videos-card-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.saved-videos-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.saved-videos-incident-id {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--surface-hover);
+}
+
+.saved-videos-file-name {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.saved-videos-badge-url {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.saved-videos-card-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.saved-videos-icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.saved-videos-icon-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.saved-videos-icon-btn--danger:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.saved-videos-loading .spin,
+.saved-videos-btn .spin {
+  animation: saved-videos-spin 0.9s linear infinite;
+}
+
+@keyframes saved-videos-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.main-content--videos-tab .saved-videos-panel {
+  min-height: 0;
+}

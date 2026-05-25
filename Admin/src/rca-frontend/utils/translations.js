@@ -7,6 +7,29 @@ const translations = {
     manual_form: 'Manuel Form',
     interactive_analysis: 'Etkileşimli Analiz',
     tab_saved_reports: 'Raporlar',
+    tab_videos: 'Videolar',
+    videos_intro:
+      'Olay analizi veya eğitim için oluşturduğunuz videoları bu klasöre ekleyin. Dosya yükleyebilir veya harici bağlantı kaydedebilirsiniz.',
+    videos_upload_section: 'Video ekle',
+    videos_title_placeholder: 'Video başlığı (isteğe bağlı)',
+    videos_incident_placeholder: 'Incident ID (isteğe bağlı)',
+    videos_add_file: 'Dosya yükle',
+    videos_add_link: 'Bağlantı ekle',
+    videos_save_link: 'Bağlantıyı kaydet',
+    videos_storage_hint:
+      'Videolar bu tarayıcıda (IndexedDB) saklanır; başka cihazda görünmez. Maks. ~250 MB/dosya.',
+    videos_folder_created: 'Kayıtlı videolar',
+    videos_loading: 'Videolar yükleniyor…',
+    videos_empty: 'Henüz video yok.',
+    videos_empty_cta: 'Yukarıdan MP4/WebM yükleyin veya bir paylaşım bağlantısı ekleyin.',
+    videos_delete_confirm: 'Bu videoyu silmek istiyor musunuz?',
+    videos_delete: 'Sil',
+    videos_play: 'Oynat',
+    videos_rename_hint: 'Başlığı değiştir',
+    videos_rename_label: 'Video adı',
+    videos_kind_link: 'Bağlantı',
+    videos_now_playing: 'Oynatılıyor',
+    videos_external_hint: 'Harici bağlantılar yeni sekmede açılır.',
     root_cause_analysis: 'Root Cause Analysis',
     subtitle: 'DeepWhy - İş Kazası Kök Neden Analiz Sistemi',
     
@@ -255,6 +278,19 @@ const translations = {
     hitl_submit_text_answer: 'Cevabı gönder',
     hitl_submit_choices: 'Seçimleri gönder',
     hitl_multi_choice_hint: 'Birden fazla uygun seçeneği işaretleyebilirsiniz.',
+    hitl_rca_streaming_title: 'Kök neden analizi çalışıyor…',
+    hitl_determining_causes: 'Doğrudan nedenler belirleniyor…',
+    hitl_analyzing_narrative: 'Olay metni inceleniyor…',
+    hitl_intro_deepening_notice:
+      'Şimdi bu olaya özel derinleştirme sorularını birlikte yanıtlayacağız.',
+    chat_requires_form_title: 'Önce manuel formu doldurun',
+    chat_requires_form_body:
+      'Etkileşimli analiz, Manuel Formdaki «Etkileşimli Analize Geç» ile başlar. Formu gönderdikten sonra doğrudan nedenler burada akışla görünür; ardından derinleştirme sorularını yanıtlarsınız.',
+    chat_go_to_form: 'Manuel forma git',
+    chat_tab_locked_hint:
+      'Etkileşimli analiz için önce Manuel Formu doldurup «Etkileşimli Analize Geç»e basın.',
+    chat_requires_form_error:
+      'Etkileşimli analiz sekmesi kilitli. Lütfen önce Manuel Formu doldurup «Etkileşimli Analize Geç» ile başlatın.',
     
     enter_name: 'İsim girin',
     enter_location: 'Konum girin',
@@ -456,6 +492,29 @@ const translations = {
     manual_form: 'Manual Form',
     interactive_analysis: 'Interactive Analysis',
     tab_saved_reports: 'Reports',
+    tab_videos: 'Videos',
+    videos_intro:
+      'Add videos you created for incident analysis or training. Upload a file or save an external link.',
+    videos_upload_section: 'Add video',
+    videos_title_placeholder: 'Video title (optional)',
+    videos_incident_placeholder: 'Incident ID (optional)',
+    videos_add_file: 'Upload file',
+    videos_add_link: 'Add link',
+    videos_save_link: 'Save link',
+    videos_storage_hint:
+      'Videos are stored in this browser (IndexedDB); they will not appear on other devices. Max ~250 MB per file.',
+    videos_folder_created: 'Saved videos',
+    videos_loading: 'Loading videos…',
+    videos_empty: 'No videos yet.',
+    videos_empty_cta: 'Upload MP4/WebM above or add a share link.',
+    videos_delete_confirm: 'Delete this video?',
+    videos_delete: 'Delete',
+    videos_play: 'Play',
+    videos_rename_hint: 'Rename',
+    videos_rename_label: 'Video title',
+    videos_kind_link: 'Link',
+    videos_now_playing: 'Now playing',
+    videos_external_hint: 'External links open in a new tab.',
     root_cause_analysis: 'Root Cause Analysis',
     subtitle: 'DeepWhy - Workplace Incident Root Cause Analysis System',
     
@@ -703,6 +762,19 @@ const translations = {
     hitl_submit_text_answer: 'Submit answer',
     hitl_submit_choices: 'Submit selection(s)',
     hitl_multi_choice_hint: 'You can select more than one option that applies.',
+    hitl_rca_streaming_title: 'Root cause analysis in progress…',
+    hitl_determining_causes: 'Determining immediate causes…',
+    hitl_analyzing_narrative: 'Reviewing incident narrative…',
+    hitl_intro_deepening_notice:
+      'Next we will answer deepening questions specific to this incident.',
+    chat_requires_form_title: 'Complete the manual form first',
+    chat_requires_form_body:
+      'Interactive analysis starts from the Manual Form via «Go to Interactive Analysis». After submit, immediate causes stream here, then you answer deepening questions.',
+    chat_go_to_form: 'Go to manual form',
+    chat_tab_locked_hint:
+      'Fill in the Manual Form and use «Go to Interactive Analysis» to unlock this tab.',
+    chat_requires_form_error:
+      'Interactive analysis is locked. Complete the Manual Form and start via «Go to Interactive Analysis».',
     
     enter_name: 'Enter name',
     enter_location: 'Enter location',
