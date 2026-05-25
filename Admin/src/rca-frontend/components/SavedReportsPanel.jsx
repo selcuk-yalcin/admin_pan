@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Eye,
   Download,
-  CirclePlay,
+  PlayCircle,
 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import {
@@ -474,7 +474,7 @@ export default function SavedReportsPanel({
           <p className="saved-reports-lead">{t('reports_intro')}</p>
           {typeof onOpenGuideTab === 'function' ? (
             <button type="button" className="saved-reports-guide-link" onClick={onOpenGuideTab}>
-              <CirclePlay size={18} aria-hidden />
+              <PlayCircle size={18} aria-hidden />
               {t('reports_open_guide')}
             </button>
           ) : null}

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CirclePlay, Maximize2, Minimize2 } from 'lucide-react';
+import { PlayCircle, Maximize2, Minimize2 } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import { getReportGuideVideoConfig } from '../utils/reportGuideVideo';
 import './ReportGuideVideoPanel.css';
@@ -21,7 +21,7 @@ export default function ReportGuideVideoPanel({ language }) {
     <div className={`report-guide-panel${theater ? ' report-guide-panel--theater' : ''}`}>
       <header className="report-guide-header">
         <div className="report-guide-header-icon" aria-hidden>
-          <CirclePlay size={26} />
+          <PlayCircle size={26} />
         </div>
         <div className="report-guide-header-copy">
           <h2 className="report-guide-title">{t('tab_report_guide')}</h2>

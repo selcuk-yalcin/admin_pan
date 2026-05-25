@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, FolderOpen, CirclePlay } from "lucide-react";
+import { Lock, FolderOpen, PlayCircle } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
 import SavedReportsPanel from "./components/SavedReportsPanel";
