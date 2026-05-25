@@ -51,6 +51,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [flowComplete, setFlowComplete] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
   const submitAbortRef = useRef(null);
+  /** React state gecikmesi olmadan HITL oturumu (setTab ?tab=chat senkron kontrolü) */
+  const hitlSeedRef = useRef(null);
 
   const tokensBlocked =
     tokenSummary?.warn_level === "blocked" ||
@@ -67,7 +69,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       setActiveTab("guide");
       return;
     }
-    if (raw === "chat" && !hitlSeed) {
+    if (raw === "chat" && !hitlSeedRef.current && !hitlSeed) {
       setSearchParams({ tab: "form" }, { replace: true });
       setActiveTab("form");
       return;
@@ -100,14 +102,30 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const translate = (key) => getTranslation(selectedLanguage, key);
   const subtitleText = translate("subtitle").replace(/^HSG245 v2\.0\s*-\s*/i, "");
 
+  const hasHitlSession = useCallback(
+    () => Boolean(hitlSeedRef.current || hitlSeed),
+    [hitlSeed],
+  );
+
+  const applyHitlSeed = useCallback((seed) => {
+    hitlSeedRef.current = seed;
+    setHitlSeed(seed);
+  }, []);
+
+  const clearHitlSession = useCallback(() => {
+    hitlSeedRef.current = null;
+    setHitlSeed(null);
+    setChatPipelineStatus("");
+  }, []);
+
   const setTab = (tab) => {
     if (!TAB_KEYS.includes(tab)) return;
-    if (tab === "chat" && !hitlSeed) {
-      setFormSubmitError(translate("chat_requires_form_error"));
+    if (tab === "chat" && !hasHitlSession()) {
       setActiveTab("form");
       setSearchParams({ tab: "form" }, { replace: true });
       return;
     }
+    setFormSubmitError("");
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
   };
@@ -161,6 +179,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setIsSubmittingForm(true);
     setFormSubmitError("");
     setActiveSubmitMode(mode);
+    hitlSeedRef.current = null;
     setHitlSeed(null);
     setFormSubmitInfo(
       mode === "interactive"
@@ -209,8 +228,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           { signal: controller.signal },
         );
         setChatPipelineStatus("");
-        setHitlSeed({ incidentId, formData });
-        setTab("chat");
+        applyHitlSeed({ incidentId, formData });
+        setFormSubmitError("");
+        setActiveTab("chat");
+        setSearchParams({ tab: "chat" }, { replace: true });
         return;
       }
 
@@ -262,8 +283,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   };
 
   const handleHitlFlowComplete = () => {
-    setHitlSeed(null);
-    setChatPipelineStatus("");
+    clearHitlSession();
   };
 
   const handleStartNewAnalysis = useCallback(() => {
@@ -272,13 +292,12 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       submitAbortRef.current = null;
     }
     setFlowComplete(false);
-    setHitlSeed(null);
+    clearHitlSession();
     setFormSubmitInfo("");
     setFormSubmitError("");
     setCreatedIncidentId("");
     setActiveDraftId(null);
     setFormDraftSeed(null);
-    setChatPipelineStatus("");
     setIsSubmittingForm(false);
     setActiveSubmitMode(null);
     setFormResetKey((k) => k + 1);
@@ -287,7 +306,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [setSearchParams]);
+  }, [clearHitlSession, setSearchParams]);
 
   const handleAnalysisComplete = useCallback(
     ({ incidentId } = {}) => {
@@ -388,10 +407,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </button>
         <button
           type="button"
-          className={`tab-btn ${activeTab === "chat" ? "active" : ""}${!hitlSeed ? " tab-btn--locked" : ""}`}
+          className={`tab-btn ${activeTab === "chat" ? "active" : ""}${!hasHitlSession() ? " tab-btn--locked" : ""}`}
           onClick={() => setTab("chat")}
-          title={!hitlSeed ? translate("chat_tab_locked_hint") : undefined}
-          aria-disabled={!hitlSeed}
+          title={!hasHitlSession() ? translate("chat_tab_locked_hint") : undefined}
+          aria-disabled={!hasHitlSession()}
         >
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
