@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, FolderOpen, PlayCircle } from "lucide-react";
+import { Lock, FolderOpen, PlayCircle, FilePlus } from "lucide-react";
 import ChatInterface from "./components/ChatInterface";
 import IncidentForm from "./components/IncidentForm";
 import SavedReportsPanel from "./components/SavedReportsPanel";
@@ -395,16 +395,27 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       />
 
       <div className="tab-navigation">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "form" ? "active" : ""}`}
-          onClick={() => setTab("form")}
-        >
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>{translate("manual_form")}</span>
-        </button>
+        <div className="tab-navigation-form-group">
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === "form" ? "active" : ""}`}
+            onClick={() => setTab("form")}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>{translate("manual_form")}</span>
+          </button>
+          <button
+            type="button"
+            className="tab-new-report-btn"
+            onClick={handleStartNewAnalysis}
+            title={translate("btn_new_report")}
+          >
+            <FilePlus size={18} aria-hidden />
+            <span>{translate("btn_new_report")}</span>
+          </button>
+        </div>
         <button
           type="button"
           className={`tab-btn ${activeTab === "chat" ? "active" : ""}${!hasHitlSession() ? " tab-btn--locked" : ""}`}

@@ -256,6 +256,7 @@ const translations = {
     save_report: 'Raporu Kaydet',
     report_saved_toast: 'Rapor Raporlar listesine kaydedildi.',
     btn_new_analysis: 'Yeni Analiz Yap',
+    btn_new_report: 'Yeni Rapor Oluştur',
     analysis_complete_banner:
       'Analiz tamamlandı. Rapor kaydedildi — yeni bir olay için formu sıfırlamak için «Yeni Analiz Yap» seçin.',
     reports_kind_draft: 'Taslak',
@@ -756,6 +757,7 @@ const translations = {
     save_report: 'Save report',
     report_saved_toast: 'Report saved to your Reports list.',
     btn_new_analysis: 'Start New Analysis',
+    btn_new_report: 'Create New Report',
     analysis_complete_banner:
       'Analysis complete. Report saved — use «Start New Analysis» to reset the form for a new incident.',
     reports_kind_draft: 'Draft',
