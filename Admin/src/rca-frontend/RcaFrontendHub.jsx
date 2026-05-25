@@ -409,11 +409,11 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </button>
         <button
           type="button"
-          className={`tab-btn ${activeTab === "videos" ? "active" : ""}`}
-          onClick={() => setTab("videos")}
+          className={`tab-btn ${activeTab === "guide" ? "active" : ""}`}
+          onClick={() => setTab("guide")}
         >
-          <Video size={20} aria-hidden />
-          <span>{translate("tab_videos")}</span>
+          <PlayCircle size={20} aria-hidden />
+          <span>{translate("tab_report_guide")}</span>
         </button>
       </div>
 
