@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { PlayCircle, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PlayCircle, Maximize2, Minimize2, Play } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 import { getReportGuideVideoConfig } from '../utils/reportGuideVideo';
 import './ReportGuideVideoPanel.css';
@@ -14,48 +14,84 @@ export default function ReportGuideVideoPanel({ language }) {
   const config = useMemo(() => getReportGuideVideoConfig(), []);
   const [loadError, setLoadError] = useState(false);
   const [theater, setTheater] = useState(false);
-  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [showPlayOverlay, setShowPlayOverlay] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [durationLabel, setDurationLabel] = useState('');
   const videoRef = useRef(null);
 
   const toggleTheater = () => setTheater((v) => !v);
   const isTurkish = String(language || '').toLowerCase().startsWith('tr');
 
-  useEffect(() => {
-    if (config.type !== 'file') return;
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    let cancelled = false;
-    const tryAutoPlay = async () => {
-      try {
-        videoEl.muted = true;
-        const result = videoEl.play();
-        if (result && typeof result.then === 'function') {
-          await result;
-        }
-        if (!cancelled) setAutoplayBlocked(false);
-      } catch {
-        if (!cancelled) setAutoplayBlocked(true);
-      }
-    };
-    tryAutoPlay();
-    return () => {
-      cancelled = true;
-    };
-  }, [config.type, config.src]);
+  const formatTime = (seconds) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
 
-  const handleManualPlay = async () => {
+  const tryPlay = useCallback(async ({ unmute = false } = {}) => {
     const videoEl = videoRef.current;
-    if (!videoEl) return;
+    if (!videoEl) return false;
     try {
-      videoEl.muted = false;
+      if (!unmute) videoEl.muted = true;
+      else videoEl.muted = false;
+      videoEl.playsInline = true;
       const result = videoEl.play();
       if (result && typeof result.then === 'function') {
         await result;
       }
-      setAutoplayBlocked(false);
+      return true;
     } catch {
-      // Keep blocked state; user may need browser-level autoplay interaction.
-      setAutoplayBlocked(true);
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (config.type !== 'file') return undefined;
+    const videoEl = videoRef.current;
+    if (!videoEl) return undefined;
+
+    setLoadError(false);
+    setShowPlayOverlay(true);
+    setIsBuffering(true);
+    videoEl.load();
+
+    let cancelled = false;
+    (async () => {
+      const ok = await tryPlay({ unmute: false });
+      if (!cancelled && ok && videoEl.currentTime > 0.05) {
+        setShowPlayOverlay(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config.type, config.src, tryPlay]);
+
+  const handleOverlayPlay = async () => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    if (videoEl.currentTime < 0.05) {
+      videoEl.currentTime = 0;
+    }
+    const ok = await tryPlay({ unmute: true });
+    if (ok) setShowPlayOverlay(false);
+  };
+
+  const handleLoadedMetadata = () => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    setDurationLabel(formatTime(videoEl.duration));
+    setIsBuffering(false);
+  };
+
+  const handleTimeUpdate = () => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    if (videoEl.currentTime > 0.05 && !videoEl.paused) {
+      setShowPlayOverlay(false);
+      setIsBuffering(false);
     }
   };
 
@@ -98,33 +134,54 @@ export default function ReportGuideVideoPanel({ language }) {
             allowFullScreen
           />
         ) : (
-          <>
+          <div className="report-guide-player-wrap">
             <video
               ref={videoRef}
               className="report-guide-video"
-              src={config.src}
               poster={config.poster}
               controls
-              autoPlay
-              muted
               playsInline
-              preload="metadata"
-              onPlay={() => setAutoplayBlocked(false)}
+              preload="auto"
+              onLoadedMetadata={handleLoadedMetadata}
+              onTimeUpdate={handleTimeUpdate}
+              onPlaying={() => {
+                setShowPlayOverlay(false);
+                setIsBuffering(false);
+              }}
+              onWaiting={() => setIsBuffering(true)}
+              onCanPlay={() => setIsBuffering(false)}
+              onPause={() => {
+                const el = videoRef.current;
+                if (el && el.currentTime < 0.05) setShowPlayOverlay(true);
+              }}
               onError={() => setLoadError(true)}
             >
-              <track kind="captions" />
+              <source src={config.src} type="video/mp4" />
             </video>
-            {autoplayBlocked ? (
+            {showPlayOverlay ? (
               <button
                 type="button"
-                className="report-guide-theater-btn"
-                onClick={handleManualPlay}
-                style={{ position: 'absolute', bottom: '14px', right: '14px' }}
+                className="report-guide-play-overlay"
+                onClick={handleOverlayPlay}
+                aria-label={isTurkish ? 'Videoyu başlat' : 'Start video'}
               >
-                {isTurkish ? 'Videoyu başlat' : 'Start video'}
+                <span className="report-guide-play-overlay-icon" aria-hidden>
+                  <Play size={36} fill="currentColor" />
+                </span>
+                <span className="report-guide-play-overlay-label">
+                  {isTurkish ? 'Videoyu başlat' : 'Start video'}
+                </span>
+                {durationLabel ? (
+                  <span className="report-guide-play-overlay-meta">{durationLabel}</span>
+                ) : null}
               </button>
             ) : null}
-          </>
+            {isBuffering && !showPlayOverlay ? (
+              <div className="report-guide-buffering" aria-live="polite">
+                {isTurkish ? 'Yükleniyor…' : 'Loading…'}
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
 

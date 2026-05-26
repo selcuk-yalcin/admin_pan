@@ -116,6 +116,15 @@
   border: 1px solid var(--border);
 }
 
+.report-guide-player-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: min(72vh, 720px);
+  max-height: calc(100vh - 220px);
+  background: #000;
+}
+
 .report-guide-video,
 .report-guide-embed {
   width: 100%;
@@ -125,6 +134,56 @@
   object-fit: contain;
   display: block;
   background: #000;
+}
+
+.report-guide-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: none;
+  background: rgba(15, 23, 42, 0.45);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  z-index: 2;
+}
+
+.report-guide-play-overlay-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.45);
+}
+
+.report-guide-play-overlay-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.report-guide-play-overlay-meta {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.report-guide-buffering {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  z-index: 3;
 }
 
 .report-guide-embed {
