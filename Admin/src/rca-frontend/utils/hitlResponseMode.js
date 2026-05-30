@@ -41,7 +41,9 @@ export function hitlQuestionNeedsChoice(q) {
   if (m === 'choice' || m === 'options' || m === 'multi_choice') {
     return Array.isArray(q.choice_options) && q.choice_options.length >= 2;
   }
-  const t = String(q.soru || q.question_tr || q.question_en || q.question || '');
+  const t = String(
+    q.question_en || q.question_tr || q.soru || q.question || '',
+  );
   if (/\bhangi\b/i.test(t) && PPE_TR_MARKERS.test(t)) {
     return true;
   }
@@ -59,8 +61,10 @@ export function getHitlChoiceOptionLabels(q, language) {
   let tr = Array.isArray(q.choice_options) ? q.choice_options : [];
   const en = Array.isArray(q.choice_options_en) ? q.choice_options_en : [];
   if (tr.length < 2) {
-    const t = String(q.soru || q.question_tr || q.question || '');
-    if (/\bhangi\b/i.test(t) && PPE_TR_MARKERS.test(t)) {
+    const t = String(
+      q.question_en || q.question_tr || q.soru || q.question || '',
+    );
+    if (/\b(hangi|which)\b/i.test(t) && PPE_TR_MARKERS.test(t)) {
       tr = trUi ? FALLBACK_PPE_TR : FALLBACK_PPE_EN;
     }
   }

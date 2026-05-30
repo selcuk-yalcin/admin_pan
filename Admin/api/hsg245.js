@@ -185,6 +185,7 @@ export default async function handler(req, res) {
             mode: data.mode || 'global',
             batch_size: data.batch_size ?? 1,
             known_fields: data.known_fields || [],
+            output_language: data.output_language || '',
           }
           break
 
@@ -201,7 +202,11 @@ export default async function handler(req, res) {
 
         case 'generate_html':
           endpoint = `/api/v1/reports/html`
-          payload = { incident_id: data.incident_id }
+          payload = {
+            incident_id: data.incident_id,
+            report_layout: data.report_layout || undefined,
+            force_regenerate: !!data.force_regenerate,
+          }
 
           // HTML report links endpoint
           const htmlMetaResp = await fetch(`${BACKEND_URL}${endpoint}`, {
@@ -232,7 +237,28 @@ export default async function handler(req, res) {
         case 'download_docx_report':
           endpoint = `/api/v1/reports/generate`
           method = 'POST'
-          payload = { incident_id: data.incident_id }
+          payload = {
+            incident_id: data.incident_id,
+            report_layout: data.report_layout || undefined,
+            force_regenerate: !!data.force_regenerate,
+          }
+          break
+
+        case 'report_layout_options': {
+          const langQ = data.lang ? `?lang=${encodeURIComponent(data.lang)}` : ''
+          endpoint = `/api/v1/reports/layout-options${langQ}`
+          method = 'GET'
+          payload = undefined
+          break
+        }
+
+        case 'save_report_layout':
+          endpoint = `/api/v1/incidents/${encodeURIComponent(data.incident_id)}/report-layout`
+          method = 'PUT'
+          payload = {
+            report_layout: data.report_layout || {},
+            force_regenerate: data.force_regenerate !== false,
+          }
           break
 
         case 'view_html_report':
@@ -280,6 +306,7 @@ export default async function handler(req, res) {
             snapshot: data.snapshot || {},
             title_hint: data.title_hint || '',
             analysis_model_preset: data.analysis_model_preset || '',
+            report_layout: data.report_layout || undefined,
           }
           break
 
@@ -333,6 +360,14 @@ export default async function handler(req, res) {
         case 'usage_recent': {
           const lim = data.limit != null ? Number(data.limit) : 20
           endpoint = `/api/v1/usage/recent?limit=${encodeURIComponent(lim)}`
+          method = 'GET'
+          payload = undefined
+          break
+        }
+
+        case 'list_deliveries': {
+          const lim = data.limit != null ? Number(data.limit) : 10
+          endpoint = `/api/v1/deliveries?limit=${encodeURIComponent(lim)}`
           method = 'GET'
           payload = undefined
           break

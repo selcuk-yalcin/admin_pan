@@ -279,6 +279,7 @@ export async function fetchHitlQuestions(incidentId, body, options = {}) {
           mode: body.mode || 'global',
           batch_size: body.batch_size ?? 1,
           known_fields: body.known_fields || [],
+          output_language: body.output_language || '',
         },
       }),
     });
@@ -680,6 +681,11 @@ export async function generateHTMLReport(incidentId, options = {}) {
   console.log(`📄 Generating HTML report for ${incidentId}...`);
   
   try {
+    const data = { incident_id: incidentId };
+    if (options.report_layout) {
+      data.report_layout = options.report_layout;
+      data.force_regenerate = options.force_regenerate !== false;
+    }
     const response = await fetch(`${API_GATEWAY_URL}`, {
       method: 'POST',
       headers: {
@@ -689,7 +695,7 @@ export async function generateHTMLReport(incidentId, options = {}) {
       signal: options.signal,
       body: JSON.stringify({
         action: 'generate_html',
-        data: { incident_id: incidentId }
+        data,
       })
     });
 
@@ -746,8 +752,8 @@ async function downloadHtmlLike(action, incidentId, filenameFallback) {
   document.body.removeChild(a);
 }
 
-export async function downloadHTMLReport(incidentId) {
-  await generateHTMLReport(incidentId);
+export async function downloadHTMLReport(incidentId, options = {}) {
+  await generateHTMLReport(incidentId, options);
   return downloadHtmlLike('download_html_report', incidentId, `HSG245_Report_${incidentId}.html`);
 }
 

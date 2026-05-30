@@ -84,6 +84,35 @@ export async function fetchUsageRecent(limit = 20) {
 
 export function formatToken(n) {
   const v = Number(n) || 0;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1000) return `${Math.round(v / 1000)}k`;
   return String(v);
+}
+
+export function formatTokenFull(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('tr-TR');
+}
+
+export function formatUsageDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return String(iso).replace('T', ' ').slice(0, 16);
+  }
+  return d.toLocaleString('tr-TR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export async function fetchReportDeliveries(limit = 10) {
+  if (BACKEND_HTTP_BASE) {
+    const res = await directGet('/api/v1/deliveries', { limit: String(limit) });
+    return res.data;
+  }
+  const res = await gatewayGet('list_deliveries', { limit });
+  return res.data;
 }

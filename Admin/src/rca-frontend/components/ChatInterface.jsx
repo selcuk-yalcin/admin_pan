@@ -35,6 +35,8 @@ import {
 } from '../utils/hitlResponseMode';
 import { finalizeSavedReport } from '../utils/draftReportsStorage';
 import { openLibraryArtifact } from '../utils/reportsLibraryApi';
+import { DEFAULT_REPORT_LAYOUT } from '../../services/reportLayoutApi';
+import ReportTemplatePicker from './ReportTemplatePicker';
 import { createSmoothPipelineProgress } from '../utils/pipelineProgressSmooth';
 import './ChatInterface.css';
 
@@ -128,6 +130,13 @@ const ChatInterface = ({
   const [sessionId, setSessionId] = useState(null);
   /** null | 'intro_streaming' | 'questions' | 'rca' | 'pdf_prompt' | 'report_saved' */
   const [hitlPhase, setHitlPhase] = useState(null);
+  const [reportTemplateConfig, setReportTemplateConfig] = useState({
+    coverTemplate: DEFAULT_REPORT_LAYOUT.cover_template,
+    watermarkMode: DEFAULT_REPORT_LAYOUT.watermark_mode,
+    showTechnicalCodes: DEFAULT_REPORT_LAYOUT.show_technical_codes,
+    enabledSections: [...DEFAULT_REPORT_LAYOUT.sections],
+    layoutPayload: { ...DEFAULT_REPORT_LAYOUT },
+  });
   const [savedLibraryItemId, setSavedLibraryItemId] = useState(null);
   const [hitlAnswers, setHitlAnswers] = useState([]);
   /** @type {import('react').MutableRefObject<string|null>} */
@@ -476,6 +485,7 @@ const ChatInterface = ({
               previous_why_answer: previousWhyAnswer || '',
               batch_size: 1,
               known_fields: deriveKnownFields(hitlSeed.formData || {}),
+              output_language: language || 'tr',
             }
           : {
               mode: 'global',
@@ -484,6 +494,7 @@ const ChatInterface = ({
               answered_ids: answeredIds,
               batch_size: 1,
               known_fields: deriveKnownFields(hitlSeed.formData || {}),
+              output_language: language || 'tr',
             };
 
       const res = await fetchHitlQuestions(hitlSeed.incidentId, body);
@@ -491,7 +502,7 @@ const ChatInterface = ({
       const q = (payload.questions && payload.questions[0]) || null;
       return { done: !!payload.done, question: q };
     },
-    [hitlSeed, probeCodes],
+    [hitlSeed, probeCodes, language],
   );
 
   const resolveNextQuestion = useCallback(
@@ -965,10 +976,11 @@ const ChatInterface = ({
   const handleHtmlGenerate = async () => {
     if (!hitlSeed?.incidentId) return;
     setIsLoading(true);
+    const layout = reportTemplateConfig.layoutPayload || DEFAULT_REPORT_LAYOUT;
     try {
       await ensureIncidentReadyForReport(hitlSeed.incidentId);
-      await generateHTMLReport(hitlSeed.incidentId);
-      await downloadHTMLReport(hitlSeed.incidentId);
+      await generateHTMLReport(hitlSeed.incidentId, { report_layout: layout, force_regenerate: true });
+      await downloadHTMLReport(hitlSeed.incidentId, { report_layout: layout, force_regenerate: false });
       persistReportToLibrary(true);
       setMessages((prev) => [
         ...prev,
@@ -1018,9 +1030,14 @@ const ChatInterface = ({
   const runReportAction = useCallback(
     async (fn) => {
       if (!hitlSeed?.incidentId) return;
+      const layoutOpts = {
+        report_layout: reportTemplateConfig.layoutPayload || DEFAULT_REPORT_LAYOUT,
+        force_regenerate: true,
+      };
       try {
         await ensureIncidentReadyForReport(hitlSeed.incidentId);
-        const result = await fn(hitlSeed.incidentId);
+        await generateHTMLReport(hitlSeed.incidentId, layoutOpts);
+        const result = await fn(hitlSeed.incidentId, layoutOpts);
         if (result?.mode === 'download') {
           setMessages((prev) => [
             ...prev,
@@ -1044,7 +1061,7 @@ const ChatInterface = ({
         ]);
       }
     },
-    [hitlSeed, language, ensureIncidentReadyForReport, t],
+    [hitlSeed, language, ensureIncidentReadyForReport, t, reportTemplateConfig],
   );
 
   const handleSend = async () => {
@@ -1381,6 +1398,12 @@ const ChatInterface = ({
           {hitlPhase === 'report_saved' && (
             <div className="hitl-choice-panel hitl-pdf-panel">
               <p className="hitl-q">{t('hitl_auto_saved')}</p>
+              <ReportTemplatePicker
+                language={language}
+                value={reportTemplateConfig}
+                onChange={setReportTemplateConfig}
+                disabled={isLoading}
+              />
               <div className="hitl-choices hitl-report-actions">
                 <div className="report-action-card">
                   <div className="report-action-title">{isTurkish ? 'Rapor' : 'Report'}</div>
@@ -1444,6 +1467,12 @@ const ChatInterface = ({
           {hitlPhase === 'pdf_prompt' && (
             <div className="hitl-choice-panel hitl-pdf-panel">
               <p className="hitl-q">{t('hitl_ask_pdf')}</p>
+              <ReportTemplatePicker
+                language={language}
+                value={reportTemplateConfig}
+                onChange={setReportTemplateConfig}
+                disabled={isLoading}
+              />
               <div className="hitl-choices">
                 <button type="button" className="hitl-choice-btn hitl-choice-primary" onClick={handleHtmlGenerate} disabled={isLoading}>
                   {t('hitl_pdf_download')}
