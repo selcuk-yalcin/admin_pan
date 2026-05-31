@@ -8,14 +8,11 @@ import {
 } from "../../services/pricingApi";
 
 const FALLBACK_CATALOG = {
-  currency: "USD",
-  billing_period_label_tr: "ay",
   plans: [
     {
       id: "starter",
       name_tr: "Starter",
       segment_tr: "KOBİ / bireysel HSE",
-      price_monthly: 29,
       highlight: false,
       monthly_report_quota: 10,
       monthly_token_budget: 220000,
@@ -30,7 +27,6 @@ const FALLBACK_CATALOG = {
       id: "pro",
       name_tr: "Professional",
       segment_tr: "Orta ölçekli işletme",
-      price_monthly: 99,
       highlight: true,
       monthly_report_quota: 50,
       monthly_token_budget: 900000,
@@ -45,7 +41,6 @@ const FALLBACK_CATALOG = {
       id: "enterprise",
       name_tr: "Enterprise",
       segment_tr: "Büyük sanayi / holding",
-      price_monthly: 299,
       highlight: false,
       monthly_report_quota: 500,
       monthly_token_budget: 5000000,
@@ -86,8 +81,6 @@ const PagesPricing = () => {
   }, []);
 
   const plans = catalog?.plans || [];
-  const periodLabel = catalog?.billing_period_label_tr || "ay";
-  const currency = catalog?.currency || "USD";
 
   return (
     <React.Fragment>
@@ -172,26 +165,7 @@ const PagesPricing = () => {
                           {plan.segment_tr || plan.segment_en}
                         </p>
 
-                        <div
-                          style={{
-                            padding: "20px 0",
-                            borderTop: "1px solid rgba(0,0,0,.06)",
-                            borderBottom: "1px solid rgba(0,0,0,.06)",
-                            marginTop: 16,
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>
-                              {currency === "USD" ? "$" : currency}
-                            </span>
-                            <h2 style={{ margin: 0, fontWeight: 800, color: "#0f172a", fontSize: 36 }}>
-                              {plan.price_monthly}
-                            </h2>
-                            <span style={{ fontSize: 13, color: "#64748b" }}>/ {periodLabel}</span>
-                          </div>
-                        </div>
-
-                        <div style={{ padding: "20px 0" }}>
+                        <div style={{ padding: "20px 0 0" }}>
                           <a
                             href={cta.href}
                             style={{
