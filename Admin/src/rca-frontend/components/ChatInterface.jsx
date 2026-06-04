@@ -38,6 +38,7 @@ import { openLibraryArtifact } from '../utils/reportsLibraryApi';
 import { DEFAULT_REPORT_LAYOUT } from '../../services/reportLayoutApi';
 import ReportTemplatePicker from './ReportTemplatePicker';
 import { createSmoothPipelineProgress } from '../utils/pipelineProgressSmooth';
+import { stripTechnicalCodes } from '../utils/displaySanitize';
 import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
@@ -83,21 +84,37 @@ function getStageLabel(language, stage, progress) {
   const pctNum = Number(progress);
   const pct = Number.isFinite(pctNum) ? ` (${Math.max(0, Math.min(100, pctNum))}%)` : '';
   const tr = {
-    queued: `Kuyruga alindi${pct}`,
-    investigate: `Kok neden analizi calisiyor${pct}`,
-    actionplan: `Aksiyon plani olusturuluyor${pct}`,
-    completed: `Pipeline tamamlandi${pct}`,
-    failed: `Pipeline hata ile sonlandi${pct}`,
+    queued: `Analiz kuyruğa alındı${pct}`,
+    investigate: `Kök neden analizi çalışıyor${pct}`,
+    actionplan: `Aksiyon planı oluşturuluyor${pct}`,
+    completed: `Analiz tamamlandı${pct}`,
+    failed: `Analiz hata ile sonlandı${pct}`,
   };
   const en = {
-    queued: `Queued${pct}`,
-    investigate: `Root cause analysis running${pct}`,
-    actionplan: `Action plan generation running${pct}`,
-    completed: `Pipeline completed${pct}`,
-    failed: `Pipeline failed${pct}`,
+    queued: `Analysis queued${pct}`,
+    investigate: `Root cause analysis in progress${pct}`,
+    actionplan: `Building action plan${pct}`,
+    completed: `Analysis completed${pct}`,
+    failed: `Analysis ended with an error${pct}`,
   };
   const map = isTr ? tr : en;
-  return map[stage] || (isTr ? `Calisiyor${pct}` : `Running${pct}`);
+  return map[stage] || (isTr ? `Çalışıyor${pct}` : `Running${pct}`);
+}
+
+function getFlowPhaseMessage(language, phase, liveStatus = '') {
+  const isTr = String(language || '').toLowerCase().startsWith('tr');
+  if (phase === 'questions') {
+    return isTr
+      ? 'Olay metnini netleştirmek için birkaç derinleştirme sorusu soracağım.'
+      : 'I will ask a few deepening questions to clarify the incident context.';
+  }
+  if (phase === 'rca') {
+    return liveStatus || (isTr ? 'Kök neden analizi başladı.' : 'Root cause analysis has started.');
+  }
+  if (phase === 'pdf_prompt' || phase === 'report_saved') {
+    return isTr ? 'Rapor hazırlanıyor.' : 'Preparing your report.';
+  }
+  return '';
 }
 
 /**
@@ -143,6 +160,7 @@ const ChatInterface = ({
   const processedHitlIdRef = useRef(null);
   const hitlLoadGenRef = useRef(0);
   const pipelineActivitySeenRef = useRef(new Set());
+  const lastFlowPhaseRef = useRef(null);
   const resolveNextQuestionRef = useRef(null);
   const runRcaAfterHitlRef = useRef(null);
   const librarySavedRef = useRef(null);
@@ -171,6 +189,36 @@ const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, hitlPhase, hitlApiQuestion?.id, hitlQuestionsLoading]);
+
+  useEffect(() => {
+    if (!hitlSeed?.incidentId || !hitlPhase || hitlPhase === 'intro_streaming') return;
+    if (lastFlowPhaseRef.current === hitlPhase) return;
+    lastFlowPhaseRef.current = hitlPhase;
+    const text = getFlowPhaseMessage(language, hitlPhase, liveRcaStatus);
+    if (!text) return;
+    const flowId = `flow-status-${hitlPhase}`;
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === flowId)) return prev;
+      return [
+        ...prev,
+        {
+          id: flowId,
+          type: 'assistant',
+          content: text,
+          timestamp: new Date(),
+        },
+      ];
+    });
+  }, [hitlPhase, hitlSeed, language, liveRcaStatus]);
+
+  useEffect(() => {
+    if (hitlPhase !== 'rca' || !liveRcaStatus) return;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === 'flow-status-rca' ? { ...m, content: liveRcaStatus, timestamp: new Date() } : m,
+      ),
+    );
+  }, [hitlPhase, liveRcaStatus]);
 
   useEffect(() => {
     setHitlTextDraft('');
@@ -337,7 +385,9 @@ const ChatInterface = ({
                   );
                   return {
                     ...m,
-                    content: body ? `${streamHeader}\n\n${body}` : streamHeader,
+                    content: stripTechnicalCodes(
+                      body ? `${streamHeader}\n\n${body}` : streamHeader,
+                    ),
                     isStreaming: true,
                   };
                 }),
@@ -351,8 +401,8 @@ const ChatInterface = ({
         setPipelineResult(resolvedPipelineResult);
         onPipelineStatusChange?.(
           String(language || '').toLowerCase().startsWith('tr')
-            ? 'Pipeline tamamlandi. Rapor adimina gecildi.'
-            : 'Pipeline completed. Moved to report stage.',
+            ? 'Analiz tamamlandı. Rapor adımına geçildi.'
+            : 'Analysis completed. Moving to the report step.',
         );
 
         const summaryMd = buildPipelineResultMarkdown(resolvedPipelineResult, language);
@@ -377,13 +427,12 @@ const ChatInterface = ({
           // eslint-disable-next-line no-await-in-loop
           await new Promise((r) => setTimeout(r, 280));
         }
-        const incidentLine = `\n\n*Incident ID: ${hitlSeed.incidentId}*`;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === RCA_STREAM_MSG_ID
               ? {
                   ...m,
-                  content: `${builtContent}${incidentLine}`,
+                  content: stripTechnicalCodes(builtContent),
                   isStreaming: false,
                   timestamp: new Date(),
                 }
@@ -444,8 +493,8 @@ const ChatInterface = ({
         );
         onPipelineStatusChange?.(
           String(language || '').toLowerCase().startsWith('tr')
-            ? `Pipeline hatasi: ${error.message}`
-            : `Pipeline error: ${error.message}`,
+            ? `Analiz hatası: ${error.message}`
+            : `Analysis error: ${error.message}`,
         );
       } finally {
         smoothProgress.stop();
@@ -609,6 +658,7 @@ const ChatInterface = ({
     if (!hitlSeed?.incidentId) {
       setLiveRcaStatus('');
       processedHitlIdRef.current = null;
+      lastFlowPhaseRef.current = null;
       setHitlPhase(null);
       setHitlAnswers([]);
       setHitlAnsweredIds([]);
@@ -657,6 +707,7 @@ const ChatInterface = ({
     }
     processedHitlIdRef.current = hitlSeed.incidentId;
     librarySavedRef.current = null;
+    lastFlowPhaseRef.current = null;
 
     setHitlPhase('intro_streaming');
     setHitlAnswers([]);
@@ -678,8 +729,8 @@ const ChatInterface = ({
     ]);
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
-        ? `Dogrudan nedenler belirleniyor (Incident: ${hitlSeed.incidentId})`
-        : `Determining immediate causes (Incident: ${hitlSeed.incidentId})`,
+        ? 'Doğrudan nedenler belirleniyor.'
+        : 'Determining immediate causes.',
     );
 
     const rci = hitlSeed.formData?.rootCauseInitial || '';
@@ -696,8 +747,8 @@ const ChatInterface = ({
       setHitlQuestionsLoading(true);
       onPipelineStatusChange?.(
         String(language || '').toLowerCase().startsWith('tr')
-          ? `Derinlestirme sorulari basladi (Incident: ${hitlSeed.incidentId})`
-          : `Deepening questions started (Incident: ${hitlSeed.incidentId})`,
+          ? 'Derinleştirme soruları başladı.'
+          : 'Deepening questions started.',
       );
       try {
         const next = await resolveNextQuestionRef.current({
@@ -845,15 +896,14 @@ const ChatInterface = ({
         if (next.question) {
           if (hitlMode === 'why_probe' && next.nextBranchIdx > probeBranchIdx) {
             const finishedBranch = probeBranchIdx + 1;
-            const rcCode = probeCodes[probeBranchIdx] || '-';
             setMessages((prev) => [
               ...prev,
               {
                 id: `branch-done-${Date.now()}`,
                 type: 'assistant',
                 content: isTurkish
-                  ? `Dal ${finishedBranch} tamamlandi (Kod: ${rcCode}). Simdi Dal ${next.nextBranchIdx + 1} icin derin sorulara geciyoruz.`
-                  : `Branch ${finishedBranch} completed (Code: ${rcCode}). Moving to deep questions for branch ${next.nextBranchIdx + 1}.`,
+                  ? `${finishedBranch}. derinleştirme turu tamamlandı. Sıradaki sorulara geçiyoruz.`
+                  : `Deepening round ${finishedBranch} is complete. Moving to the next questions.`,
                 timestamp: new Date(),
               },
             ]);
@@ -1016,6 +1066,7 @@ const ChatInterface = ({
     setLiveRcaStatus('');
     setHitlPhase(null);
     processedHitlIdRef.current = null;
+    lastFlowPhaseRef.current = null;
     onHitlFlowComplete?.();
     setMessages([]);
     setSessionId(null);
@@ -1090,6 +1141,7 @@ const ChatInterface = ({
     }
     setLiveRcaStatus('');
     processedHitlIdRef.current = null;
+    lastFlowPhaseRef.current = null;
     setCurrentFlow(null);
     setHitlPhase(null);
     setHitlAnswers([]);
@@ -1129,23 +1181,6 @@ const ChatInterface = ({
     hitlPhase === 'pdf_prompt' ||
     hitlPhase === 'report_saved';
   const isTurkish = String(language || '').toLowerCase().startsWith('tr');
-  const totalBranches = hitlMode === 'why_probe' ? Math.max(1, probeCodes.length) : 1;
-  const branchProgressLabel =
-    hitlMode === 'why_probe'
-      ? isTurkish
-        ? `Dal ${probeBranchIdx + 1}/${totalBranches} - Why ${probeWhyLevel}/${MAX_WHY_LEVEL}`
-        : `Branch ${probeBranchIdx + 1}/${totalBranches} - Why ${probeWhyLevel}/${MAX_WHY_LEVEL}`
-      : isTurkish
-        ? `Derinlestirme asamasi - Soru ${hitlAnswers.length + 1}`
-        : `Deepening stage - Question ${hitlAnswers.length + 1}`;
-  const branchGateText =
-    hitlMode === 'why_probe'
-      ? isTurkish
-        ? `Dal ${probeBranchIdx + 1} tamamlanmadan sonraki dala gecilmez.`
-        : `The next branch cannot start before Branch ${probeBranchIdx + 1} is completed.`
-      : isTurkish
-        ? 'Siradaki soru onceki cevaplara gore derinlestirilir.'
-        : 'Next question is deepened from your previous answer.';
 
   const showHitlPanel = hitlPhase === 'questions' && (hitlQuestionsLoading || hitlApiQuestion);
   const displayChoiceLabels = hitlApiQuestion
@@ -1161,52 +1196,7 @@ const ChatInterface = ({
     hitlApiQuestion && !showHitlChips && hitlQuestionShowsYesNo(hitlApiQuestion);
   const showHitlTextArea = hitlApiQuestion && !showHitlChips && (showHitlFree || showHitlYesNo);
   return (
-    <div className="chat-interface">
-      <div className="chat-sidebar">
-        <div className="sidebar-header">
-          <h3>{t('analysis_steps')}</h3>
-        </div>
-        <div className="sidebar-content">
-          <div className={`step-item ${hitlSeed ? 'completed' : ''}`}>
-            <div className="step-icon">{hitlSeed ? '✓' : '1'}</div>
-            <div className="step-text">
-              <h4>{t('step_1')}</h4>
-              <p>{t('step_1_desc')}</p>
-            </div>
-          </div>
-          <div
-            className={`step-item ${
-              hitlPhase === 'intro_streaming' || hitlPhase === 'questions'
-                ? 'active'
-                : hitlPhase && hitlPhase !== 'intro_streaming'
-                  ? 'completed'
-                  : ''
-            }`}
-          >
-            <div className="step-icon">{hitlPhase === 'questions' ? '2' : hitlPhase ? '✓' : '2'}</div>
-            <div className="step-text">
-              <h4>{t('step_2_hitl')}</h4>
-              <p>{t('step_2_hitl_desc')}</p>
-            </div>
-          </div>
-          <div className={`step-item ${hitlPhase === 'rca' ? 'active' : ['pdf_prompt', 'report_saved'].includes(hitlPhase) ? 'completed' : ''}`}>
-            <div className="step-icon">3</div>
-            <div className="step-text">
-              <h4>{t('step_3')}</h4>
-              <p>{hitlPhase === 'rca' ? liveRcaStatus || t('step_3_desc') : t('step_3_desc')}</p>
-            </div>
-          </div>
-          <div className={`step-item ${hitlPhase === 'pdf_prompt' || hitlPhase === 'report_saved' ? 'active' : ''}`}>
-            <div className="step-icon">4</div>
-            <div className="step-text">
-              <h4>{t('step_4')}</h4>
-              <p>{t('step_4_desc')}</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
+    <div className="chat-interface chat-interface--full">
       <div className="chat-main">
         <div className="chat-messages">
           {!hitlSeed?.incidentId ? (
@@ -1233,30 +1223,15 @@ const ChatInterface = ({
           )}
 
           {showHitlPanel && (
-            <div className="hitl-choice-panel">
-              <div className="hitl-branch-status">
-                <div className="hitl-branch-title">{branchProgressLabel}</div>
-                <div className="hitl-branch-sub">{branchGateText}</div>
-              </div>
+            <div className="hitl-choice-panel hitl-choice-panel--flow">
               {hitlQuestionsLoading && !hitlApiQuestion ? (
                 <p className="hitl-q">{t('hitl_loading_questions')}</p>
               ) : hitlApiQuestion ? (
                 <>
                   {(() => {
-                    const hintRaw =
-                      hitlMode === 'why_probe'
-                        ? formatHitlHint(hitlApiQuestion.hsg_hint) || currentProbeCode
-                        : formatHitlHint(hitlApiQuestion.hsg_hint);
+                    const hintRaw = formatHitlHint(hitlApiQuestion.hsg_hint);
                     if (!hintRaw) return null;
-                    return (
-                      <div className="hitl-hint">
-                        {hitlMode === 'why_probe'
-                          ? isTurkish
-                            ? `Dal ${probeBranchIdx + 1}/${Math.max(1, probeCodes.length)} • Why-${probeWhyLevel} • ${hintRaw}`
-                            : `Branch ${probeBranchIdx + 1}/${Math.max(1, probeCodes.length)} • Why-${probeWhyLevel} • ${hintRaw}`
-                          : hintRaw}
-                      </div>
-                    );
+                    return <p className="hitl-flow-context">{hintRaw}</p>;
                   })()}
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
                   {showHitlChips ? (

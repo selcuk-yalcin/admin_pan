@@ -152,3 +152,21 @@
 .rca-frontend-hub.fullscreen-mode .chat-messages {
   min-height: 0;
 }
+
+.rca-frontend-hub .main-content--chat-tab {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.rca-frontend-hub.fullscreen-mode .main-content--chat-tab {
+  height: 100%;
+}
+
+.rca-frontend-hub .main-content--chat-tab .chat-interface--full {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}

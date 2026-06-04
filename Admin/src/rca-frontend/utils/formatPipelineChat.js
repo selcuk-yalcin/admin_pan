@@ -1,4 +1,5 @@
 import { getTranslation } from './translations';
+import { stripTechnicalCodes } from './displaySanitize';
 
 /**
  * @param {string} prev
@@ -14,18 +15,18 @@ export function appendNewActivityLines(prev, lines, seen) {
     added.push(line);
   }
   if (!added.length) return prev || '';
-  const block = added.map((l) => `- ${l}`).join('\n');
+  const block = added
+    .map((l) => stripTechnicalCodes(l))
+    .filter(Boolean)
+    .join('\n\n');
   const base = String(prev || '').trim();
   return base ? `${base}\n\n${block}` : block;
 }
 
-function formatCauseLine(cause, isTr) {
-  const code = cause?.code || '';
-  const cat = cause?.category || cause?.category_type || '';
+function formatCauseLine(cause) {
   const desc = cause?.description || cause?.cause_tr || cause?.cause || '';
   if (!desc) return '';
-  const parts = [code, cat, desc].filter(Boolean);
-  return parts.join(' — ');
+  return stripTechnicalCodes(desc);
 }
 
 /**
@@ -58,16 +59,16 @@ export function buildPipelineResultMarkdown(result, language) {
       isTr ? '**Öncelikli doğrudan nedenler**' : '**Primary immediate causes**',
     );
     imm.slice(0, 8).forEach((c) => {
-      const line = formatCauseLine(c, isTr);
-      if (line) sections.push(`- ${line}`);
+      const line = formatCauseLine(c);
+      if (line) sections.push(line);
     });
   }
 
   if (roots.length) {
     sections.push(isTr ? '**Kök nedenler**' : '**Root causes**');
     roots.slice(0, 8).forEach((c) => {
-      const line = formatCauseLine(c, isTr);
-      if (line) sections.push(`- ${line}`);
+      const line = formatCauseLine(c);
+      if (line) sections.push(line);
     });
   }
 
@@ -80,16 +81,16 @@ export function buildPipelineResultMarkdown(result, language) {
   }
   if (actionTexts.length) {
     sections.push(isTr ? '**Önerilen aksiyonlar**' : '**Recommended actions**');
-    actionTexts.slice(0, 10).forEach((t) => sections.push(`- ${t}`));
+    actionTexts.slice(0, 10).forEach((t) => sections.push(stripTechnicalCodes(t)));
   }
 
   const summary = part3?.incident_summary || part3?.final_report_tr;
   if (!imm.length && !roots.length && summary) {
-    const excerpt = String(summary).slice(0, 600);
-    sections.push(excerpt);
+    const excerpt = stripTechnicalCodes(String(summary).slice(0, 600));
+    if (excerpt) sections.push(excerpt);
   }
 
-  return sections.filter(Boolean).join('\n\n');
+  return stripTechnicalCodes(sections.filter(Boolean).join('\n\n'));
 }
 
 /**

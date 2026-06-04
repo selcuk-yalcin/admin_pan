@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Bot, AlertTriangle, CheckCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { stripTechnicalCodes } from '../utils/displaySanitize';
 import './Message.css';
 
 const Message = ({ message, language }) => {
@@ -36,7 +37,7 @@ const Message = ({ message, language }) => {
       
       <div className="message-content">
         <div className={`message-bubble${isStreaming ? ' message-bubble--streaming' : ''}`}>
-          <ReactMarkdown>{content}</ReactMarkdown>
+          <ReactMarkdown>{stripTechnicalCodes(content)}</ReactMarkdown>
           {isStreaming ? <span className="message-stream-cursor" aria-hidden="true" /> : null}
           
           {suggestions && suggestions.length > 0 && (

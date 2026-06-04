@@ -468,7 +468,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </div>
       ) : null}
 
-      {!LIBRARY_TABS.has(activeTab) ? (
+      {!LIBRARY_TABS.has(activeTab) && activeTab !== "chat" ? (
         <div className="info-banner">
           <div className="info-banner-icon">RCA</div>
           <div className="info-banner-content">
@@ -510,17 +510,17 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             ? " main-content--reports-tab"
             : activeTab === "guide"
               ? " main-content--guide-tab"
-              : ""
+              : activeTab === "chat"
+                ? " main-content--chat-tab"
+                : ""
         }`}
       >
-        {formSubmitInfo && !LIBRARY_TABS.has(activeTab) && (
+        {formSubmitInfo && !LIBRARY_TABS.has(activeTab) && activeTab !== "chat" && (
           <div className="info-banner" style={{ marginBottom: "16px" }}>
             <div className="info-banner-icon">AI</div>
             <div className="info-banner-content">
-              <h2>Agent Pipeline</h2>
+              <h2>{selectedLanguage === "tr" ? "İşlem durumu" : "Processing status"}</h2>
               <p>{formSubmitInfo}</p>
-              {activeTab === "chat" && chatPipelineStatus && <p><strong>Canli Durum:</strong> {chatPipelineStatus}</p>}
-              {createdIncidentId && <p><strong>Incident ID:</strong> {createdIncidentId}</p>}
               {isSubmittingForm && (
                 <div style={{ marginTop: "10px" }}>
                   <button
@@ -536,7 +536,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
                       fontWeight: 600,
                     }}
                   >
-                    Analizi İptal Et
+                    {selectedLanguage === "tr" ? "Analizi İptal Et" : "Cancel analysis"}
                   </button>
                 </div>
               )}

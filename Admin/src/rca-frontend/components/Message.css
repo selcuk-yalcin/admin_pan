@@ -54,10 +54,14 @@
 }
 
 .message-content {
-  max-width: 70%;
+  max-width: min(85%, 720px);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.chat-interface--full .message-content {
+  max-width: min(92%, 820px);
 }
 
 .message-user .message-content {
