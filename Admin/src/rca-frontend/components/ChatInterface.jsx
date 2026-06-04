@@ -24,6 +24,7 @@ import {
   buildInvestigationPayload,
   buildHowHappenedText,
 } from '../utils/investigationPayload';
+import { normalizeWitnesses } from '../utils/witnessRows';
 import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
 import {
   hitlQuestionNeedsFreeText,
@@ -67,6 +68,13 @@ function deriveKnownFields(formData = {}) {
   if (formData.weatherConditions) out.push('weather_known');
   if (formData.lightingConditions) out.push('lighting_known');
   if (formData.workType || formData.rootCauseInitial) out.push('risk_assessment');
+  const witnessesPresent = String(formData.witnessesPresent || '').trim().toLowerCase();
+  const witnesses = normalizeWitnesses(formData);
+  const witnessCaptured =
+    witnessesPresent === 'yes' ||
+    witnessesPresent === 'no' ||
+    witnesses.some((w) => String(w?.name || w?.statement || '').trim());
+  if (witnessCaptured) out.push('witness_known');
   return out;
 }
 

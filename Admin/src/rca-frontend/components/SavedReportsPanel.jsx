@@ -149,9 +149,10 @@ function ReportList({
 }) {
   if (!entries.length) {
     return (
-      <p className="saved-reports-folder-empty">
-        {t('reports_folder_empty')}
-      </p>
+      <div className="saved-reports-empty-inline">
+        <Inbox size={32} strokeWidth={1.5} aria-hidden />
+        <p>{t('reports_folder_empty')}</p>
+      </div>
     );
   }
   return (
@@ -184,79 +185,81 @@ function ReportList({
                     <Clock size={14} className="saved-reports-card-clock" aria-hidden />
                     {formatDate(entry.updatedAt, language)}
                     {report && incidentId ? (
-                      <span className="saved-reports-incident-id">{incidentId}</span>
+                      <span className="saved-reports-incident-pill" title={incidentId}>
+                        {incidentId}
+                      </span>
                     ) : null}
                   </span>
                 </div>
 
                 {report && incidentId && !compact ? (
                   <div className="saved-reports-actions-panel" role="group" aria-label={t('reports_actions_title')}>
-                    <div className="saved-reports-action-row">
-                      <span className="saved-reports-action-label">
-                        <FileText size={15} aria-hidden />
-                        {t('reports_section_report')}
-                      </span>
-                      <div className="saved-reports-action-chips">
+                    <div className="saved-reports-action-group">
+                      <div className="saved-reports-action-group-head">
+                        <FileText size={16} aria-hidden />
+                        <span>{t('reports_section_report')}</span>
+                      </div>
+                      <div className="saved-reports-action-grid">
                         <button
                           type="button"
-                          className="saved-reports-chip saved-reports-chip--view"
+                          className="saved-reports-action-btn saved-reports-action-btn--primary"
                           onClick={() => onViewArtifact(entry, 'report')}
                         >
-                          <Eye size={14} aria-hidden />
+                          <Eye size={15} aria-hidden />
                           {t('reports_view_short')}
                         </button>
                         <button
                           type="button"
-                          className="saved-reports-chip saved-reports-chip--html"
+                          className="saved-reports-action-btn"
                           disabled={downloadingId === `${entry.id}-html-report`}
                           onClick={() => onDownloadArtifact(entry, 'report')}
                         >
                           {downloadingId === `${entry.id}-html-report` ? (
-                            <Loader2 size={14} className="spin" aria-hidden />
+                            <Loader2 size={15} className="spin" aria-hidden />
                           ) : (
-                            <Download size={14} aria-hidden />
+                            <Download size={15} aria-hidden />
                           )}
                           HTML
                         </button>
                         <button
                           type="button"
-                          className="saved-reports-chip saved-reports-chip--word"
+                          className="saved-reports-action-btn"
                           disabled={downloadingId === `${entry.id}-docx`}
                           onClick={() => onDownloadDocx(entry)}
                         >
                           {downloadingId === `${entry.id}-docx` ? (
-                            <Loader2 size={14} className="spin" aria-hidden />
+                            <Loader2 size={15} className="spin" aria-hidden />
                           ) : (
-                            <Download size={14} aria-hidden />
+                            <Download size={15} aria-hidden />
                           )}
                           Word
                         </button>
                       </div>
                     </div>
-                    <div className="saved-reports-action-row">
-                      <span className="saved-reports-action-label">
-                        <GitBranch size={15} aria-hidden />
-                        {t('reports_section_tree')}
-                      </span>
-                      <div className="saved-reports-action-chips">
+                    <div className="saved-reports-action-group">
+                      <div className="saved-reports-action-group-head">
+                        <GitBranch size={16} aria-hidden />
+                        <span>{t('reports_section_tree')}</span>
+                      </div>
+                      <div className="saved-reports-action-grid saved-reports-action-grid--tree">
                         <button
                           type="button"
-                          className="saved-reports-chip saved-reports-chip--view"
+                          className="saved-reports-action-btn saved-reports-action-btn--primary"
                           onClick={() => onViewArtifact(entry, 'decision_tree')}
                         >
-                          <Eye size={14} aria-hidden />
+                          <Eye size={15} aria-hidden />
                           {t('reports_view_short')}
                         </button>
                         <button
                           type="button"
-                          className="saved-reports-chip saved-reports-chip--html"
+                          className="saved-reports-action-btn"
                           disabled={downloadingId === `${entry.id}-html-tree`}
                           onClick={() => onDownloadArtifact(entry, 'decision_tree')}
                         >
                           {downloadingId === `${entry.id}-html-tree` ? (
-                            <Loader2 size={14} className="spin" aria-hidden />
+                            <Loader2 size={15} className="spin" aria-hidden />
                           ) : (
-                            <Download size={14} aria-hidden />
+                            <Download size={15} aria-hidden />
                           )}
                           HTML
                         </button>
@@ -265,14 +268,14 @@ function ReportList({
                     {isLibraryServerMode() ? (
                       <button
                         type="button"
-                        className="saved-reports-chip saved-reports-chip--sync"
+                        className="saved-reports-action-btn saved-reports-action-btn--sync"
                         disabled={syncingId === entry.id}
                         onClick={() => onSyncArtifacts(entry)}
                       >
                         {syncingId === entry.id ? (
-                          <Loader2 size={14} className="spin" aria-hidden />
+                          <Loader2 size={15} className="spin" aria-hidden />
                         ) : (
-                          <RefreshCw size={14} aria-hidden />
+                          <RefreshCw size={15} aria-hidden />
                         )}
                         {t('reports_sync_artifacts')}
                       </button>
@@ -489,7 +492,7 @@ export default function SavedReportsPanel({
           <span>{t('reports_loading')}</span>
         </div>
       ) : (
-        <div className="saved-reports-layout saved-reports-layout--with-videos">
+        <div className="saved-reports-layout">
           <section className="saved-reports-folder saved-reports-folder--reports" aria-labelledby="reports-created-heading">
             <h3 id="reports-created-heading" className="saved-reports-folder-title">
               <FileText size={18} aria-hidden />
