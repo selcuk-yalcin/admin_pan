@@ -20,7 +20,14 @@ export function getUserContextHeaders() {
     const user = JSON.parse(raw);
     const uid = user?.id || user?.sub || user?.userId || '';
     if (uid) headers['X-User-ID'] = String(uid);
-    if (user?.email) headers['X-User-Email'] = String(user.email);
+    const email =
+      user?.email ||
+      user?.preferred_email ||
+      user?.username ||
+      '';
+    if (email && String(email).includes('@')) {
+      headers['X-User-Email'] = String(email);
+    }
   } catch {
     // ignore parse errors
   }
