@@ -830,7 +830,7 @@ const ChatInterface = ({
           : 'Mongo BARSEL: identifying immediate causes…',
       );
       try {
-        const rci = hitlSeed.formData?.rootCauseInitial || '';
+        const narrative = buildHowHappenedText(hitlSeed.formData, language);
         const ident = await fetchQuestionForState({
           mode: 'immediate_identify',
           answers: [],
@@ -844,7 +844,6 @@ const ChatInterface = ({
         const causes = ident.immediateCauses || [];
         await streamHitlIntro({
           language,
-          causes,
           signal: abortController.signal,
           onUpdate: updateIntroMessage,
         });
@@ -852,7 +851,7 @@ const ChatInterface = ({
         setHitlPhase('questions');
         const codes = causes.map((c) => c.code).filter(Boolean);
         if (!codes.length) {
-          const fallback = extractHsgCodes(rci);
+          const fallback = extractHsgCodes(narrative);
           setProbeCodes(fallback);
         } else {
           setHitlImmediateCauses(causes);
@@ -865,7 +864,7 @@ const ChatInterface = ({
             ? `${codes.length || 0} doğrudan neden — Why-1 probe soruları.`
             : `${codes.length || 0} immediate causes — Why-1 probes.`,
         );
-        const activeCodes = codes.length ? codes : extractHsgCodes(rci);
+        const activeCodes = codes.length ? codes : extractHsgCodes(narrative);
         const next = await resolveNextQuestionRef.current({
           mode: 'why_probe',
           answers: [],

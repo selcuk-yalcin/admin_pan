@@ -299,6 +299,7 @@ const translations = {
     hitl_multi_choice_hint: 'Birden fazla uygun seçeneği işaretleyebilirsiniz.',
     hitl_rca_streaming_title: 'Kök neden analizi çalışıyor…',
     hitl_determining_causes: 'Doğrudan nedenler belirleniyor…',
+    hitl_intro_start: 'Olay metniniz analiz edildi.',
     hitl_analyzing_narrative: 'Olay metni inceleniyor…',
     hitl_no_immediate_causes_yet:
       'Olay metni BARSEL taksonomisi ile eşleştiriliyor; doğrudan nedenler analiz sonucunda belirlenecek.',
@@ -804,6 +805,7 @@ const translations = {
     hitl_multi_choice_hint: 'You can select more than one option that applies.',
     hitl_rca_streaming_title: 'Root cause analysis in progress…',
     hitl_determining_causes: 'Determining immediate causes…',
+    hitl_intro_start: 'Your incident narrative has been reviewed.',
     hitl_analyzing_narrative: 'Reviewing incident narrative…',
     hitl_no_immediate_causes_yet:
       'Matching the incident to BARSEL taxonomy; immediate causes will be determined from the analysis.',
