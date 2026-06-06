@@ -99,12 +99,12 @@ export function hitlQuestionNeedsFreeText(q) {
 }
 
 /**
- * Evet/Hayır düğmeleri göster (serbest metin veya chip listesi değilse).
+ * Evet/Hayır/Bilinmiyor/Soruyu Geç düğmeleri (chip listesi hariç her soruda).
  * @param {object} q
  */
 export function hitlQuestionShowsYesNo(q) {
   if (!q) return false;
-  return !hitlQuestionNeedsFreeText(q) && !hitlQuestionNeedsChoice(q);
+  return !hitlQuestionNeedsChoice(q);
 }
 
 /**

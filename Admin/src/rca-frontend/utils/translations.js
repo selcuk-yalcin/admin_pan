@@ -291,7 +291,9 @@ const translations = {
     hitl_free_text_placeholder: 'Cevabınızı yazın (ör. kaç yıl deneyim, miktar, açıklama)',
     hitl_optional_text_placeholder: 'Yazılı cevap (isteğe bağlı) — Enter ile gönderin',
     hitl_text_enter_hint: 'Enter ile sonraki soruya geçin. Shift+Enter yeni satır.',
-    hitl_hybrid_text_hint: 'Veya yukarıdaki Evet/Hayır/Bilinmiyor — yazı yazarsanız Enter ile gönderin.',
+    hitl_skip_question: 'Soruyu Geç',
+    hitl_hybrid_text_hint:
+      'Veya yukarıdaki Evet/Hayır/Bilinmiyor/Soruyu Geç — yazı yazarsanız Enter ile gönderin.',
     hitl_submit_text_answer: 'Cevabı gönder',
     hitl_submit_choices: 'Seçimleri gönder',
     hitl_multi_choice_hint: 'Birden fazla uygun seçeneği işaretleyebilirsiniz.',
@@ -792,7 +794,9 @@ const translations = {
     hitl_free_text_placeholder: 'Type your answer (e.g. years of experience, quantity, explanation)',
     hitl_optional_text_placeholder: 'Written answer (optional) — press Enter to send',
     hitl_text_enter_hint: 'Press Enter for the next question. Shift+Enter for a new line.',
-    hitl_hybrid_text_hint: 'Or use Yes/No/Unknown above — if you type text, press Enter to send.',
+    hitl_skip_question: 'Skip question',
+    hitl_hybrid_text_hint:
+      'Or use Yes/No/Unknown/Skip above — if you type text, press Enter to send.',
     hitl_submit_text_answer: 'Submit answer',
     hitl_submit_choices: 'Submit selection(s)',
     hitl_multi_choice_hint: 'You can select more than one option that applies.',

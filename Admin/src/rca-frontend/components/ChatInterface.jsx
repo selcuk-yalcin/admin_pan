@@ -27,7 +27,6 @@ import {
 import { normalizeWitnesses } from '../utils/witnessRows';
 import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
 import {
-  hitlQuestionNeedsFreeText,
   hitlQuestionNeedsChoice,
   hitlQuestionShowsYesNo,
   getHitlChoiceOptionLabels,
@@ -176,8 +175,10 @@ const ChatInterface = ({
   const [hitlApiQuestion, setHitlApiQuestion] = useState(null);
   const [hitlAnsweredIds, setHitlAnsweredIds] = useState([]);
   const [hitlQuestionsLoading, setHitlQuestionsLoading] = useState(false);
-  const [hitlMode, setHitlMode] = useState('global'); // global | why_probe
+  const [hitlMode, setHitlMode] = useState('why_probe'); // why_probe (Mongo typical_problems flow)
   const [probeCodes, setProbeCodes] = useState([]);
+  const [hitlImmediateCauses, setHitlImmediateCauses] = useState([]);
+  const [hitlWhyDisplay, setHitlWhyDisplay] = useState('');
   const [probeBranchIdx, setProbeBranchIdx] = useState(0);
   const [probeWhyLevel, setProbeWhyLevel] = useState(1);
   const [liveRcaStatus, setLiveRcaStatus] = useState('');
@@ -529,37 +530,54 @@ const ChatInterface = ({
       const howAugmented = appendix ? `${baseHow}\n\n--- HITL ---\n${appendix}` : baseHow;
       const currentCode = (codes || probeCodes)[branchIdx] || '';
 
-      const body =
-        mode === 'why_probe'
-          ? {
-              mode: 'why_probe',
-              how_happened: howAugmented,
-              root_cause_initial: rci,
-              answered_ids: answeredIds,
-              immediate_code: currentCode,
-              why_level: whyLevel,
-              current_why_question: `Why-${whyLevel} (${currentCode || 'GENERIC'})`,
-              previous_why_answer: previousWhyAnswer || '',
-              batch_size: 1,
-              known_fields: deriveKnownFields(hitlSeed.formData || {}),
-              output_language: language || 'tr',
-            }
-          : {
-              mode: 'global',
-              how_happened: howAugmented,
-              root_cause_initial: rci,
-              answered_ids: answeredIds,
-              batch_size: 1,
-              known_fields: deriveKnownFields(hitlSeed.formData || {}),
-              output_language: language || 'tr',
-            };
+      let body;
+      if (mode === 'immediate_identify') {
+        body = {
+          mode: 'immediate_identify',
+          how_happened: howAugmented,
+          root_cause_initial: rci,
+          batch_size: 1,
+          known_fields: deriveKnownFields(hitlSeed.formData || {}),
+          output_language: language || 'tr',
+        };
+      } else if (mode === 'why_probe') {
+        body = {
+          mode: 'why_probe',
+          how_happened: howAugmented,
+          root_cause_initial: rci,
+          answered_ids: answeredIds,
+          immediate_code: currentCode,
+          immediate_causes: hitlImmediateCauses,
+          why_level: whyLevel,
+          current_why_question: hitlWhyDisplay || `Why-${whyLevel}`,
+          previous_why_answer: previousWhyAnswer || '',
+          batch_size: 1,
+          known_fields: deriveKnownFields(hitlSeed.formData || {}),
+          output_language: language || 'tr',
+        };
+      } else {
+        body = {
+          mode: 'global',
+          how_happened: howAugmented,
+          root_cause_initial: rci,
+          answered_ids: answeredIds,
+          batch_size: 1,
+          known_fields: deriveKnownFields(hitlSeed.formData || {}),
+          output_language: language || 'tr',
+        };
+      }
 
       const res = await fetchHitlQuestions(hitlSeed.incidentId, body);
       const payload = res.data || {};
       const q = (payload.questions && payload.questions[0]) || null;
-      return { done: !!payload.done, question: q };
+      return {
+        done: !!payload.done,
+        question: q,
+        whyDisplay: payload.why_display || '',
+        immediateCauses: payload.immediate_causes || null,
+      };
     },
-    [hitlSeed, probeCodes, language],
+    [hitlSeed, probeCodes, hitlImmediateCauses, hitlWhyDisplay, language],
   );
 
   const resolveNextQuestion = useCallback(
@@ -574,18 +592,9 @@ const ChatInterface = ({
     }) => {
       const activeCodes = codes || probeCodes;
       if (mode !== 'why_probe') {
-        const r = await fetchQuestionForState({
-          mode: 'global',
-          answers,
-          answeredIds,
-          branchIdx: 0,
-          whyLevel: 1,
-          previousWhyAnswer: '',
-          codes: activeCodes,
-        });
         return {
-          done: !r.question,
-          question: r.question,
+          done: true,
+          question: null,
           nextBranchIdx: 0,
           nextWhyLevel: 1,
           nextAnsweredIds: answeredIds,
@@ -618,7 +627,11 @@ const ChatInterface = ({
             nextWhyLevel: w,
             nextAnsweredIds: ids,
             nextPreviousWhyAnswer: prevAns,
+            nextWhyDisplay: r.whyDisplay || '',
           };
+        }
+        if (r.whyDisplay) {
+          prevAns = prevAns || r.whyDisplay;
         }
 
         if (w < MAX_WHY_LEVEL) {
@@ -672,8 +685,10 @@ const ChatInterface = ({
       setHitlAnsweredIds([]);
       setHitlApiQuestion(null);
       setHitlQuestionsLoading(false);
-      setHitlMode('global');
+      setHitlMode('why_probe');
       setProbeCodes([]);
+      setHitlImmediateCauses([]);
+      setHitlWhyDisplay('');
       setProbeBranchIdx(0);
       setProbeWhyLevel(1);
       setPipelineResult(null);
@@ -741,12 +756,6 @@ const ChatInterface = ({
         : 'Determining immediate causes.',
     );
 
-    const rci = hitlSeed.formData?.rootCauseInitial || '';
-    const codes = extractHsgCodes(rci);
-    const mode = codes.length ? 'why_probe' : 'global';
-    setHitlMode(mode);
-    setProbeCodes(codes);
-
     const abortController = new AbortController();
     let cancelled = false;
 
@@ -755,18 +764,46 @@ const ChatInterface = ({
       setHitlQuestionsLoading(true);
       onPipelineStatusChange?.(
         String(language || '').toLowerCase().startsWith('tr')
-          ? 'Derinleştirme soruları başladı.'
-          : 'Deepening questions started.',
+          ? 'Mongo BARSEL: doğrudan nedenler belirleniyor…'
+          : 'Mongo BARSEL: identifying immediate causes…',
       );
       try {
-        const next = await resolveNextQuestionRef.current({
-          mode,
+        const rci = hitlSeed.formData?.rootCauseInitial || '';
+        const ident = await fetchQuestionForState({
+          mode: 'immediate_identify',
           answers: [],
           answeredIds: [],
           branchIdx: 0,
           whyLevel: 1,
           previousWhyAnswer: '',
-          codes,
+          codes: [],
+        });
+        if (cancelled) return;
+        const causes = ident.immediateCauses || [];
+        const codes = causes.map((c) => c.code).filter(Boolean);
+        if (!codes.length) {
+          const fallback = extractHsgCodes(rci);
+          setProbeCodes(fallback);
+        } else {
+          setHitlImmediateCauses(causes);
+          setProbeCodes(codes);
+        }
+        setHitlWhyDisplay(ident.whyDisplay || '');
+        setHitlMode('why_probe');
+        onPipelineStatusChange?.(
+          String(language || '').toLowerCase().startsWith('tr')
+            ? `${codes.length || 0} doğrudan neden — Why-1 probe soruları.`
+            : `${codes.length || 0} immediate causes — Why-1 probes.`,
+        );
+        const activeCodes = codes.length ? codes : extractHsgCodes(rci);
+        const next = await resolveNextQuestionRef.current({
+          mode: 'why_probe',
+          answers: [],
+          answeredIds: [],
+          branchIdx: 0,
+          whyLevel: 1,
+          previousWhyAnswer: '',
+          codes: activeCodes,
         });
         if (cancelled) return;
         if (next.question) {
@@ -774,6 +811,7 @@ const ChatInterface = ({
           setProbeBranchIdx(next.nextBranchIdx);
           setProbeWhyLevel(next.nextWhyLevel);
           setHitlAnsweredIds(next.nextAnsweredIds);
+          if (next.nextWhyDisplay) setHitlWhyDisplay(next.nextWhyDisplay);
           return;
         }
         if (next.done) {
@@ -920,6 +958,7 @@ const ChatInterface = ({
           setProbeBranchIdx(next.nextBranchIdx);
           setProbeWhyLevel(next.nextWhyLevel);
           setHitlAnsweredIds(next.nextAnsweredIds);
+          if (next.nextWhyDisplay) setHitlWhyDisplay(next.nextWhyDisplay);
           return;
         }
         if (next.done) {
@@ -943,11 +982,12 @@ const ChatInterface = ({
   };
 
   const handleHitlAnswer = (value) => {
-    if (!['yes', 'no', 'unknown'].includes(value)) return;
+    if (!['yes', 'no', 'unknown', 'skip'].includes(value)) return;
     const labels = {
       yes: t('yes'),
       no: t('no'),
       unknown: t('unknown'),
+      skip: t('hitl_skip_question'),
     };
     submitHitlResponse(value, labels[value] || value);
   };
@@ -1156,8 +1196,10 @@ const ChatInterface = ({
     setHitlAnsweredIds([]);
     setHitlApiQuestion(null);
     setHitlQuestionsLoading(false);
-    setHitlMode('global');
+    setHitlMode('why_probe');
     setProbeCodes([]);
+    setHitlImmediateCauses([]);
+    setHitlWhyDisplay('');
     setProbeBranchIdx(0);
     setProbeWhyLevel(1);
     setPipelineResult(null);
@@ -1198,11 +1240,9 @@ const ChatInterface = ({
     hitlApiQuestion && hitlQuestionNeedsChoice(hitlApiQuestion) && displayChoiceLabels.length >= 2;
   const hitlOtherIdx = showHitlChips ? getOtherChoiceIndex() : -1;
   const hitlOtherSelected = showHitlChips && hitlOtherIdx >= 0 && hitlChoiceIdx.has(hitlOtherIdx);
-  const showHitlFree =
-    hitlApiQuestion && !showHitlChips && hitlQuestionNeedsFreeText(hitlApiQuestion);
   const showHitlYesNo =
     hitlApiQuestion && !showHitlChips && hitlQuestionShowsYesNo(hitlApiQuestion);
-  const showHitlTextArea = hitlApiQuestion && !showHitlChips && (showHitlFree || showHitlYesNo);
+  const showHitlTextArea = hitlApiQuestion && !showHitlChips && showHitlYesNo;
   return (
     <div className="chat-interface chat-interface--full">
       <div className="chat-main">
@@ -1236,6 +1276,11 @@ const ChatInterface = ({
                 <p className="hitl-q">{t('hitl_loading_questions')}</p>
               ) : hitlApiQuestion ? (
                 <>
+                  {hitlMode === 'why_probe' && hitlWhyDisplay ? (
+                    <p className="hitl-why-display">
+                      {isTurkish ? `NEDEN ${probeWhyLevel}` : `WHY ${probeWhyLevel}`}: {hitlWhyDisplay}
+                    </p>
+                  ) : null}
                   {(() => {
                     const hintRaw = formatHitlHint(hitlApiQuestion.hsg_hint);
                     if (!hintRaw) return null;
@@ -1306,6 +1351,16 @@ const ChatInterface = ({
                           {t('hitl_submit_choices')}
                         </button>
                       )}
+                      <div className="hitl-choices hitl-choices--skip">
+                        <button
+                          type="button"
+                          className="hitl-choice-btn hitl-choice-skip"
+                          onClick={() => handleHitlAnswer('skip')}
+                          disabled={isLoading || hitlQuestionsLoading}
+                        >
+                          {t('hitl_skip_question')}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <>
@@ -1335,10 +1390,18 @@ const ChatInterface = ({
                           >
                             {t('unknown')}
                           </button>
+                          <button
+                            type="button"
+                            className="hitl-choice-btn hitl-choice-skip"
+                            onClick={() => handleHitlAnswer('skip')}
+                            disabled={isLoading || hitlQuestionsLoading}
+                          >
+                            {t('hitl_skip_question')}
+                          </button>
                         </div>
                       )}
                       {showHitlTextArea && (
-                        <div className={`hitl-free-text-wrap${showHitlYesNo ? ' hitl-free-text-wrap--hybrid' : ''}`}>
+                        <div className="hitl-free-text-wrap hitl-free-text-wrap--hybrid">
                           <textarea
                             className="hitl-free-text-input"
                             value={hitlTextDraft}
@@ -1348,27 +1411,11 @@ const ChatInterface = ({
                                 if (hitlTextDraft.trim()) handleHitlFreeTextSubmit();
                               })
                             }
-                            rows={showHitlFree ? 3 : 2}
-                            placeholder={
-                              showHitlFree
-                                ? t('hitl_free_text_placeholder')
-                                : t('hitl_optional_text_placeholder')
-                            }
+                            rows={2}
+                            placeholder={t('hitl_optional_text_placeholder')}
                             disabled={isLoading || hitlQuestionsLoading}
                           />
-                          <p className="hitl-text-hint">
-                            {showHitlFree ? t('hitl_text_enter_hint') : t('hitl_hybrid_text_hint')}
-                          </p>
-                          {showHitlFree && (
-                            <button
-                              type="button"
-                              className="hitl-choice-btn hitl-choice-primary"
-                              onClick={handleHitlFreeTextSubmit}
-                              disabled={!hitlTextDraft.trim() || isLoading || hitlQuestionsLoading}
-                            >
-                              {t('hitl_submit_text_answer')}
-                            </button>
-                          )}
+                          <p className="hitl-text-hint">{t('hitl_hybrid_text_hint')}</p>
                         </div>
                       )}
                     </>
