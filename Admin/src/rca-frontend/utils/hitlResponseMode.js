@@ -135,8 +135,8 @@ export function inferFreeTextHeuristic(t) {
   if (t.includes('—') && tr.length >= 1) {
     if (t.includes(',') || tr.length > 2) return true;
   }
-  // "geçerli miydi" probe soruları — typical_problem içinde "veya" olsa da Evet/Hayır kalır
-  if (/geçerli\s+miydi|geçerli\s+mi\b|geçerli\s+ydi/i.test(low)) {
+  // Probe kalıpları — typical_problem içinde "veya" olsa da Evet/Hayır kalır
+  if (/geçerli\s+miydi|geçerli\s+mi\b|geçerli\s+ydi|aşağıda\s+belirtilen/i.test(low)) {
     return false;
   }
   if ((low.includes(' veya ') || /\b(or|versus)\b/i.test(t)) && t.includes('?') && t.length > 35) {

@@ -98,8 +98,10 @@ function getHitlCauseTitle(q) {
 function getHitlContextNote(q) {
   if (!q) return '';
   const title = getHitlCauseTitle(q);
-  const guidance = String(q.response_guidance || q.helper_hint || '').trim();
-  if (guidance) return guidance;
+  const probeContext = String(q.probe_context || '').trim();
+  if (probeContext) return probeContext;
+  const helperHint = String(q.helper_hint || '').trim();
+  if (helperHint && !/Evet.*Hayır|Yes.*No/i.test(helperHint)) return helperHint;
   const hint = formatHitlHint(q.hsg_hint);
   if (hint && hint !== title) return hint;
   return '';
