@@ -25,7 +25,11 @@ import {
   buildHowHappenedText,
 } from '../utils/investigationPayload';
 import { normalizeWitnesses } from '../utils/witnessRows';
-import { getHitlQuestionLabel, formatHitlAnswersBlock } from '../utils/hitlKbQuestions';
+import {
+  formatHitlAnswerChatLine,
+  formatHitlAnswersBlock,
+  getHitlQuestionLabel,
+} from '../utils/hitlKbQuestions';
 import {
   hitlQuestionNeedsChoice,
   hitlQuestionShowsYesNo,
@@ -684,16 +688,16 @@ const ChatInterface = ({
           prevAns = prevAns || r.whyDisplay;
         }
 
-        if (w < MAX_WHY_LEVEL) {
-          w += 1;
-          ids = [];
-          continue;
-        }
         if (b < activeCodes.length - 1) {
           b += 1;
           w = 1;
           ids = [];
           prevAns = '';
+          continue;
+        }
+        if (w < MAX_WHY_LEVEL) {
+          w += 1;
+          ids = [];
           continue;
         }
         return {
@@ -950,6 +954,7 @@ const ChatInterface = ({
     if (!hitlSeed?.incidentId || !hitlApiQuestion || isLoading || hitlQuestionsLoading) return;
     const label = displayLabel;
     const qLabel = getHitlQuestionLabel(hitlApiQuestion, language);
+    const chatLine = formatHitlAnswerChatLine(hitlApiQuestion, language, label);
     const entry = {
       questionId: hitlApiQuestion.id,
       hsgHint: hitlApiQuestion.hsg_hint || '',
@@ -970,7 +975,7 @@ const ChatInterface = ({
       {
         id: `u-${Date.now()}`,
         type: 'user',
-        content: `${qLabel}\n→ ${label}`,
+        content: chatLine,
         timestamp: new Date(),
       },
     ]);

@@ -268,76 +268,76 @@ export const TEST_SCENARIOS = {
     },
     formData: {
       // Reporter Info
-      reportedBy: 'Niyazi Tanrıverdi - Alt İşveren Santiye Şefi',
-      reportDate: '2026-02-12',
-      reportTime: '17:30',
+      reportedBy: 'Serkan Aydın - Saha İSG Uzmanı',
+      reportDate: '2026-03-08',
+      reportTime: '18:10',
       
       // Incident Details
-      incidentDate: '2026-02-12',
-      incidentTime: '16:15',
-      location: 'MAOG Projesi, Mersin-Adana Kesimi KM 359+300',
-      department: 'Altyapı / Kazı-Boru Montaj',
+      incidentDate: '2026-03-08',
+      incidentTime: '15:40',
+      location: 'Kuzey Otoyolu Genişletme Projesi, Lot-7, PK 42+800',
+      department: 'Altyapı / Kazı ve Boru Hattı',
       eventCategory: 'incident',
       
       // Description
-      incidentDescription: `Plastik kaynakçısı Nuri Karakuş (50) kazi alanında boru montajı yaparken kazı yüzeyindeki ani toprak kayması sonucu göçük altında kaldı. Ekip tarafından ~5 dk'da kurtarıldı.`,
+      incidentDescription: `HDPE boru kaynakçısı Emre Polat (46), yağmur sonrası kazı hattında boru hizalama yaparken şev yüzeyinde ani toprak kayması meydana geldi. Çalışan yaklaşık 4 dakika göçük altında kaldı; ekip tarafından kurtarıldı.`,
       
-      whatHappened: 'Yağış sonrası kazı yüzeyinde çatlak oluştu, işçi kaçamadan göçük meydana geldi. Toprak altında kaldı, ekip tarafından kurtarıldı.',
+      whatHappened: 'Öğleden sonra yağıştan sonra kazı kenarında çatlak oluştu. Çalışan uyarıya rağmen kısa sürede göçük altında kaldı; ekip manuel kazı ile çıkardı.',
       
-      whereHappened: 'KM 359+300 mevkii, atık-su hattı kazı alanı, ~2.5m derinlik',
+      whereHappened: 'PK 42+800 mevkii, drenaj hattı kazı alanı, yaklaşık 2,4 m derinlik',
       
-      whenHappened: '12 Şubat 2026, Saat 16:15, Yağışlı hava sonrası yetkisiz çalışma',
+      whenHappened: '8 Mart 2026, Saat 15:40, Yağış sonrası yeniden başlatılan çalışma',
       
-      whoInvolved: 'Nuri Karakuş (50) - Plastik Kaynakçısı, 2 yıl 10 ay deneyim',
+      whoInvolved: 'Emre Polat (46) - HDPE Boru Kaynakçısı, 3 yıl deneyim',
       
-      emergencyMeasures: 'Ekip tarafından kurtarma (16:15-16:20), 112 ve REC Acil çağrısı, ambulansla sevk (16:40), bilinç açık',
+      emergencyMeasures: 'Saha ekibi kurtarma (15:40-15:44), 112 arandı, şantiye ambulansı ile sevk (16:05), bilinç açık',
       
       // Safety Equipment
       fallProtection: 'no',
       safetyHarness: 'no',
       safetyTraining: 'yes',
-      ppeUsed: 'Baret, iş eldiveni, çelik burunlu bot',
+      ppeUsed: 'Baret, iş eldiveni, çelik burunlu iş ayakkabısı',
       
       // Witnesses
       witnessesPresent: 'yes',
-      witnessNames: 'İbrahim Karademir (ekip), Adem Toslak (ekskavatör operatörü)',
-      witnessStatements: 'İbrahim Karademir: "Yüzeyde hareket gördüm, uyardım ama hızlı oldu."\nGürkan Demir: "Çalışma sonlandırılmıştı ama sundurma çökme riski nedeniyle devam ettik."',
+      witnessNames: 'Burak Şen (kazı ekibi), Oğuz Yılmaz (ekskavatör operatörü)',
+      witnessStatements: 'Burak Şen: "Şevde hareket gördüm, bağırarak uyardım ama çok hızlı oldu."\nOğuz Yılmaz: "Yağış nedeniyle çalışma durdurulmuştu; kısa süreli devam kararı alındı."',
       
       // Environment
-      weatherConditions: 'Yağışlı (14:30-15:15 şiddetli yağmur)',
-      lightingConditions: 'Kötü (akşam karanlığı yaklaşıyor)',
+      weatherConditions: 'Yağışlı (13:20-14:10 orta şiddetli yağmur)',
+      lightingConditions: 'Zayıf (gün batımına yakın)',
       noiseLevel: 'Normal',
-      temperature: '12°C',
+      temperature: '11°C',
       
       // Work Conditions
-      workType: '600mm beton boru montajı ve dolgu',
-      workHeight: 'Kazı derinliği ~2.5m',
-      experienceLevel: '2 yıl 10 ay',
-      shiftTime: 'Gündüz (08:00-17:00)',
-      workDuration: 'Yetkisiz yeniden başlatma (~5 dakika)',
+      workType: 'Ø500 mm beton drenaj borusu montajı ve dolgu',
+      workHeight: 'Kazı derinliği ~2,4 m',
+      experienceLevel: '3 yıl',
+      shiftTime: 'Gündüz (07:30-16:30)',
+      workDuration: 'Onay dışı yeniden başlatma (~6 dakika)',
       
       // Injuries
       injuryType: 'Ezilme, göçük altında kalma',
       injurySeverity: 'moderate',
-      bodyPart: 'Gövde, bacaklar (genel ezilme)',
-      medicalTreatment: 'Hastaneye sevk, muayene, gözlem',
-      propertyDamage: 'Kazı yüzeyi çökmüş, boru hasarlı',
+      bodyPart: 'Gövde ve alt ekstremite (genel ezilme)',
+      medicalTreatment: 'Bölge hastanesine sevk, görüntüleme ve gözlem',
+      propertyDamage: 'Kazı şevi çökmüş, boru segmenti hasarlı',
       
       // Root Cause
-      rootCauseInitial: `1. Yağış sonrası kazı stabilitesi değerlendirilmeden çalışma
-2. Çalışma durdurulmuştu ancak yetkisiz yeniden başlatıldı
-3. Kazı şev açısı ve destek sistemi yetersiz
-4. TRIC kart eğitimi konuyla uyumsuz (demir tezgah, kazı değil)
-5. Göçük tatbikatı bilgisi davranışa dönüşmemiş`,
+      rootCauseInitial: `1. Yağış sonrası kazı stabilitesi kontrol edilmeden çalışmaya devam edildi
+2. Durdurulan iş onay alınmadan yeniden başlatıldı
+3. Kazı şev açısı ve geçici destekleme yetersizdi
+4. Günlük saha brifingi kazı risklerine odaklanmadı
+5. Göçük acil durum tatbikatı bilgisi sahada uygulanmadı`,
       
-      correctiveActions: `1. Yağış sonrası kazı güvenlik kontrolü zorunlu
-2. Yetkisiz çalışma başlatma engellenecek (iş izni sistemi)
-3. Kazı şev açılarının revize edilmesi
-4. Kazı destek sistemlerinin güçlendirilmesi
-5. Kazı tehlikeleri eğitiminin detaylandırılması
-6. Günlük TRIC kart konularının işle uyumluluğu`,
+      correctiveActions: `1. Yağış sonrası kazı güvenlik kontrolü zorunlu hale getirildi
+2. İş izni olmadan kazıya giriş engellendi
+3. Kazı şev açıları ve destekleme planı revize edildi
+4. Geçici şev stabilizasyonu güçlendirildi
+5. Kazı tehlikeleri eğitimi işe özel güncellendi
+6. Günlük toolbox konuları saha işleriyle eşleştirildi`,
       
-      additionalNotes: 'TCDD 551 eğitimi süresi dolmuş. 463 toolbox ve 82 interaktif eğitim alınmış (35+20 kazı). Göçük tatbikatı 12.06.2024 yapılmış ancak teorik kalmış.',
+      additionalNotes: 'Temel iş güvenliği sertifikası güncel. Son 12 ayda 28 toolbox ve 6 interaktif eğitim kaydı var. Göçük tatbikatı 6 ay önce yapıldı; sahada uygulama eksikliği tespit edildi.',
     },
   },
 };
