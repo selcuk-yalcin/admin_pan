@@ -458,14 +458,44 @@
   border-radius: 4px;
 }
 
+.hitl-field-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.hitl-category-block {
+  margin: 0 0 0.75rem;
+}
+
 .hitl-cause-title {
-  margin: 0 0 0.5rem;
+  margin: 0;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--text-primary);
   line-height: 1.35;
+}
+
+.hitl-probe-context-card {
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.hitl-probe-context-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .hitl-flow-context {
@@ -475,12 +505,8 @@
   line-height: 1.45;
 }
 
-.hitl-probe-context {
-  padding: 0.55rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  background: rgba(99, 102, 241, 0.08);
-  color: var(--text-primary);
+.hitl-choices {
+  margin-bottom: 0.75rem;
 }
 
 .hitl-branch-status {

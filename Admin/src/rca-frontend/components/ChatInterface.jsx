@@ -95,16 +95,45 @@ function getHitlCauseTitle(q) {
   return '';
 }
 
-function getHitlContextNote(q) {
+function extractProbeContextFromQuestion(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return '';
+  const patterns = [
+    /geçerli\s+miydi:\s*(.+?)\s*\??\s*$/i,
+    /geçerli\s+ydi:\s*(.+?)\s*\??\s*$/i,
+    /şu durum geçerli miydi:\s*(.+?)\s*\??\s*$/i,
+  ];
+  for (const pat of patterns) {
+    const m = raw.match(pat);
+    if (m?.[1]) return m[1].trim().replace(/\?$/, '').trim();
+  }
+  return '';
+}
+
+function getHitlContextNote(q, language) {
   if (!q) return '';
   const title = getHitlCauseTitle(q);
   const probeContext = String(q.probe_context || '').trim();
   if (probeContext) return probeContext;
+  const fromQuestion = extractProbeContextFromQuestion(getHitlQuestionLabel(q, language));
+  if (fromQuestion) return fromQuestion;
   const helperHint = String(q.helper_hint || '').trim();
   if (helperHint && !/Evet.*Hayır|Yes.*No/i.test(helperHint)) return helperHint;
   const hint = formatHitlHint(q.hsg_hint);
   if (hint && hint !== title) return hint;
   return '';
+}
+
+function getHitlCategoryLabel(q, language, isTurkish) {
+  const fromApi = String(q?.category_label || '').trim();
+  if (fromApi) return fromApi;
+  return isTurkish ? 'İlgili neden alanı' : 'Related cause area';
+}
+
+function getHitlConditionLabel(q, language, isTurkish) {
+  const fromApi = String(q?.probe_context_label || '').trim();
+  if (fromApi) return fromApi;
+  return isTurkish ? 'İncelenen koşul / durum' : 'Condition under review';
 }
 
 function getStageLabel(language, stage, progress) {
@@ -1261,12 +1290,16 @@ const ChatInterface = ({
     hitlApiQuestion && hitlQuestionNeedsChoice(hitlApiQuestion) && displayChoiceLabels.length >= 2;
   const hitlOtherIdx = showHitlChips ? getOtherChoiceIndex() : -1;
   const hitlOtherSelected = showHitlChips && hitlOtherIdx >= 0 && hitlChoiceIdx.has(hitlOtherIdx);
-  const showHitlQuickChoices =
-    hitlApiQuestion && hitlQuestionShowsYesNo(hitlApiQuestion);
-  const showHitlTextArea =
-    hitlApiQuestion && !showHitlChips && showHitlQuickChoices;
+  const showHitlQuickChoices = Boolean(hitlApiQuestion);
+  const showHitlTextArea = Boolean(hitlApiQuestion && !showHitlChips);
   const hitlCauseTitle = hitlApiQuestion ? getHitlCauseTitle(hitlApiQuestion) : '';
-  const hitlContextNote = hitlApiQuestion ? getHitlContextNote(hitlApiQuestion) : '';
+  const hitlContextNote = hitlApiQuestion ? getHitlContextNote(hitlApiQuestion, language) : '';
+  const hitlCategoryLabel = hitlApiQuestion
+    ? getHitlCategoryLabel(hitlApiQuestion, language, isTurkish)
+    : '';
+  const hitlConditionLabel = hitlApiQuestion
+    ? getHitlConditionLabel(hitlApiQuestion, language, isTurkish)
+    : '';
 
   const renderHitlQuickChoiceButtons = () => (
     <div className="hitl-choices">
@@ -1344,13 +1377,19 @@ const ChatInterface = ({
                     </p>
                   ) : null}
                   {hitlCauseTitle ? (
-                    <p className="hitl-cause-title">{hitlCauseTitle}</p>
+                    <div className="hitl-category-block">
+                      <span className="hitl-field-label">{hitlCategoryLabel}</span>
+                      <p className="hitl-cause-title">{hitlCauseTitle}</p>
+                    </div>
+                  ) : null}
+                  {hitlContextNote ? (
+                    <div className="hitl-probe-context-card">
+                      <span className="hitl-field-label">{hitlConditionLabel}</span>
+                      <p className="hitl-probe-context-text">{hitlContextNote}</p>
+                    </div>
                   ) : null}
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
-                  {hitlContextNote ? (
-                    <p className="hitl-flow-context hitl-probe-context">{hitlContextNote}</p>
-                  ) : null}
-                  {showHitlQuickChoices ? renderHitlQuickChoiceButtons() : null}
+                  {renderHitlQuickChoiceButtons()}
                   {showHitlChips ? (
                     <div className="hitl-choice-chips-wrap">
                       <div className="hitl-choice-head">

@@ -136,7 +136,7 @@ export function inferFreeTextHeuristic(t) {
     if (t.includes(',') || tr.length > 2) return true;
   }
   // Probe kalıpları — typical_problem içinde "veya" olsa da Evet/Hayır kalır
-  if (/geçerli\s+miydi|geçerli\s+mi\b|geçerli\s+ydi|aşağıda\s+belirtilen/i.test(low)) {
+  if (/geçerli\s+miydi|geçerli\s+mi\b|geçerli\s+ydi|aşağıda\s+belirtilen|yukarıda\s+özetlenen/i.test(low)) {
     return false;
   }
   if ((low.includes(' veya ') || /\b(or|versus)\b/i.test(t)) && t.includes('?') && t.length > 35) {
