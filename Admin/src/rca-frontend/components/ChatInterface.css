@@ -458,11 +458,29 @@
   border-radius: 4px;
 }
 
+.hitl-cause-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
 .hitl-flow-context {
   margin: 0 0 0.65rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.45;
+}
+
+.hitl-probe-context {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--text-primary);
 }
 
 .hitl-branch-status {

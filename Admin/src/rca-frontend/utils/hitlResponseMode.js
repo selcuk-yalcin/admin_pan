@@ -99,12 +99,11 @@ export function hitlQuestionNeedsFreeText(q) {
 }
 
 /**
- * Evet/Hayır/Bilinmiyor/Soruyu Geç düğmeleri (chip listesi hariç her soruda).
+ * Evet/Hayır/Bilinmiyor/Soruyu Geç — her HITL sorusunda (chip listesi olsa da).
  * @param {object} q
  */
 export function hitlQuestionShowsYesNo(q) {
-  if (!q) return false;
-  return !hitlQuestionNeedsChoice(q);
+  return !!q;
 }
 
 /**
@@ -135,6 +134,10 @@ export function inferFreeTextHeuristic(t) {
   if (tr.length >= 2) return true;
   if (t.includes('—') && tr.length >= 1) {
     if (t.includes(',') || tr.length > 2) return true;
+  }
+  // "geçerli miydi" probe soruları — typical_problem içinde "veya" olsa da Evet/Hayır kalır
+  if (/geçerli\s+miydi|geçerli\s+mi\b|geçerli\s+ydi/i.test(low)) {
+    return false;
   }
   if ((low.includes(' veya ') || /\b(or|versus)\b/i.test(t)) && t.includes('?') && t.length > 35) {
     return true;

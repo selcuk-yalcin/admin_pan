@@ -86,6 +86,25 @@ function formatHitlHint(hint) {
     .trim();
 }
 
+function getHitlCauseTitle(q) {
+  if (!q) return '';
+  const cause = String(q.cause_desc || '').trim();
+  if (cause && !cause.includes('?')) return cause;
+  const hint = formatHitlHint(q.hsg_hint);
+  if (hint && !hint.includes('?') && hint.length > 12) return hint;
+  return '';
+}
+
+function getHitlContextNote(q) {
+  if (!q) return '';
+  const title = getHitlCauseTitle(q);
+  const guidance = String(q.response_guidance || q.helper_hint || '').trim();
+  if (guidance) return guidance;
+  const hint = formatHitlHint(q.hsg_hint);
+  if (hint && hint !== title) return hint;
+  return '';
+}
+
 function getStageLabel(language, stage, progress) {
   const isTr = String(language || '').toLowerCase().startsWith('tr');
   const pctNum = Number(progress);
@@ -1240,9 +1259,50 @@ const ChatInterface = ({
     hitlApiQuestion && hitlQuestionNeedsChoice(hitlApiQuestion) && displayChoiceLabels.length >= 2;
   const hitlOtherIdx = showHitlChips ? getOtherChoiceIndex() : -1;
   const hitlOtherSelected = showHitlChips && hitlOtherIdx >= 0 && hitlChoiceIdx.has(hitlOtherIdx);
-  const showHitlYesNo =
-    hitlApiQuestion && !showHitlChips && hitlQuestionShowsYesNo(hitlApiQuestion);
-  const showHitlTextArea = hitlApiQuestion && !showHitlChips && showHitlYesNo;
+  const showHitlQuickChoices =
+    hitlApiQuestion && hitlQuestionShowsYesNo(hitlApiQuestion);
+  const showHitlTextArea =
+    hitlApiQuestion && !showHitlChips && showHitlQuickChoices;
+  const hitlCauseTitle = hitlApiQuestion ? getHitlCauseTitle(hitlApiQuestion) : '';
+  const hitlContextNote = hitlApiQuestion ? getHitlContextNote(hitlApiQuestion) : '';
+
+  const renderHitlQuickChoiceButtons = () => (
+    <div className="hitl-choices">
+      <button
+        type="button"
+        className="hitl-choice-btn"
+        onClick={() => handleHitlAnswer('yes')}
+        disabled={isLoading || hitlQuestionsLoading}
+      >
+        {t('yes')}
+      </button>
+      <button
+        type="button"
+        className="hitl-choice-btn hitl-choice-no"
+        onClick={() => handleHitlAnswer('no')}
+        disabled={isLoading || hitlQuestionsLoading}
+      >
+        {t('no')}
+      </button>
+      <button
+        type="button"
+        className="hitl-choice-btn hitl-choice-un"
+        onClick={() => handleHitlAnswer('unknown')}
+        disabled={isLoading || hitlQuestionsLoading}
+      >
+        {t('unknown')}
+      </button>
+      <button
+        type="button"
+        className="hitl-choice-btn hitl-choice-skip"
+        onClick={() => handleHitlAnswer('skip')}
+        disabled={isLoading || hitlQuestionsLoading}
+      >
+        {t('hitl_skip_question')}
+      </button>
+    </div>
+  );
+
   return (
     <div className="chat-interface chat-interface--full">
       <div className="chat-main">
@@ -1281,12 +1341,14 @@ const ChatInterface = ({
                       {isTurkish ? `NEDEN ${probeWhyLevel}` : `WHY ${probeWhyLevel}`}: {hitlWhyDisplay}
                     </p>
                   ) : null}
-                  {(() => {
-                    const hintRaw = formatHitlHint(hitlApiQuestion.hsg_hint);
-                    if (!hintRaw) return null;
-                    return <p className="hitl-flow-context">{hintRaw}</p>;
-                  })()}
+                  {hitlCauseTitle ? (
+                    <p className="hitl-cause-title">{hitlCauseTitle}</p>
+                  ) : null}
                   <p className="hitl-q">{getHitlQuestionLabel(hitlApiQuestion, language)}</p>
+                  {hitlContextNote ? (
+                    <p className="hitl-flow-context hitl-probe-context">{hitlContextNote}</p>
+                  ) : null}
+                  {showHitlQuickChoices ? renderHitlQuickChoiceButtons() : null}
                   {showHitlChips ? (
                     <div className="hitl-choice-chips-wrap">
                       <div className="hitl-choice-head">
@@ -1351,75 +1413,35 @@ const ChatInterface = ({
                           {t('hitl_submit_choices')}
                         </button>
                       )}
-                      <div className="hitl-choices hitl-choices--skip">
+                    </div>
+                  ) : showHitlTextArea ? (
+                    <div className="hitl-free-text-wrap hitl-free-text-wrap--hybrid">
+                      <textarea
+                        className="hitl-free-text-input"
+                        value={hitlTextDraft}
+                        onChange={(e) => setHitlTextDraft(e.target.value)}
+                        onKeyDown={(e) =>
+                          handleHitlTextareaEnter(e, () => {
+                            if (hitlTextDraft.trim()) handleHitlFreeTextSubmit();
+                          })
+                        }
+                        rows={2}
+                        placeholder={t('hitl_optional_text_placeholder')}
+                        disabled={isLoading || hitlQuestionsLoading}
+                      />
+                      <p className="hitl-text-hint">{t('hitl_hybrid_text_hint')}</p>
+                      {hitlTextDraft.trim() ? (
                         <button
                           type="button"
-                          className="hitl-choice-btn hitl-choice-skip"
-                          onClick={() => handleHitlAnswer('skip')}
+                          className="hitl-choice-btn hitl-choice-primary"
+                          onClick={handleHitlFreeTextSubmit}
                           disabled={isLoading || hitlQuestionsLoading}
                         >
-                          {t('hitl_skip_question')}
+                          {t('hitl_submit_text_answer')}
                         </button>
-                      </div>
+                      ) : null}
                     </div>
-                  ) : (
-                    <>
-                      {showHitlYesNo && (
-                        <div className="hitl-choices">
-                          <button
-                            type="button"
-                            className="hitl-choice-btn"
-                            onClick={() => handleHitlAnswer('yes')}
-                            disabled={isLoading || hitlQuestionsLoading}
-                          >
-                            {t('yes')}
-                          </button>
-                          <button
-                            type="button"
-                            className="hitl-choice-btn hitl-choice-no"
-                            onClick={() => handleHitlAnswer('no')}
-                            disabled={isLoading || hitlQuestionsLoading}
-                          >
-                            {t('no')}
-                          </button>
-                          <button
-                            type="button"
-                            className="hitl-choice-btn hitl-choice-un"
-                            onClick={() => handleHitlAnswer('unknown')}
-                            disabled={isLoading || hitlQuestionsLoading}
-                          >
-                            {t('unknown')}
-                          </button>
-                          <button
-                            type="button"
-                            className="hitl-choice-btn hitl-choice-skip"
-                            onClick={() => handleHitlAnswer('skip')}
-                            disabled={isLoading || hitlQuestionsLoading}
-                          >
-                            {t('hitl_skip_question')}
-                          </button>
-                        </div>
-                      )}
-                      {showHitlTextArea && (
-                        <div className="hitl-free-text-wrap hitl-free-text-wrap--hybrid">
-                          <textarea
-                            className="hitl-free-text-input"
-                            value={hitlTextDraft}
-                            onChange={(e) => setHitlTextDraft(e.target.value)}
-                            onKeyDown={(e) =>
-                              handleHitlTextareaEnter(e, () => {
-                                if (hitlTextDraft.trim()) handleHitlFreeTextSubmit();
-                              })
-                            }
-                            rows={2}
-                            placeholder={t('hitl_optional_text_placeholder')}
-                            disabled={isLoading || hitlQuestionsLoading}
-                          />
-                          <p className="hitl-text-hint">{t('hitl_hybrid_text_hint')}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  ) : null}
                 </>
               ) : null}
             </div>
