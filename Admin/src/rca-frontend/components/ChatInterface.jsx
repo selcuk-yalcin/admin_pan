@@ -795,15 +795,15 @@ const ChatInterface = ({
       {
         id: 'hitl-stream',
         type: 'assistant',
-        content: `**${getTranslation(language, 'hitl_determining_causes')}**`,
+        content: `**${getTranslation(language, 'hitl_analyzing_narrative')}**`,
         timestamp: new Date(),
         isStreaming: true,
       },
     ]);
     onPipelineStatusChange?.(
       String(language || '').toLowerCase().startsWith('tr')
-        ? 'Doğrudan nedenler belirleniyor.'
-        : 'Determining immediate causes.',
+        ? 'Olay metni analiz ediliyor…'
+        : 'Reviewing incident narrative…',
     );
 
     const abortController = new AbortController();
@@ -826,8 +826,8 @@ const ChatInterface = ({
       setHitlQuestionsLoading(true);
       onPipelineStatusChange?.(
         String(language || '').toLowerCase().startsWith('tr')
-          ? 'Mongo BARSEL: doğrudan nedenler belirleniyor…'
-          : 'Mongo BARSEL: identifying immediate causes…',
+          ? 'BARSEL eşleştirmesi yapılıyor…'
+          : 'Matching incident to BARSEL taxonomy…',
       );
       try {
         const narrative = buildHowHappenedText(hitlSeed.formData, language);
@@ -861,8 +861,8 @@ const ChatInterface = ({
         setHitlMode('why_probe');
         onPipelineStatusChange?.(
           String(language || '').toLowerCase().startsWith('tr')
-            ? `${codes.length || 0} doğrudan neden — Why-1 probe soruları.`
-            : `${codes.length || 0} immediate causes — Why-1 probes.`,
+            ? 'Derinleştirme soruları hazırlanıyor…'
+            : 'Preparing deepening questions…',
         );
         const activeCodes = codes.length ? codes : extractHsgCodes(narrative);
         const next = await resolveNextQuestionRef.current({
