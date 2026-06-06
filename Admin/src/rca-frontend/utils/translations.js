@@ -274,7 +274,7 @@ const translations = {
     step_2_hitl_desc: 'Kaza bağlamını netleştirme',
     hitl_questions_title: 'Derinleştirme soruları',
     hitl_input_locked_placeholder: 'Yanıtları yukarıdaki panelden verin',
-    hitl_loading_questions: 'Sorular hazırlanıyor...',
+    hitl_loading_questions: 'Sıradaki soru hazırlanıyor…',
     hitl_no_questions: 'Soru üretilemedi. Lütfen formu kontrol edip tekrar deneyin.',
     hitl_running_rca: 'Kök neden analizi ve aksiyon planı çalışıyor...',
     hitl_ask_pdf: 'Tamamlandı. HTML rapor oluşturulsun mu?',
@@ -300,11 +300,13 @@ const translations = {
     hitl_rca_streaming_title: 'Kök neden analizi çalışıyor…',
     hitl_determining_causes: 'Doğrudan nedenler belirleniyor…',
     hitl_analyzing_narrative: 'Olay metni inceleniyor…',
+    hitl_no_immediate_causes_yet:
+      'Olay metni BARSEL taksonomisi ile eşleştiriliyor; doğrudan nedenler analiz sonucunda belirlenecek.',
     hitl_intro_deepening_notice:
       'Şimdi bu olaya özel derinleştirme sorularını birlikte yanıtlayacağız.',
     chat_requires_form_title: 'Önce manuel formu doldurun',
     chat_requires_form_body:
-      'Etkileşimli analiz, Manuel Formdaki «Etkileşimli Analize Geç» ile başlar. Formu gönderdikten sonra doğrudan nedenler burada akışla görünür; ardından derinleştirme sorularını yanıtlarsınız.',
+      'Etkileşimli analiz, Manuel Formdaki «Etkileşimli Analize Geç» ile başlar. Doğrudan nedenler olay metninden analiz edilir; ardından derinleştirme sorularını yanıtlarsınız.',
     chat_go_to_form: 'Manuel forma git',
     chat_tab_locked_hint:
       'Etkileşimli analiz için önce Manuel Formu doldurup «Etkileşimli Analize Geç»e basın.',
@@ -803,6 +805,8 @@ const translations = {
     hitl_rca_streaming_title: 'Root cause analysis in progress…',
     hitl_determining_causes: 'Determining immediate causes…',
     hitl_analyzing_narrative: 'Reviewing incident narrative…',
+    hitl_no_immediate_causes_yet:
+      'Matching the incident to BARSEL taxonomy; immediate causes will be determined from the analysis.',
     hitl_intro_deepening_notice:
       'Next we will answer deepening questions specific to this incident.',
     chat_requires_form_title: 'Complete the manual form first',

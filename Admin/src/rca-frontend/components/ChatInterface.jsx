@@ -809,8 +809,20 @@ const ChatInterface = ({
     const abortController = new AbortController();
     let cancelled = false;
 
+    const updateIntroMessage = (content, isStreaming = false) => {
+      if (cancelled) return;
+      setMessages([
+        {
+          id: 'hitl-stream',
+          type: 'assistant',
+          content,
+          timestamp: new Date(),
+          isStreaming,
+        },
+      ]);
+    };
+
     const loadFirstQuestion = async () => {
-      setHitlPhase('questions');
       setHitlQuestionsLoading(true);
       onPipelineStatusChange?.(
         String(language || '').toLowerCase().startsWith('tr')
@@ -830,6 +842,14 @@ const ChatInterface = ({
         });
         if (cancelled) return;
         const causes = ident.immediateCauses || [];
+        await streamHitlIntro({
+          language,
+          causes,
+          signal: abortController.signal,
+          onUpdate: updateIntroMessage,
+        });
+        if (cancelled) return;
+        setHitlPhase('questions');
         const codes = causes.map((c) => c.code).filter(Boolean);
         if (!codes.length) {
           const fallback = extractHsgCodes(rci);
@@ -900,25 +920,6 @@ const ChatInterface = ({
 
     (async () => {
       try {
-        await streamHitlIntro({
-          language,
-          formData: hitlSeed.formData || {},
-          incidentId: hitlSeed.incidentId,
-          signal: abortController.signal,
-          onUpdate: (content, isStreaming) => {
-            if (cancelled) return;
-            setMessages([
-              {
-                id: 'hitl-stream',
-                type: 'assistant',
-                content,
-                timestamp: new Date(),
-                isStreaming,
-              },
-            ]);
-          },
-        });
-        if (cancelled) return;
         await loadFirstQuestion();
       } catch (error) {
         if (!cancelled) {

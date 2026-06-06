@@ -104,7 +104,7 @@ function sentencesFromNarrative(text, max = 3) {
 }
 
 /**
- * Olaya özel doğrudan neden satırları (form → HITL intro akışı).
+ * Form metninden satır çıkarır (yalnızca yardımcı; HITL intro artık API immediate_causes kullanır).
  * @param {object} formData
  * @param {number} [maxLines]
  */
