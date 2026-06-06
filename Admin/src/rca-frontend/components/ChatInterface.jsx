@@ -46,7 +46,11 @@ import { stripTechnicalCodes } from '../utils/displaySanitize';
 import './ChatInterface.css';
 
 const MAX_PROBE_CODES = 3;
-const MAX_WHY_LEVEL = 5;
+/** Dal başına en fazla probe; why seviyesi band rotasyonu yok. */
+const MAX_PROBES_PER_BRANCH = 3;
+/** Tüm HITL oturumunda üst sınır (≈4 dal × 3 soru). */
+const MAX_HITL_PROBE_ANSWERS = 12;
+const MAX_IMMEDIATE_BRANCHES = 4;
 /** Uzun RCA + thinking modeller; 6 dk önce UI "Pipeline timeout" veriyordu. */
 const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
 const RCA_STREAM_MSG_ID = 'rca-pipeline-stream';
@@ -644,7 +648,7 @@ const ChatInterface = ({
       previousWhyAnswer,
       codes,
     }) => {
-      const activeCodes = codes || probeCodes;
+      const activeCodes = (codes || probeCodes).slice(0, MAX_IMMEDIATE_BRANCHES);
       if (mode !== 'why_probe') {
         return {
           done: true,
@@ -656,14 +660,43 @@ const ChatInterface = ({
         };
       }
 
+      if ((answers || []).length >= MAX_HITL_PROBE_ANSWERS) {
+        return {
+          done: true,
+          question: null,
+          nextBranchIdx: branchIdx,
+          nextWhyLevel: 1,
+          nextAnsweredIds: answeredIds,
+          nextPreviousWhyAnswer: previousWhyAnswer || '',
+        };
+      }
+
       let b = branchIdx;
-      let w = whyLevel;
+      const w = 1;
       let ids = answeredIds;
       let prevAns = previousWhyAnswer || '';
       let guard = 0;
 
-      while (guard < 24) {
+      while (guard < 12) {
         guard += 1;
+        const branchAnswers = (answers || []).filter((a) => a.branchNumber === b + 1);
+        if (branchAnswers.length >= MAX_PROBES_PER_BRANCH) {
+          if (b < activeCodes.length - 1) {
+            b += 1;
+            ids = [];
+            prevAns = '';
+            continue;
+          }
+          return {
+            done: true,
+            question: null,
+            nextBranchIdx: b,
+            nextWhyLevel: 1,
+            nextAnsweredIds: ids,
+            nextPreviousWhyAnswer: prevAns,
+          };
+        }
+
         const r = await fetchQuestionForState({
           mode: 'why_probe',
           answers,
@@ -690,21 +723,15 @@ const ChatInterface = ({
 
         if (b < activeCodes.length - 1) {
           b += 1;
-          w = 1;
           ids = [];
           prevAns = '';
-          continue;
-        }
-        if (w < MAX_WHY_LEVEL) {
-          w += 1;
-          ids = [];
           continue;
         }
         return {
           done: true,
           question: null,
           nextBranchIdx: b,
-          nextWhyLevel: w,
+          nextWhyLevel: 1,
           nextAnsweredIds: ids,
           nextPreviousWhyAnswer: prevAns,
         };
@@ -853,9 +880,9 @@ const ChatInterface = ({
         });
         if (cancelled) return;
         setHitlPhase('questions');
-        const codes = causes.map((c) => c.code).filter(Boolean);
+        const codes = causes.map((c) => c.code).filter(Boolean).slice(0, MAX_IMMEDIATE_BRANCHES);
         if (!codes.length) {
-          const fallback = extractHsgCodes(narrative);
+          const fallback = extractHsgCodes(narrative).slice(0, MAX_IMMEDIATE_BRANCHES);
           setProbeCodes(fallback);
         } else {
           setHitlImmediateCauses(causes);
