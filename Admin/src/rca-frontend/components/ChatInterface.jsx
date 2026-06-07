@@ -51,6 +51,8 @@ const MAX_PROBES_PER_BRANCH = 3;
 /** Tüm HITL oturumunda üst sınır (≈4 dal × 3 soru). */
 const MAX_HITL_PROBE_ANSWERS = 12;
 const MAX_IMMEDIATE_BRANCHES = 4;
+/** P1.22: A/B probe sonrası kök neden aday (C/D) probe üst sınırı. */
+const MAX_ROOT_PROBE_ANSWERS = 6;
 /** Uzun RCA + thinking modeller; 6 dk önce UI "Pipeline timeout" veriyordu. */
 const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
 const RCA_STREAM_MSG_ID = 'rca-pipeline-stream';
@@ -419,7 +421,9 @@ const ChatInterface = ({
       try {
         const appendix = formatHitlAnswersBlock(answers);
         const inv = buildInvestigationPayload(hitlSeed.formData, appendix, language);
-        inv.why_probe_answers = answers.map((a) => ({
+        const whyAnswers = answers.filter((a) => a.phase !== 'rootcause_probe');
+        const rcAnswers = answers.filter((a) => a.phase === 'rootcause_probe');
+        inv.why_probe_answers = whyAnswers.map((a) => ({
           branch_number: a.branchNumber || 1,
           why_level: a.whyLevel || 1,
           immediate_code: a.immediateCode || '',
@@ -427,6 +431,13 @@ const ChatInterface = ({
           question: a.question || '',
           answer: a.label || '',
           hsg_hint: a.hsgHint || '',
+        }));
+        // P1.22: kök neden aday (C/D) probe cevapları → motorda forbidden/affirmed sinyali.
+        inv.root_cause_probe_answers = rcAnswers.map((a) => ({
+          code: a.code || '',
+          answer: a.value || a.label || '',
+          question: a.question || '',
+          probe_context: a.probeContext || '',
         }));
         const pipelineResponse = await runPipelineJobWithPolling(
           hitlSeed.incidentId,
@@ -613,6 +624,17 @@ const ChatInterface = ({
           known_fields: deriveKnownFields(hitlSeed.formData || {}),
           output_language: language || 'tr',
         };
+      } else if (mode === 'rootcause_probe') {
+        body = {
+          mode: 'rootcause_probe',
+          how_happened: howAugmented,
+          root_cause_initial: rci,
+          answered_ids: answeredIds,
+          immediate_code: (codes || probeCodes)[0] || '',
+          batch_size: 1,
+          known_fields: deriveKnownFields(hitlSeed.formData || {}),
+          output_language: language || 'tr',
+        };
       } else {
         body = {
           mode: 'global',
@@ -649,6 +671,32 @@ const ChatInterface = ({
       codes,
     }) => {
       const activeCodes = (codes || probeCodes).slice(0, MAX_IMMEDIATE_BRANCHES);
+
+      // P1.22: Kök neden aday (C/D) probe — tek havuz, dal yok.
+      if (mode === 'rootcause_probe') {
+        const rcAnswers = (answers || []).filter((a) => a.phase === 'rootcause_probe');
+        if (rcAnswers.length >= MAX_ROOT_PROBE_ANSWERS) {
+          return { done: true, question: null, nextAnsweredIds: answeredIds };
+        }
+        const r = await fetchQuestionForState({
+          mode: 'rootcause_probe',
+          answers,
+          answeredIds,
+          branchIdx: 0,
+          whyLevel: 1,
+          previousWhyAnswer: '',
+          codes: activeCodes,
+        });
+        return {
+          done: !r.question,
+          question: r.question || null,
+          nextBranchIdx: 0,
+          nextWhyLevel: 1,
+          nextAnsweredIds: answeredIds,
+          nextPreviousWhyAnswer: '',
+        };
+      }
+
       if (mode !== 'why_probe') {
         return {
           done: true,
@@ -988,6 +1036,9 @@ const ChatInterface = ({
       question: qLabel,
       label,
       value,
+      phase: hitlMode,
+      code: hitlApiQuestion.code || '',
+      probeContext: hitlApiQuestion.probe_context || '',
       branchNumber: hitlMode === 'why_probe' ? probeBranchIdx + 1 : 1,
       whyLevel: hitlMode === 'why_probe' ? probeWhyLevel : hitlAnswers.length + 1,
       immediateCode: hitlMode === 'why_probe' ? currentProbeCode : '',
@@ -1044,6 +1095,34 @@ const ChatInterface = ({
           return;
         }
         if (next.done) {
+          // P1.22: A/B doğrudan neden probe'ları bitince kök neden aday (C/D) fazına geç.
+          if (hitlMode === 'why_probe') {
+            const rc = await resolveNextQuestion({
+              mode: 'rootcause_probe',
+              answers: nextAnswers,
+              answeredIds: newIds,
+              branchIdx: 0,
+              whyLevel: 1,
+              previousWhyAnswer: '',
+              codes: probeCodes,
+            });
+            if (rc.question) {
+              setHitlMode('rootcause_probe');
+              setHitlApiQuestion(rc.question);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `rc-probe-intro-${Date.now()}`,
+                  type: 'assistant',
+                  content: isTurkish
+                    ? 'Doğrudan neden soruları tamamlandı. Şimdi olası kök nedenleri netleştirmek için birkaç kısa soru soracağım.'
+                    : 'Direct-cause questions are complete. Now I will ask a few short questions to clarify the likely root causes.',
+                  timestamp: new Date(),
+                },
+              ]);
+              return;
+            }
+          }
           void runRcaAfterHitl(nextAnswers);
         }
       } catch (error) {

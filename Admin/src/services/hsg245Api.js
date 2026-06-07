@@ -311,6 +311,7 @@ export async function startPipelineJob(incidentId, data, options = {}) {
         safety_procedures: data.safety_procedures || '',
         injuries: data.injuries || '',
         why_probe_answers: data.why_probe_answers || [],
+        root_cause_probe_answers: data.root_cause_probe_answers || [],
         output_language: data.output_language || '',
         analysis_model_preset: data.analysis_model_preset || '',
       },
