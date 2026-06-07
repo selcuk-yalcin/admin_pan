@@ -411,11 +411,17 @@ export default async function handler(req, res) {
           const asJson = JSON.parse(error)
           if (typeof asJson?.detail === 'string' && asJson.detail.trim()) {
             parsedDetail = asJson.detail
+          } else if (typeof asJson?.details === 'string' && asJson.details.trim()) {
+            parsedDetail = asJson.details
           } else if (typeof asJson?.error === 'string' && asJson.error.trim()) {
             parsedDetail = asJson.error
           }
         } catch {
           // keep raw text
+        }
+        if (/^upstream error$/i.test(String(parsedDetail || '').trim())) {
+          parsedDetail =
+            'Backend zaman aşımı veya geçici hata (upstream). Birkaç saniye sonra tekrar deneyin.'
         }
         console.error('[ERROR] Backend error:', parsedDetail)
         return res.status(response.status).json({
