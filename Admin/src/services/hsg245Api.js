@@ -255,42 +255,69 @@ export async function addAssessmentFromForm(incidentId, data, options = {}) {
  */
 const HITL_QUESTIONS_TIMEOUT_MS = 120_000;
 
+/** Backend "hazırlanıyor" (retriable) cevabı için istemci tarafı bekleme. */
+const HITL_RETRY_DELAY_MS = 4_000;
+
 export async function fetchHitlQuestions(incidentId, body, options = {}) {
   const timeoutMs = options.timeoutMs ?? HITL_QUESTIONS_TIMEOUT_MS;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
-      signal: controller.signal,
-      body: JSON.stringify({
-        action: 'hitl_questions',
-        data: {
-          incident_id: incidentId,
-          how_happened: body.how_happened || '',
-          root_cause_initial: body.root_cause_initial || '',
-          answered_ids: body.answered_ids || [],
-          immediate_causes: body.immediate_causes ?? null,
-          immediate_code: body.immediate_code || '',
-          why_level: body.why_level ?? 0,
-          current_why_question: body.current_why_question || '',
-          previous_why_answer: body.previous_why_answer || '',
-          mode: body.mode || 'global',
-          batch_size: body.batch_size ?? 1,
-          known_fields: body.known_fields || [],
-          output_language: body.output_language || '',
-        },
-      }),
-    });
-    return handleResponse(response);
-  } catch (error) {
-    if (error?.name === 'AbortError') {
+  const deadline = Date.now() + timeoutMs;
+
+  const requestBody = JSON.stringify({
+    action: 'hitl_questions',
+    data: {
+      incident_id: incidentId,
+      how_happened: body.how_happened || '',
+      root_cause_initial: body.root_cause_initial || '',
+      answered_ids: body.answered_ids || [],
+      immediate_causes: body.immediate_causes ?? null,
+      immediate_code: body.immediate_code || '',
+      why_level: body.why_level ?? 0,
+      current_why_question: body.current_why_question || '',
+      previous_why_answer: body.previous_why_answer || '',
+      mode: body.mode || 'global',
+      batch_size: body.batch_size ?? 1,
+      known_fields: body.known_fields || [],
+      output_language: body.output_language || '',
+    },
+  });
+
+  // Backend soru üretimini bir süre bütçesiyle yapar; aşılırsa { retriable: true }
+  // döner (gateway 504 yerine). Bu durumda kısa bekleyip tekrar dener; arka plan
+  // üretimi tamamlanınca sıcak cache'ten anında dönülür.
+  for (;;) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
       throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), remaining);
+    let result;
+    try {
+      const response = await fetch(`${API_GATEWAY_URL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
+        signal: controller.signal,
+        body: requestBody,
+      });
+      result = await handleResponse(response);
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (result && result.success === false && result.retriable) {
+      const wait = Math.min(HITL_RETRY_DELAY_MS, Math.max(0, deadline - Date.now()));
+      if (wait <= 0) {
+        throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, wait));
+      continue;
+    }
+    return result;
   }
 }
 
