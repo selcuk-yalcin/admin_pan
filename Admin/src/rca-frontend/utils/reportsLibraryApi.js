@@ -122,9 +122,21 @@ export async function fetchIncidentArtifactHtml(incidentId, artifactType = 'repo
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(payload?.details || payload?.error || `HTTP ${response.status}`);
+    const raw = payload?.detail || payload?.details || payload?.error || `HTTP ${response.status}`;
+    throw new Error(localizeReportFetchError(raw));
   }
   return response.text();
+}
+
+function localizeReportFetchError(message) {
+  const raw = String(message || '').trim();
+  if (/part\s*3.*not completed/i.test(raw)) {
+    return (
+      'Kök neden analizi henüz kayda yazılmadı. Birkaç saniye bekleyip tekrar deneyin ' +
+      'veya «Rapor ve karar ağacını buluta kaydet» ile önce HTML senkronize edin.'
+    );
+  }
+  return raw;
 }
 
 function downloadHtmlBlob(html, filename) {
@@ -220,7 +232,8 @@ export async function downloadDocxForEntry(entry) {
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(payload?.details || payload?.error || `HTTP ${response.status}`);
+    const raw = payload?.detail || payload?.details || payload?.error || `HTTP ${response.status}`;
+    throw new Error(localizeReportFetchError(raw));
   }
 
   const blob = await response.blob();
