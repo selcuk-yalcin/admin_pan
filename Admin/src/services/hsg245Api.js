@@ -68,6 +68,10 @@ async function handleResponse(response) {
         message = payload.error;
       }
     }
+    if (response.status === 504) {
+      message =
+        'Sunucu zaman aşımı (504). Etkileşimli analiz için formu tekrar gönderin; sorun sürerse birkaç saniye bekleyip yeniden deneyin.';
+    }
     throw new Error(message || 'Unknown error');
   }
   return await response.json();
@@ -114,8 +118,9 @@ export async function checkHealth() {
  * @returns {Promise<Object>} - { success, data: { incident_id, part1 } }
  */
 export async function createIncident(data, options = {}) {
-  console.log('[INFO] Creating incident...', data);
-  
+  const action = options.fast ? 'create_incident_fast' : 'create_incident';
+  console.log(`[INFO] Creating incident (${action})...`, data);
+
   try {
     const response = await fetch(`${API_GATEWAY_URL}`, {
       method: 'POST',
@@ -125,21 +130,21 @@ export async function createIncident(data, options = {}) {
       },
       signal: options.signal,
       body: JSON.stringify({
-        action: 'create_incident',
+        action,
         data: {
           reported_by: data.reported_by,
           description: data.description,
           injury_description: data.injury_description || '',
           forwarded_to: data.forwarded_to || '',
           event_category: data.event_category || '',
-          date_time: data.date_time || new Date().toISOString()
-        }
-      })
+          date_time: data.date_time || new Date().toISOString(),
+        },
+      }),
     });
-    
+
     const result = await handleResponse(response);
     console.log('[SUCCESS] Incident created:', result.data.incident_id);
-    
+
     return result;
   } catch (error) {
     console.error('[ERROR] Failed to create incident:', error.message);

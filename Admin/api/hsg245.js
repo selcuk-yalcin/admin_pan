@@ -112,6 +112,18 @@ export default async function handler(req, res) {
           }
           break
 
+        case 'create_incident_fast':
+          endpoint = '/api/v1/incidents/create/fast'
+          payload = {
+            reported_by: data.reported_by,
+            date_time: data.date_time,
+            event_category: data.event_category,
+            description: data.description,
+            injury_description: data.injury_description || '',
+            forwarded_to: data.forwarded_to || ''
+          }
+          break
+
         case 'add_assessment':
           endpoint = `/api/v1/incidents/${data.incident_id}/assessment`
           payload = {

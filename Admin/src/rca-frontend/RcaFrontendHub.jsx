@@ -206,7 +206,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         forwarded_to: formData.department || "",
         event_category: formData.eventCategory || "incident",
         date_time: dateTime || new Date().toISOString(),
-      }, { signal: controller.signal });
+      }, { signal: controller.signal, fast: mode === "interactive" });
 
       const incidentId = part1Result?.data?.incident_id;
       if (!incidentId) {
