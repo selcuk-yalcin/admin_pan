@@ -1,3 +1,8 @@
+/** Vercel serverless: allow up to 60s for backend cold-start + proxy. */
+export const config = {
+  maxDuration: 60,
+}
+
 /**
  * Vercel Serverless Function for HSG245 Investigation
  * 
@@ -121,6 +126,21 @@ export default async function handler(req, res) {
             description: data.description,
             injury_description: data.injury_description || '',
             forwarded_to: data.forwarded_to || ''
+          }
+          break
+
+        case 'bootstrap_interactive':
+          endpoint = '/api/v1/incidents/bootstrap/interactive'
+          payload = {
+            reported_by: data.reported_by,
+            date_time: data.date_time,
+            event_category: data.event_category,
+            description: data.description,
+            injury_description: data.injury_description || '',
+            forwarded_to: data.forwarded_to || '',
+            event_type: data.event_type || '',
+            actual_harm: data.actual_harm || '',
+            riddor_reportable: data.riddor_reportable || '',
           }
           break
 

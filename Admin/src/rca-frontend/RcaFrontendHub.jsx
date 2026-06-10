@@ -14,8 +14,9 @@ import {
 } from "./utils/draftReportsStorage";
 import {
   createIncident,
+  bootstrapInteractiveSession,
+  checkHealth,
   addAssessment,
-  addAssessmentFromForm,
   investigateIncident,
   generateActionPlan,
   generatePDFReport,
@@ -98,6 +99,12 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       cancelled = true;
     };
   }, [activeTab, isSubmittingForm]);
+
+  // Railway cold-start: form sekmesi açılınca backend'i uyar (504 riskini azaltır).
+  useEffect(() => {
+    if (activeTab !== "form") return;
+    checkHealth().catch(() => {});
+  }, [activeTab]);
 
   const translate = (key) => getTranslation(selectedLanguage, key);
   const subtitleText = translate("subtitle").replace(/^HSG245 v2\.0\s*-\s*/i, "");
@@ -183,7 +190,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setHitlSeed(null);
     setFormSubmitInfo(
       mode === "interactive"
-        ? "Kayit ve degerlendirme (HITL oncesi)..."
+        ? "Kayit hazirlaniyor (sunucu uyaniyorsa birkaç saniye surebilir)..."
         : "Ajan pipeline ve PDF rapor baslatiliyor...",
     );
     setCreatedIncidentId("");
@@ -191,6 +198,44 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     try {
       const description = buildHowHappenedText(formData, selectedLanguage);
       const dateTime = `${formData.incidentDate || ""}T${formData.incidentTime || ""}`.replace(/T$/, "");
+
+      let incidentId = "";
+
+      if (mode === "interactive") {
+        const bootstrapResult = await bootstrapInteractiveSession({
+          reported_by: formData.reportedBy || "Unknown reporter",
+          description,
+          injury_description: [
+            formData.injuryType,
+            formData.bodyPart,
+            formData.medicalTreatment,
+            formData.propertyDamage,
+          ]
+            .filter(Boolean)
+            .join(" | "),
+          forwarded_to: formData.department || "",
+          event_category: formData.eventCategory || "incident",
+          date_time: dateTime || new Date().toISOString(),
+          event_type: mapEventCategoryToEventType(formData.eventCategory),
+          actual_harm: mapInjurySeverityToActualHarm(formData.injurySeverity),
+          riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
+        }, { signal: controller.signal });
+
+        incidentId = bootstrapResult?.data?.incident_id;
+        if (!incidentId) {
+          throw new Error("Incident ID donmedi.");
+        }
+        setCreatedIncidentId(incidentId);
+        setFormSubmitInfo(
+          `Hazir: ${incidentId}. Etkilesimli analiz sekmesine geciliyor...`,
+        );
+        setChatPipelineStatus("");
+        applyHitlSeed({ incidentId, formData });
+        setFormSubmitError("");
+        setActiveTab("chat");
+        setSearchParams({ tab: "chat" }, { replace: true });
+        return;
+      }
 
       const part1Result = await createIncident({
         reported_by: formData.reportedBy || "Unknown reporter",
@@ -206,34 +251,13 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         forwarded_to: formData.department || "",
         event_category: formData.eventCategory || "incident",
         date_time: dateTime || new Date().toISOString(),
-      }, { signal: controller.signal, fast: mode === "interactive" });
+      }, { signal: controller.signal });
 
-      const incidentId = part1Result?.data?.incident_id;
+      incidentId = part1Result?.data?.incident_id;
       if (!incidentId) {
         throw new Error("Incident ID donmedi.");
       }
       setCreatedIncidentId(incidentId);
-
-      if (mode === "interactive") {
-        setFormSubmitInfo(
-          `Hazir: ${incidentId}. Etkilesimli analiz sekmesine geciliyor...`,
-        );
-        await addAssessmentFromForm(
-          incidentId,
-          {
-            event_type: mapEventCategoryToEventType(formData.eventCategory),
-            actual_harm: mapInjurySeverityToActualHarm(formData.injurySeverity),
-            riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
-          },
-          { signal: controller.signal },
-        );
-        setChatPipelineStatus("");
-        applyHitlSeed({ incidentId, formData });
-        setFormSubmitError("");
-        setActiveTab("chat");
-        setSearchParams({ tab: "chat" }, { replace: true });
-        return;
-      }
 
       setFormSubmitInfo(`Incident olusturuldu (${incidentId}). Assessment calisiyor...`);
 

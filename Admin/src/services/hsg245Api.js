@@ -7,6 +7,9 @@ import { getUserContextHeaders as buildUserContextHeaders } from '../rca-fronten
 
 // IMPORTANT: Use Vercel serverless gateway endpoint.
 const API_GATEWAY_URL = '/api/hsg245';
+const BOOTSTRAP_RETRY_STATUSES = new Set([502, 503, 504]);
+const BOOTSTRAP_RETRY_DELAY_MS = 3500;
+const BOOTSTRAP_MAX_ATTEMPTS = 4;
 const BACKEND_HTTP_BASE = (
   import.meta.env.VITE_BACKEND_API_URL ||
   import.meta.env.VITE_HSG245_BACKEND_URL ||
@@ -70,11 +73,65 @@ async function handleResponse(response) {
     }
     if (response.status === 504) {
       message =
-        'Sunucu zaman aşımı (504). Etkileşimli analiz için formu tekrar gönderin; sorun sürerse birkaç saniye bekleyip yeniden deneyin.';
+        'Sunucu uyanıyor olabilir (504). 10-15 saniye bekleyip tekrar deneyin; sorun sürerse sayfayı yenileyin.';
+    } else if (response.status === 502 || response.status === 503) {
+      message =
+        'Backend geçici olarak ulaşılamıyor. Birkaç saniye bekleyip tekrar deneyin.';
     }
     throw new Error(message || 'Unknown error');
   }
   return await response.json();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Gateway çağrısı — 502/503/504 için otomatik yeniden dene (Railway cold-start).
+ */
+async function fetchGatewayWithRetry(body, options = {}) {
+  const {
+    signal,
+    maxAttempts = BOOTSTRAP_MAX_ATTEMPTS,
+    retryDelayMs = BOOTSTRAP_RETRY_DELAY_MS,
+  } = options;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    try {
+      const response = await fetch(`${API_GATEWAY_URL}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getTenantContextHeaders(),
+        },
+        signal,
+        body: JSON.stringify(body),
+      });
+      if (
+        !response.ok
+        && BOOTSTRAP_RETRY_STATUSES.has(response.status)
+        && attempt < maxAttempts - 1
+      ) {
+        await sleep(retryDelayMs);
+        continue;
+      }
+      return response;
+    } catch (err) {
+      if (err?.name === 'AbortError') throw err;
+      lastError = err;
+      if (attempt < maxAttempts - 1) {
+        await sleep(retryDelayMs);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError || new Error('Gateway request failed after retries');
 }
 
 /**
@@ -121,26 +178,30 @@ export async function createIncident(data, options = {}) {
   const action = options.fast ? 'create_incident_fast' : 'create_incident';
   console.log(`[INFO] Creating incident (${action})...`, data);
 
+  const body = {
+    action,
+    data: {
+      reported_by: data.reported_by,
+      description: data.description,
+      injury_description: data.injury_description || '',
+      forwarded_to: data.forwarded_to || '',
+      event_category: data.event_category || '',
+      date_time: data.date_time || new Date().toISOString(),
+    },
+  };
+
   try {
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getTenantContextHeaders(),
-      },
-      signal: options.signal,
-      body: JSON.stringify({
-        action,
-        data: {
-          reported_by: data.reported_by,
-          description: data.description,
-          injury_description: data.injury_description || '',
-          forwarded_to: data.forwarded_to || '',
-          event_category: data.event_category || '',
-          date_time: data.date_time || new Date().toISOString(),
-        },
-      }),
-    });
+    const response = options.fast
+      ? await fetchGatewayWithRetry(body, { signal: options.signal })
+      : await fetch(`${API_GATEWAY_URL}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getTenantContextHeaders(),
+          },
+          signal: options.signal,
+          body: JSON.stringify(body),
+        });
 
     const result = await handleResponse(response);
     console.log('[SUCCESS] Incident created:', result.data.incident_id);
@@ -200,29 +261,52 @@ export async function addAssessment(incidentId, data, options = {}) {
 }
 
 /**
+ * Tek çağrıda Part 1 + Part 2 (LLM yok). Etkileşimli HITL form gönderimi için tercih edilir.
+ */
+export async function bootstrapInteractiveSession(data, options = {}) {
+  console.log('[INFO] Bootstrapping interactive session (fast)...');
+
+  try {
+    const response = await fetchGatewayWithRetry({
+      action: 'bootstrap_interactive',
+      data: {
+        reported_by: data.reported_by,
+        description: data.description,
+        injury_description: data.injury_description || '',
+        forwarded_to: data.forwarded_to || '',
+        event_category: data.event_category || '',
+        date_time: data.date_time || new Date().toISOString(),
+        event_type: data.event_type || '',
+        actual_harm: data.actual_harm || '',
+        riddor_reportable: data.riddor_reportable || '',
+      },
+    }, { signal: options.signal });
+
+    const result = await handleResponse(response);
+    console.log('[SUCCESS] Interactive session bootstrapped:', result.data?.incident_id);
+    return result;
+  } catch (error) {
+    console.error('[ERROR] Failed to bootstrap interactive session:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Part 2 from form fields only (no LLM). Fast path for interactive HITL.
  */
 export async function addAssessmentFromForm(incidentId, data, options = {}) {
   console.log(`[INFO] Form assessment (fast) for ${incidentId}...`);
 
   try {
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getTenantContextHeaders(),
+    const response = await fetchGatewayWithRetry({
+      action: 'add_assessment_form',
+      data: {
+        incident_id: incidentId,
+        event_type: data.event_type,
+        actual_harm: data.actual_harm,
+        riddor_reportable: data.riddor_reportable,
       },
-      signal: options.signal,
-      body: JSON.stringify({
-        action: 'add_assessment_form',
-        data: {
-          incident_id: incidentId,
-          event_type: data.event_type,
-          actual_harm: data.actual_harm,
-          riddor_reportable: data.riddor_reportable,
-        },
-      }),
-    });
+    }, { signal: options.signal });
 
     const result = await handleResponse(response);
     console.log('[SUCCESS] Form assessment saved');
@@ -1034,6 +1118,7 @@ export function getApiUrl() {
 export default {
   checkHealth,
   createIncident,
+  bootstrapInteractiveSession,
   addAssessment,
   addAssessmentFromForm,
   fetchHitlQuestions,
