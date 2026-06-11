@@ -17,9 +17,22 @@ import {
   checkHealth,
   prewarmBackend,
   runPipelineJobWithPolling,
+  resumePipelineJobForIncident,
   generatePDFReport,
 } from "../services/hsg245Api";
+import ReportProgressBanner from "./components/ReportProgressBanner";
 import { buildHowHappenedText, buildInvestigationPayload } from "./utils/investigationPayload";
+import { createSmoothPipelineProgress } from "./utils/pipelineProgressSmooth";
+import {
+  clearPipelineJob,
+  loadPipelineJob,
+  savePipelineJob,
+} from "./utils/pipelineJobStorage";
+import {
+  getReportPhaseLabel,
+  getStageLabel,
+  mapPipelineToOverallPct,
+} from "./utils/reportProgressLabels";
 import { fetchUsageSummary, formatToken } from "../services/usageApi";
 import "./RcaFrontendHub.css";
 import "./rcaEmbedLayout.css";
@@ -28,6 +41,21 @@ const TAB_KEYS = ["form", "chat", "reports", "guide"];
 const LIBRARY_TABS = new Set(["reports", "guide"]);
 /** Test aşamasında etkileşimli analiz kapalı; yalnızca doğrudan rapor oluşturma. */
 const INTERACTIVE_ANALYSIS_ENABLED = false;
+
+function isResumablePipelineError(error) {
+  if (error?.name === "AbortError") return false;
+  const msg = String(error?.message || "").toLowerCase();
+  return (
+    msg.includes("504")
+    || msg.includes("502")
+    || msg.includes("503")
+    || msg.includes("timeout")
+    || msg.includes("zaman aşım")
+    || msg.includes("fetch failed")
+    || msg.includes("network")
+    || msg.includes("failed to fetch")
+  );
+}
 
 /**
  * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports|guide).
@@ -42,6 +70,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [formSubmitError, setFormSubmitError] = useState("");
   const [formSubmitInfo, setFormSubmitInfo] = useState("");
+  const [reportProgress, setReportProgress] = useState(null);
+  const smoothProgressRef = useRef(null);
   const [createdIncidentId, setCreatedIncidentId] = useState("");
   const [hitlSeed, setHitlSeed] = useState(null);
   const [activeSubmitMode, setActiveSubmitMode] = useState(null);
@@ -52,8 +82,11 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [flowComplete, setFlowComplete] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
   const submitAbortRef = useRef(null);
+  const pendingPipelineJobRef = useRef(null);
+  const lastReportFormRef = useRef(null);
   /** React state gecikmesi olmadan HITL oturumu (setTab ?tab=chat senkron kontrolü) */
   const hitlSeedRef = useRef(null);
+  const [pipelineResumeOffer, setPipelineResumeOffer] = useState(null);
 
   const tokensBlocked =
     tokenSummary?.warn_level === "blocked" ||
@@ -100,7 +133,18 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     };
   }, [activeTab, isSubmittingForm]);
 
-  // Railway cold-start: form sekmesi açılınca backend'i uyar (504 riskini azaltır).
+  useEffect(() => {
+    const saved = loadPipelineJob();
+    if (saved?.jobId && saved?.incidentId) {
+      setPipelineResumeOffer(saved);
+      setCreatedIncidentId(saved.incidentId);
+      setFormSubmitError(
+        selectedLanguage === "tr"
+          ? "Önceki analiz yarım kalmış olabilir. «Devam Et» ile kaldığınız yerden sürdürebilirsiniz."
+          : "A previous analysis may still be running. Use «Continue» to resume.",
+      );
+    }
+  }, [selectedLanguage]);
   useEffect(() => {
     if (activeTab !== "form") return;
     checkHealth().catch(() => {});
@@ -124,6 +168,55 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setHitlSeed(null);
     setChatPipelineStatus("");
   }, []);
+
+  const clearReportProgress = useCallback(() => {
+    smoothProgressRef.current?.stop();
+    smoothProgressRef.current = null;
+    setReportProgress(null);
+  }, []);
+
+  const setReportProgressStep = useCallback((pct, label, stage = "") => {
+    const clamped = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+    setReportProgress({ pct: clamped, label, stage });
+    setFormSubmitInfo(label);
+  }, []);
+
+  const attachPipelineProgress = useCallback((controller) => {
+    smoothProgressRef.current = createSmoothPipelineProgress({
+      onTick: (displayPct, stage) => {
+        const overall = mapPipelineToOverallPct(displayPct);
+        setReportProgressStep(
+          overall,
+          getStageLabel(selectedLanguage, stage, overall),
+          stage,
+        );
+      },
+    });
+    return {
+      onUpdate: (job) => {
+        smoothProgressRef.current?.update(job);
+      },
+      onJobStarted: (jobId, incidentId) => {
+        pendingPipelineJobRef.current = { jobId, incidentId };
+        savePipelineJob({ jobId, incidentId });
+        setPipelineResumeOffer(null);
+      },
+      signal: controller.signal,
+    };
+  }, [selectedLanguage, setReportProgressStep]);
+
+  const finalizeReportAfterPipeline = useCallback(async (incidentId, controller) => {
+    setReportProgressStep(90, getReportPhaseLabel(selectedLanguage, "report_html", 90), "report_html");
+    await generatePDFReport(incidentId, { signal: controller.signal });
+    setReportProgressStep(
+      100,
+      getReportPhaseLabel(selectedLanguage, "report_done", 100),
+      "completed",
+    );
+    pendingPipelineJobRef.current = null;
+    clearPipelineJob();
+    setPipelineResumeOffer(null);
+  }, [selectedLanguage, setReportProgressStep]);
 
   const setTab = (tab) => {
     if (!TAB_KEYS.includes(tab)) return;
@@ -193,6 +286,15 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         ? "Kayit hazirlaniyor (sunucu uyaniyorsa birkaç saniye surebilir)..."
         : "Ajan pipeline ve PDF rapor baslatiliyor...",
     );
+    if (mode === "report") {
+      clearReportProgress();
+      setReportProgressStep(1, getReportPhaseLabel(selectedLanguage, "prewarm", 1), "prewarm");
+      lastReportFormRef.current = formData;
+      pendingPipelineJobRef.current = null;
+      setPipelineResumeOffer(null);
+    } else {
+      clearReportProgress();
+    }
     setCreatedIncidentId("");
 
     try {
@@ -251,16 +353,22 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         return;
       }
 
-      setFormSubmitInfo("Sunucu hazirlaniyor (ilk acilista 15-30 sn surebilir)...");
+      setReportProgressStep(3, getReportPhaseLabel(selectedLanguage, "prewarm", 3), "prewarm");
       await prewarmBackend({
         signal: controller.signal,
         onAttempt: (attempt, total) => {
-          setFormSubmitInfo(
-            `Sunucu baglantisi kontrol ediliyor (${attempt}/${total})...`,
+          const pct = Math.min(10, 3 + Math.round((attempt / Math.max(total, 1)) * 7));
+          setReportProgressStep(
+            pct,
+            selectedLanguage === "tr"
+              ? `Sunucu bağlantısı kontrol ediliyor (${attempt}/${total}) (${pct}%)`
+              : `Checking server connection (${attempt}/${total}) (${pct}%)`,
+            "prewarm",
           );
         },
       });
 
+      setReportProgressStep(11, getReportPhaseLabel(selectedLanguage, "bootstrap", 11), "bootstrap");
       const bootstrapResult = await bootstrapInteractiveSession({
         reported_by: formData.reportedBy || "Unknown reporter",
         description,
@@ -286,41 +394,103 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       }
       setCreatedIncidentId(incidentId);
 
-      setFormSubmitInfo(`Kök neden analizi baslatiliyor (${incidentId})...`);
+      setReportProgressStep(
+        12,
+        getReportPhaseLabel(selectedLanguage, "pipeline_start", 12),
+        "queued",
+      );
 
+      const pipelineOpts = attachPipelineProgress(controller);
       const pipelineResult = await runPipelineJobWithPolling(
         incidentId,
         buildInvestigationPayload(formData, "", selectedLanguage),
-        {
-          signal: controller.signal,
-          onUpdate: (job) => {
-            const stage = job?.stage || "";
-            const message = job?.message || "";
-            if (message) {
-              setFormSubmitInfo(message);
-            } else if (stage) {
-              setFormSubmitInfo(`Asama: ${stage} (${job?.progress ?? 0}%)`);
-            }
-          },
-        },
+        pipelineOpts,
       );
+
+      smoothProgressRef.current?.finish(true);
 
       if (!pipelineResult?.data && !pipelineResult?.job?.result) {
         throw new Error("Pipeline tamamlandi ancak sonuc donmedi.");
       }
 
-      setFormSubmitInfo("HTML rapor olusturuluyor ve indiriliyor...");
-      await generatePDFReport(incidentId, { signal: controller.signal });
-
-      setFormSubmitInfo(
-        `Tamamlandi. Incident ID: ${incidentId}. Rapor indirildi.`,
-      );
+      await finalizeReportAfterPipeline(incidentId, controller);
     } catch (error) {
+      const pendingJob = pendingPipelineJobRef.current;
       if (error?.name === "AbortError") {
-        setFormSubmitInfo("Analiz islemi kullanici tarafindan iptal edildi.");
+        clearReportProgress();
+        const cancelled = getReportPhaseLabel(selectedLanguage, "cancelled", 0);
+        setFormSubmitInfo(cancelled);
         setFormSubmitError("");
+      } else if (pendingJob?.jobId && isResumablePipelineError(error)) {
+        setPipelineResumeOffer(pendingJob);
+        setFormSubmitError(
+          selectedLanguage === "tr"
+            ? `${error?.message || "Bağlantı kesildi."} Analiz arka planda devam ediyor olabilir — «Devam Et» ile sürdürün.`
+            : `${error?.message || "Connection lost."} Analysis may still be running in the background — use «Continue».`,
+        );
       } else {
+        clearReportProgress();
+        pendingPipelineJobRef.current = null;
+        clearPipelineJob();
+        setPipelineResumeOffer(null);
         setFormSubmitError(error?.message || "Form gonderimi sirasinda bilinmeyen bir hata olustu.");
+        setFormSubmitInfo("");
+      }
+    } finally {
+      submitAbortRef.current = null;
+      setIsSubmittingForm(false);
+      setActiveSubmitMode(null);
+    }
+  };
+
+  const handleResumeReport = async () => {
+    const offer = pipelineResumeOffer || pendingPipelineJobRef.current || loadPipelineJob();
+    if (!offer?.incidentId || isSubmittingForm) return;
+
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
+    setIsSubmittingForm(true);
+    setFormSubmitError("");
+    setActiveSubmitMode("report");
+    setCreatedIncidentId(offer.incidentId);
+    setReportProgressStep(
+      12,
+      selectedLanguage === "tr"
+        ? "Analiz durumu kontrol ediliyor…"
+        : "Checking analysis status…",
+      "queued",
+    );
+
+    try {
+      const pipelineOpts = attachPipelineProgress(controller);
+      const pipelineResult = await resumePipelineJobForIncident(offer.incidentId, {
+        ...pipelineOpts,
+        jobId: offer.jobId,
+      });
+
+      smoothProgressRef.current?.finish(true);
+
+      if (!pipelineResult?.data && !pipelineResult?.job?.result) {
+        throw new Error("Pipeline tamamlandi ancak sonuc donmedi.");
+      }
+
+      await finalizeReportAfterPipeline(offer.incidentId, controller);
+    } catch (error) {
+      const pendingJob = pendingPipelineJobRef.current || offer;
+      if (error?.name === "AbortError") {
+        clearReportProgress();
+        setFormSubmitInfo(getReportPhaseLabel(selectedLanguage, "cancelled", 0));
+        setFormSubmitError("");
+      } else if (pendingJob?.jobId && isResumablePipelineError(error)) {
+        setPipelineResumeOffer(pendingJob);
+        setFormSubmitError(
+          selectedLanguage === "tr"
+            ? `${error?.message || "Bağlantı kesildi."} «Devam Et» ile tekrar deneyin.`
+            : `${error?.message || "Connection lost."} Try «Continue» again.`,
+        );
+      } else {
+        clearReportProgress();
+        setFormSubmitError(error?.message || "Devam islemi basarisiz oldu.");
         setFormSubmitInfo("");
       }
     } finally {
@@ -347,6 +517,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     }
     setFlowComplete(false);
     clearHitlSession();
+    clearReportProgress();
+    pendingPipelineJobRef.current = null;
+    clearPipelineJob();
+    setPipelineResumeOffer(null);
     setFormSubmitInfo("");
     setFormSubmitError("");
     setCreatedIncidentId("");
@@ -580,40 +754,70 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
                 : ""
         }`}
       >
-        {formSubmitInfo && !LIBRARY_TABS.has(activeTab) && activeTab !== "chat" && (
-          <div className="info-banner" style={{ marginBottom: "16px" }}>
-            <div className="info-banner-icon">AI</div>
-            <div className="info-banner-content">
-              <h2>{selectedLanguage === "tr" ? "İşlem durumu" : "Processing status"}</h2>
-              <p>{formSubmitInfo}</p>
-              {isSubmittingForm && (
-                <div style={{ marginTop: "10px" }}>
-                  <button
-                    type="button"
-                    onClick={handleCancelSubmit}
-                    style={{
-                      background: "#ef4444",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {selectedLanguage === "tr" ? "Analizi İptal Et" : "Cancel analysis"}
-                  </button>
-                </div>
-              )}
+        {reportProgress && !LIBRARY_TABS.has(activeTab) && activeTab !== "chat" ? (
+          <ReportProgressBanner
+            progress={reportProgress}
+            isSubmitting={isSubmittingForm}
+            language={selectedLanguage}
+            onCancel={handleCancelSubmit}
+          />
+        ) : formSubmitInfo && !LIBRARY_TABS.has(activeTab) && activeTab !== "chat" ? (
+            <div className="info-banner" style={{ marginBottom: "16px" }}>
+              <div className="info-banner-icon">AI</div>
+              <div className="info-banner-content">
+                <h2>{selectedLanguage === "tr" ? "İşlem durumu" : "Processing status"}</h2>
+                <p>{formSubmitInfo}</p>
+                {isSubmittingForm && (
+                  <div style={{ marginTop: "10px" }}>
+                    <button
+                      type="button"
+                      onClick={handleCancelSubmit}
+                      style={{
+                        background: "#ef4444",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: "8px 12px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedLanguage === "tr" ? "Analizi İptal Et" : "Cancel analysis"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+        ) : null}
         {formSubmitError && !LIBRARY_TABS.has(activeTab) && (
           <div className="info-banner" style={{ marginBottom: "16px", borderColor: "#ef4444" }}>
             <div className="info-banner-icon">!</div>
             <div className="info-banner-content">
-              <h2>Gonderim Hatasi</h2>
+              <h2>{selectedLanguage === "tr" ? "Gönderim Hatası" : "Submission error"}</h2>
               <p>{formSubmitError}</p>
+              {pipelineResumeOffer?.incidentId && !isSubmittingForm && (
+                <div style={{ marginTop: "12px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="report-progress-resume"
+                    onClick={handleResumeReport}
+                  >
+                    {selectedLanguage === "tr" ? "Devam Et" : "Continue"}
+                  </button>
+                  <button
+                    type="button"
+                    className="report-progress-dismiss"
+                    onClick={() => {
+                      clearPipelineJob();
+                      pendingPipelineJobRef.current = null;
+                      setPipelineResumeOffer(null);
+                      setFormSubmitError("");
+                    }}
+                  >
+                    {selectedLanguage === "tr" ? "Yeni Analiz Başlat" : "Start new analysis"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

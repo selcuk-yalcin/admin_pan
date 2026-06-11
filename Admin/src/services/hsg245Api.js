@@ -636,11 +636,35 @@ async function runPipelineJobWithWebSocket(jobId, options = {}) {
   });
 }
 
+export async function resumePipelineJob(jobId, options = {}) {
+  if (!jobId) {
+    throw new Error('Devam edilecek analiz bulunamadi (job_id yok).');
+  }
+  return pollPipelineJobUntilDone(jobId, options);
+}
+
+/** incident kaydindaki last_pipeline_job_id ile polling devam ettirir. */
+export async function resumePipelineJobForIncident(incidentId, options = {}) {
+  const explicitJobId = options.jobId || options.existingJobId;
+  if (explicitJobId) {
+    return resumePipelineJob(explicitJobId, options);
+  }
+  const incidentResp = await getIncident(incidentId, options);
+  const jobId = incidentResp?.data?.last_pipeline_job_id || incidentResp?.data?.lastPipelineJobId;
+  if (!jobId) {
+    throw new Error('Bu olay icin devam edilecek analiz bulunamadi.');
+  }
+  return resumePipelineJob(jobId, options);
+}
+
 export async function runPipelineJobWithPolling(incidentId, data, options = {}) {
   const started = await startPipelineJob(incidentId, data, options);
   const jobId = started?.data?.job_id;
   if (!jobId) {
     throw new Error('Pipeline baslatildi ama job_id donmedi.');
+  }
+  if (typeof options.onJobStarted === 'function') {
+    options.onJobStarted(jobId, incidentId);
   }
 
   const preferWebSocket = options.preferWebSocket !== false;
@@ -751,7 +775,7 @@ export async function generateActionPlan(incidentId, options = {}) {
  * 
  * @returns {Promise<Object>} - Complete incident data
  */
-export async function getIncident(incidentId) {
+export async function getIncident(incidentId, options = {}) {
   console.log(`📖 Fetching incident ${incidentId}...`);
   
   try {
@@ -761,6 +785,7 @@ export async function getIncident(incidentId) {
         'Content-Type': 'application/json',
         ...getTenantContextHeaders(),
       },
+      signal: options.signal,
       body: JSON.stringify({
         action: 'get_incident',
         data: { incident_id: incidentId }
@@ -1149,6 +1174,7 @@ export default {
   startPipelineJob,
   getPipelineJobStatus,
   runPipelineJobWithPolling,
+  resumePipelineJobForIncident,
   investigateIncident,
   generateActionPlan,
   getIncident,

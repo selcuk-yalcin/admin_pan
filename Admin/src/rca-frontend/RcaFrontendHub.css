@@ -379,6 +379,115 @@
   font-weight: 500;
 }
 
+/* Report pipeline progress (Rapor Oluştur) */
+.report-progress-banner {
+  align-items: flex-start;
+}
+
+.report-progress-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.report-progress-header h2 {
+  font-size: 1.25rem;
+}
+
+.report-progress-pct {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.report-progress-label {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.report-progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  overflow: hidden;
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.rca-frontend-hub.theme-dark .report-progress-track {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.35);
+}
+
+.report-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary) 0%, #3b82f6 55%, var(--secondary) 100%);
+  transition: width 0.55s ease;
+  min-width: 2%;
+}
+
+.report-progress-fill--done {
+  background: linear-gradient(90deg, var(--success) 0%, #34d399 100%);
+}
+
+.report-progress-actions {
+  margin-top: 12px;
+}
+
+.report-progress-cancel {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.report-progress-cancel:hover {
+  background: #dc2626;
+}
+
+.report-progress-resume {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.report-progress-resume:hover {
+  filter: brightness(1.05);
+}
+
+.report-progress-dismiss {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
 .main-content {
   flex: 1;
   width: 100%;

@@ -42,6 +42,7 @@ import { openLibraryArtifact } from '../utils/reportsLibraryApi';
 import { DEFAULT_REPORT_LAYOUT } from '../../services/reportLayoutApi';
 import ReportTemplatePicker from './ReportTemplatePicker';
 import { createSmoothPipelineProgress } from '../utils/pipelineProgressSmooth';
+import { getStageLabel } from '../utils/reportProgressLabels';
 import { stripTechnicalCodes } from '../utils/displaySanitize';
 import './ChatInterface.css';
 
@@ -144,28 +145,6 @@ function getHitlConditionLabel(q, language, isTurkish) {
   const fromApi = String(q?.probe_context_label || '').trim();
   if (fromApi) return fromApi;
   return isTurkish ? 'İncelenen koşul / durum' : 'Condition under review';
-}
-
-function getStageLabel(language, stage, progress) {
-  const isTr = String(language || '').toLowerCase().startsWith('tr');
-  const pctNum = Number(progress);
-  const pct = Number.isFinite(pctNum) ? ` (${Math.max(0, Math.min(100, pctNum))}%)` : '';
-  const tr = {
-    queued: `Analiz kuyruğa alındı${pct}`,
-    investigate: `Kök neden analizi çalışıyor${pct}`,
-    actionplan: `Aksiyon planı oluşturuluyor${pct}`,
-    completed: `Analiz tamamlandı${pct}`,
-    failed: `Analiz hata ile sonlandı${pct}`,
-  };
-  const en = {
-    queued: `Analysis queued${pct}`,
-    investigate: `Root cause analysis in progress${pct}`,
-    actionplan: `Building action plan${pct}`,
-    completed: `Analysis completed${pct}`,
-    failed: `Analysis ended with an error${pct}`,
-  };
-  const map = isTr ? tr : en;
-  return map[stage] || (isTr ? `Çalışıyor${pct}` : `Running${pct}`);
 }
 
 function getFlowPhaseMessage(language, phase, liveStatus = '') {
