@@ -8,10 +8,10 @@ import { getUserContextHeaders as buildUserContextHeaders } from '../rca-fronten
 // IMPORTANT: Use Vercel serverless gateway endpoint.
 const API_GATEWAY_URL = '/api/hsg245';
 const BOOTSTRAP_RETRY_STATUSES = new Set([502, 503, 504]);
-const BOOTSTRAP_RETRY_DELAY_MS = 4500;
-const BOOTSTRAP_MAX_ATTEMPTS = 8;
-const PREWARM_MAX_ATTEMPTS = 6;
-const PREWARM_DELAY_MS = 3000;
+const BOOTSTRAP_RETRY_DELAY_MS = 5000;
+const BOOTSTRAP_MAX_ATTEMPTS = 10;
+const PREWARM_MAX_ATTEMPTS = 10;
+const PREWARM_DELAY_MS = 4000;
 const BACKEND_HTTP_BASE = (
   import.meta.env.VITE_BACKEND_API_URL ||
   import.meta.env.VITE_HSG245_BACKEND_URL ||
@@ -46,39 +46,45 @@ function resolveJobWebSocketUrl(jobId) {
   return `${wsBase}/ws/jobs/${jobId}${query}`;
 }
 
+function extractPayloadMessage(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return payload.message.trim();
+  }
+  if (typeof payload.detail === 'string' && payload.detail.trim()) {
+    return payload.detail.trim();
+  }
+  if (typeof payload.error === 'string' && payload.error.trim()) {
+    return payload.error.trim();
+  }
+  if (typeof payload.details === 'string' && payload.details.trim()) {
+    const nested = payload.details.trim();
+    if (nested.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(nested);
+        return extractPayloadMessage(parsed) || nested;
+      } catch {
+        return nested;
+      }
+    }
+    return nested;
+  }
+  return '';
+}
+
 /**
  * API çağrılarında hata yönetimi için yardımcı fonksiyon
  */
 async function handleResponse(response) {
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    let message = `HTTP ${response.status}: ${response.statusText}`;
-    if (payload) {
-      // Gateway shape: { error, details, status }
-      // Backend shape: { detail: "..." }
-      if (typeof payload.detail === 'string' && payload.detail.trim()) {
-        message = payload.detail;
-      } else if (typeof payload.details === 'string' && payload.details.trim()) {
-        try {
-          const nested = JSON.parse(payload.details);
-          if (nested?.detail) {
-            message = String(nested.detail);
-          } else {
-            message = payload.details;
-          }
-        } catch {
-          message = payload.details;
-        }
-      } else if (typeof payload.error === 'string' && payload.error.trim()) {
-        message = payload.error;
-      }
-    }
+    let message = extractPayloadMessage(payload) || `HTTP ${response.status}: ${response.statusText}`;
     if (response.status === 504) {
       message =
         'Sunucu zaman aşımı (504). Rapor oluşturma birkaç saniye sürebilir; 15-20 saniye bekleyip «Rapor Oluştur»a tekrar basın. Sorun sürerse sayfayı yenileyin.';
     } else if (response.status === 502 || response.status === 503) {
       message =
-        'Backend geçici olarak ulaşılamıyor (sunucu uyanıyor olabilir). Birkaç saniye bekleyip tekrar deneyin.';
+        'Backend geçici olarak ulaşılamıyor (Railway uyanıyor olabilir). 20-30 saniye bekleyip «Rapor Oluştur»a tekrar basın.';
     }
     throw new Error(message || 'Unknown error');
   }
@@ -187,6 +193,19 @@ export async function prewarmBackend(options = {}) {
     } catch (err) {
       if (err?.name === 'AbortError') throw err;
       lastError = err;
+      // Gateway başarısızsa doğrudan Railway health dene (VITE_BACKEND_API_URL tanımlıysa)
+      if (BACKEND_HTTP_BASE) {
+        try {
+          const direct = await fetch(`${BACKEND_HTTP_BASE.replace(/\/$/, '')}/api/v1/health`, {
+            signal,
+          });
+          if (direct.ok) {
+            return { status: 'healthy', backend: await direct.json(), via: 'direct' };
+          }
+        } catch {
+          // gateway retry döngüsü devam eder
+        }
+      }
       if (attempt < PREWARM_MAX_ATTEMPTS - 1) {
         await sleep(PREWARM_DELAY_MS);
       }

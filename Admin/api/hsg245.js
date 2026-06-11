@@ -11,8 +11,36 @@ const BACKEND_RETRY_ACTIONS = new Set([
   'generate_html',
   'job_status',
 ])
-const BACKEND_MAX_ATTEMPTS = 5
-const BACKEND_RETRY_DELAY_MS = 4000
+const BACKEND_MAX_ATTEMPTS = 8
+const BACKEND_RETRY_DELAY_MS = 5000
+const HEALTH_MAX_ATTEMPTS = 10
+const HEALTH_RETRY_DELAY_MS = 3500
+
+/** Railway / gateway hata metnini kullanıcı dostu stringe çevirir. */
+function parseBackendErrorText(raw) {
+  const text = String(raw || '').trim()
+  if (!text) return 'Backend yanıt vermedi'
+  if (text.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(text)
+      if (typeof parsed?.message === 'string' && parsed.message.trim()) {
+        return parsed.message.trim()
+      }
+      if (typeof parsed?.detail === 'string' && parsed.detail.trim()) {
+        return parsed.detail.trim()
+      }
+      if (typeof parsed?.error === 'string' && parsed.error.trim()) {
+        return parsed.error.trim()
+      }
+    } catch {
+      // keep raw
+    }
+  }
+  if (/^upstream error$/i.test(text)) {
+    return 'Backend geçici olarak yanıt vermedi (upstream).'
+  }
+  return text
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -88,7 +116,7 @@ export default async function handler(req, res) {
       process.env.BACKEND_API_URL ||
       process.env.NEXT_PUBLIC_BACKEND_API_URL ||
       process.env.VITE_BACKEND_API_URL ||
-      'https://hsercanalysisagenticai-production.up.railway.app'
+      'https://web-production-c9d02.up.railway.app'
     ).trim()
 
     console.log('[REQUEST]', req.method, req.url)
@@ -110,20 +138,49 @@ export default async function handler(req, res) {
       forwardHeaders['X-User-Email'] = String(req.headers['x-user-email'])
     }
 
-    // Handle GET request (health check)
+    // Handle GET request (health check) — Railway cold-start için retry
     if (req.method === 'GET') {
       console.log(`[HEALTH CHECK] ${BACKEND_URL}/api/v1/health`)
-      
-      const response = await fetch(`${BACKEND_URL}/api/v1/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...forwardHeaders,
-        },
-      })
+      let response = null
+      let lastHealthError = null
 
-      if (!response.ok) {
-        throw new Error(`Backend returned ${response.status}`)
+      for (let attempt = 0; attempt < HEALTH_MAX_ATTEMPTS; attempt += 1) {
+        try {
+          response = await fetch(`${BACKEND_URL}/api/v1/health`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...forwardHeaders,
+            },
+          })
+          if (
+            BACKEND_RETRY_STATUSES.has(response.status)
+            && attempt < HEALTH_MAX_ATTEMPTS - 1
+          ) {
+            console.warn(`[RETRY] health backend ${response.status}, attempt ${attempt + 1}/${HEALTH_MAX_ATTEMPTS}`)
+            await sleep(HEALTH_RETRY_DELAY_MS)
+            continue
+          }
+          break
+        } catch (err) {
+          lastHealthError = err
+          if (attempt < HEALTH_MAX_ATTEMPTS - 1) {
+            console.warn(`[RETRY] health fetch failed, attempt ${attempt + 1}/${HEALTH_MAX_ATTEMPTS}:`, err?.message || err)
+            await sleep(HEALTH_RETRY_DELAY_MS)
+            continue
+          }
+          throw err
+        }
+      }
+
+      if (!response?.ok) {
+        const errorText = response ? await response.text().catch(() => '') : ''
+        const detail = parseBackendErrorText(errorText) || lastHealthError?.message || `Backend returned ${response?.status || 'unknown'}`
+        return res.status(response?.status || 502).json({
+          error: 'Backend health check failed',
+          details: detail,
+          backend_url: BACKEND_URL,
+        })
       }
 
       const data = await response.json()
@@ -495,23 +552,7 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         const error = await response.text()
-        let parsedDetail = error
-        try {
-          const asJson = JSON.parse(error)
-          if (typeof asJson?.detail === 'string' && asJson.detail.trim()) {
-            parsedDetail = asJson.detail
-          } else if (typeof asJson?.details === 'string' && asJson.details.trim()) {
-            parsedDetail = asJson.details
-          } else if (typeof asJson?.error === 'string' && asJson.error.trim()) {
-            parsedDetail = asJson.error
-          }
-        } catch {
-          // keep raw text
-        }
-        if (/^upstream error$/i.test(String(parsedDetail || '').trim())) {
-          parsedDetail =
-            'Backend zaman aşımı veya geçici hata (upstream). Birkaç saniye sonra tekrar deneyin.'
-        }
+        const parsedDetail = parseBackendErrorText(error)
         console.error('[ERROR] Backend error:', parsedDetail)
         return res.status(response.status).json({
           error: 'Backend API error',
