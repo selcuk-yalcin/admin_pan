@@ -20,6 +20,12 @@ const DIRECT_ACTIONS = new Set([
   'get_incident',
   'generate_html',
   'hitl_questions',
+  'library_list',
+  'library_upsert',
+  'library_finalize',
+  'library_save_html',
+  'library_delete',
+  'library_artifact',
 ]);
 
 export function canUseDirectBackend(action) {
@@ -101,6 +107,59 @@ function buildDirectRequest(action, data = {}) {
           output_language: data.output_language || '',
         },
       };
+    case 'library_list': {
+      const kindQ = data.kind ? `?kind=${encodeURIComponent(data.kind)}` : '';
+      return { method: 'GET', path: `/api/v1/library/items${kindQ}` };
+    }
+    case 'library_upsert':
+      return {
+        method: 'POST',
+        path: '/api/v1/library/items',
+        body: {
+          kind: data.kind || 'draft',
+          snapshot: data.snapshot || {},
+          title_hint: data.title_hint || '',
+          incident_id: data.incident_id || '',
+          report_ready: !!data.report_ready,
+          analysis_model_preset: data.analysis_model_preset || '',
+          item_id: data.item_id || '',
+        },
+      };
+    case 'library_finalize':
+      return {
+        method: 'POST',
+        path: '/api/v1/library/items/finalize',
+        body: {
+          incident_id: data.incident_id,
+          snapshot: data.snapshot || {},
+          title_hint: data.title_hint || '',
+          analysis_model_preset: data.analysis_model_preset || '',
+          report_layout: data.report_layout || undefined,
+        },
+      };
+    case 'library_save_html':
+      return {
+        method: 'POST',
+        path: '/api/v1/library/items/save-html',
+        body: {
+          incident_id: data.incident_id,
+          snapshot: data.snapshot || {},
+          title_hint: data.title_hint || '',
+          analysis_model_preset: data.analysis_model_preset || '',
+          report_html: data.report_html || '',
+          decision_tree_html: data.decision_tree_html || '',
+        },
+      };
+    case 'library_delete':
+      return {
+        method: 'DELETE',
+        path: `/api/v1/library/items/${encodeURIComponent(data.item_id)}`,
+      };
+    case 'library_artifact':
+      return {
+        method: 'GET',
+        path: `/api/v1/library/items/${encodeURIComponent(data.item_id)}/artifact/${encodeURIComponent(data.artifact_type || 'report')}`,
+      };
     default:
       return null;
   }
@@ -140,7 +199,9 @@ export async function fetchBackendDirect(action, data, options = {}) {
   const timeoutMs = options.timeoutMs ?? (
     action === 'generate_html' ? 90000
       : action === 'hitl_questions' ? 55000
-        : 25000
+        : action === 'library_save_html' ? 120000
+          : action === 'library_finalize' ? 120000
+            : 25000
   );
   const headers = {
     'Content-Type': 'application/json',

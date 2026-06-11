@@ -1,7 +1,12 @@
 /**
- * Server-side saved reports library (MongoDB via Railway API + Vercel gateway).
+ * Server-side saved reports library (MongoDB via Railway API).
+ * Önce doğrudan Railway; olmazsa Vercel gateway.
  */
 import { getUserContextHeaders } from './userContext';
+import {
+  canUseDirectBackend,
+  fetchBackendDirect,
+} from '../../services/backendDirect';
 
 const API_GATEWAY_URL = '/api/hsg245';
 
@@ -21,29 +26,31 @@ async function handleResponse(response) {
   return response.json();
 }
 
-export async function listLibraryItems(kind = null) {
+async function fetchLibraryAction(action, data = {}, options = {}) {
+  if (canUseDirectBackend(action)) {
+    try {
+      const response = await fetchBackendDirect(action, data, options);
+      return handleResponse(response);
+    } catch (err) {
+      console.warn(`[WARN] Direct library ${action} failed, using gateway:`, err?.message || err);
+    }
+  }
   const response = await fetch(API_GATEWAY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-    body: JSON.stringify({
-      action: 'library_list',
-      data: kind ? { kind } : {},
-    }),
+    body: JSON.stringify({ action, data }),
+    signal: options.signal,
   });
-  const json = await handleResponse(response);
+  return handleResponse(response);
+}
+
+export async function listLibraryItems(kind = null) {
+  const json = await fetchLibraryAction('library_list', kind ? { kind } : {});
   return json?.data?.items || [];
 }
 
 export async function upsertLibraryItem(payload) {
-  const response = await fetch(API_GATEWAY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-    body: JSON.stringify({
-      action: 'library_upsert',
-      data: payload,
-    }),
-  });
-  const json = await handleResponse(response);
+  const json = await fetchLibraryAction('library_upsert', payload);
   return json?.data;
 }
 
@@ -53,20 +60,12 @@ export async function finalizeLibraryReport({
   titleHint = '',
   analysisModelPreset = '',
 }) {
-  const response = await fetch(API_GATEWAY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-    body: JSON.stringify({
-      action: 'library_finalize',
-      data: {
-        incident_id: incidentId,
-        snapshot,
-        title_hint: titleHint,
-        analysis_model_preset: analysisModelPreset,
-      },
-    }),
-  });
-  const json = await handleResponse(response);
+  const json = await fetchLibraryAction('library_finalize', {
+    incident_id: incidentId,
+    snapshot,
+    title_hint: titleHint,
+    analysis_model_preset: analysisModelPreset,
+  }, { timeoutMs: 120000 });
   return json?.data;
 }
 
@@ -78,35 +77,19 @@ export async function saveLibraryHtml({
   reportHtml = '',
   decisionTreeHtml = '',
 }) {
-  const response = await fetch(API_GATEWAY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-    body: JSON.stringify({
-      action: 'library_save_html',
-      data: {
-        incident_id: incidentId,
-        snapshot,
-        title_hint: titleHint,
-        analysis_model_preset: analysisModelPreset,
-        report_html: reportHtml,
-        decision_tree_html: decisionTreeHtml,
-      },
-    }),
-  });
-  const json = await handleResponse(response);
+  const json = await fetchLibraryAction('library_save_html', {
+    incident_id: incidentId,
+    snapshot,
+    title_hint: titleHint,
+    analysis_model_preset: analysisModelPreset,
+    report_html: reportHtml,
+    decision_tree_html: decisionTreeHtml,
+  }, { timeoutMs: 120000 });
   return json?.data;
 }
 
 export async function deleteLibraryItem(itemId) {
-  const response = await fetch(API_GATEWAY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-    body: JSON.stringify({
-      action: 'library_delete',
-      data: { item_id: itemId },
-    }),
-  });
-  return handleResponse(response);
+  return fetchLibraryAction('library_delete', { item_id: itemId });
 }
 
 /** Fetch HTML from incident artifacts (generates on backend if needed). */
@@ -175,15 +158,10 @@ export async function fetchArtifactHtmlForEntry(entry, artifactType = 'report') 
 
   if (itemId) {
     try {
-      const response = await fetch(API_GATEWAY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getUserContextHeaders() },
-        body: JSON.stringify({
-          action: 'library_artifact',
-          data: { item_id: itemId, artifact_type: artifactType },
-        }),
+      const result = await fetchLibraryAction('library_artifact', {
+        item_id: itemId,
+        artifact_type: artifactType,
       });
-      const result = await handleResponse(response);
       const html = (result?.html || '').trim();
       if (html) return html;
     } catch {
@@ -268,7 +246,7 @@ export async function syncReportHtmlToLibrary({
       analysisModelPreset,
     });
   } catch {
-    // Vercel may timeout on finalize — generate then upload HTML in two lighter calls.
+    // finalize may timeout on large HTML — generate then upload in two lighter calls.
   }
 
   if (typeof generateHTMLReportFn === 'function') {
