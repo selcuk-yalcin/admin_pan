@@ -308,11 +308,11 @@ export async function bootstrapInteractiveSession(data, options = {}) {
     const response = await fetchGatewayWithRetry({
       action: 'bootstrap_interactive',
       data: {
-        reported_by: data.reported_by,
-        description: data.description,
+        reported_by: data.reported_by || 'Unknown reporter',
+        description: data.description || '',
         injury_description: data.injury_description || '',
         forwarded_to: data.forwarded_to || '',
-        event_category: data.event_category || '',
+        event_category: data.event_category || 'incident',
         date_time: data.date_time || new Date().toISOString(),
         event_type: data.event_type || '',
         actual_harm: data.actual_harm || '',
@@ -453,7 +453,7 @@ export async function startPipelineJob(incidentId, data, options = {}) {
     action: 'pipeline_start',
     data: {
       incident_id: incidentId,
-      how_happened: data.how_happened,
+      how_happened: data.how_happened || '',
       location: data.location || '',
       who_involved: data.who_involved || '',
       activities: data.activities || '',

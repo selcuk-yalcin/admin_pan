@@ -197,6 +197,13 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
     try {
       const description = buildHowHappenedText(formData, selectedLanguage);
+      if (!String(description || "").trim()) {
+        throw new Error(
+          selectedLanguage === "tr"
+            ? "Olay açıklaması zorunludur. «Olay Tanımı» bölümünü doldurun veya test senaryosu yükleyin."
+            : "Incident description is required. Fill in the incident description or load a test scenario.",
+        );
+      }
       const dateTime = `${formData.incidentDate || ""}T${formData.incidentTime || ""}`.replace(/T$/, "");
 
       let incidentId = "";

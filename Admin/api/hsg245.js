@@ -179,10 +179,10 @@ export default async function handler(req, res) {
         case 'bootstrap_interactive':
           endpoint = '/api/v1/incidents/bootstrap/interactive'
           payload = {
-            reported_by: data.reported_by,
-            date_time: data.date_time,
-            event_category: data.event_category,
-            description: data.description,
+            reported_by: data.reported_by || 'Unknown reporter',
+            date_time: data.date_time || new Date().toISOString(),
+            event_category: data.event_category || 'incident',
+            description: data.description || '',
             injury_description: data.injury_description || '',
             forwarded_to: data.forwarded_to || '',
             event_type: data.event_type || '',
@@ -233,7 +233,7 @@ export default async function handler(req, res) {
         case 'pipeline_start':
           endpoint = `/api/v1/incidents/${data.incident_id}/pipeline/start`
           payload = {
-            how_happened: data.how_happened,
+            how_happened: data.how_happened || '',
             location: data.location || '',
             who_involved: data.who_involved || '',
             activities: data.activities || '',
