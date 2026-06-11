@@ -425,68 +425,107 @@ export async function addAssessmentFromForm(incidentId, data, options = {}) {
  * @param {string} incidentId
  * @param {{ how_happened?: string, root_cause_initial?: string, answered_ids?: string[], immediate_causes?: object[]|null, immediate_code?: string, why_level?: number, current_why_question?: string, previous_why_answer?: string, mode?: 'global'|'why_probe', batch_size?: number, known_fields?: string[] }} body
  */
-const HITL_QUESTIONS_TIMEOUT_MS = 120_000;
+const HITL_QUESTIONS_TIMEOUT_MS = 240_000;
+const HITL_PER_ATTEMPT_TIMEOUT_MS = 55_000;
 
 /** Backend "hazırlanıyor" (retriable) cevabı için istemci tarafı bekleme. */
-const HITL_RETRY_DELAY_MS = 4_000;
+const HITL_RETRY_DELAY_MS = 3_000;
+
+async function parseHitlResponse(response) {
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = extractPayloadMessage(payload) || `HTTP ${response.status}`;
+    throw new Error(message);
+  }
+  return payload;
+}
 
 export async function fetchHitlQuestions(incidentId, body, options = {}) {
   const timeoutMs = options.timeoutMs ?? HITL_QUESTIONS_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
+  let attempt = 0;
 
-  const requestBody = JSON.stringify({
-    action: 'hitl_questions',
-    data: {
-      incident_id: incidentId,
-      how_happened: body.how_happened || '',
-      root_cause_initial: body.root_cause_initial || '',
-      answered_ids: body.answered_ids || [],
-      immediate_causes: body.immediate_causes ?? null,
-      immediate_code: body.immediate_code || '',
-      why_level: body.why_level ?? 0,
-      current_why_question: body.current_why_question || '',
-      previous_why_answer: body.previous_why_answer || '',
-      mode: body.mode || 'global',
-      batch_size: body.batch_size ?? 1,
-      known_fields: body.known_fields || [],
-      output_language: body.output_language || '',
-    },
-  });
+  const requestData = {
+    incident_id: incidentId,
+    how_happened: body.how_happened || '',
+    root_cause_initial: body.root_cause_initial || '',
+    answered_ids: body.answered_ids || [],
+    immediate_causes: body.immediate_causes ?? null,
+    immediate_code: body.immediate_code || '',
+    why_level: body.why_level ?? 0,
+    current_why_question: body.current_why_question || '',
+    previous_why_answer: body.previous_why_answer || '',
+    mode: body.mode || 'global',
+    batch_size: body.batch_size ?? 1,
+    known_fields: body.known_fields || [],
+    output_language: body.output_language || '',
+  };
 
-  // Backend soru üretimini bir süre bütçesiyle yapar; aşılırsa { retriable: true }
-  // döner (gateway 504 yerine). Bu durumda kısa bekleyip tekrar dener; arka plan
-  // üretimi tamamlanınca sıcak cache'ten anında dönülür.
+  const gatewayBody = JSON.stringify({ action: 'hitl_questions', data: requestData });
+
   for (;;) {
+    attempt += 1;
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
       throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
     }
+
+    const attemptTimeoutMs = Math.min(remaining, HITL_PER_ATTEMPT_TIMEOUT_MS);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), remaining);
+    const timeoutId = setTimeout(() => controller.abort(), attemptTimeoutMs);
+    if (options.signal?.aborted) {
+      clearTimeout(timeoutId);
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    const onAbort = () => controller.abort();
+    options.signal?.addEventListener('abort', onAbort, { once: true });
+
     let result;
     try {
-      const response = await fetch(`${API_GATEWAY_URL}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
-        signal: controller.signal,
-        body: requestBody,
-      });
-      result = await handleResponse(response);
+      let response = null;
+      if (canUseDirectBackend('hitl_questions')) {
+        try {
+          response = await fetchBackendDirect('hitl_questions', requestData, {
+            signal: controller.signal,
+            timeoutMs: attemptTimeoutMs,
+          });
+        } catch (directErr) {
+          if (directErr?.name === 'AbortError') throw directErr;
+          console.warn('[WARN] Direct HITL failed, using gateway:', directErr?.message || directErr);
+        }
+      }
+      if (!response) {
+        response = await fetch(`${API_GATEWAY_URL}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
+          signal: controller.signal,
+          body: gatewayBody,
+        });
+      }
+      result = await parseHitlResponse(response);
     } catch (error) {
       if (error?.name === 'AbortError') {
-        throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
+        // Tek deneme zaman aşımı — retriable gibi tekrar dene (arka plan cache ısınmış olabilir)
+        if (Date.now() >= deadline) {
+          throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
+        }
+        options.onRetry?.(attempt, { reason: 'attempt_timeout' });
+        await sleep(HITL_RETRY_DELAY_MS);
+        continue;
       }
       throw error;
     } finally {
       clearTimeout(timeoutId);
+      options.signal?.removeEventListener('abort', onAbort);
     }
 
     if (result && result.success === false && result.retriable) {
+      options.onRetry?.(attempt, { reason: 'retriable' });
       const wait = Math.min(HITL_RETRY_DELAY_MS, Math.max(0, deadline - Date.now()));
       if (wait <= 0) {
         throw new Error(`Soru yükleme zaman aşımı (${Math.round(timeoutMs / 1000)} sn)`);
       }
-      await new Promise((resolve) => setTimeout(resolve, wait));
+      await sleep(wait);
       continue;
     }
     return result;

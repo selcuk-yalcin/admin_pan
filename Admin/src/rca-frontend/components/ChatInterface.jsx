@@ -626,7 +626,16 @@ const ChatInterface = ({
         };
       }
 
-      const res = await fetchHitlQuestions(hitlSeed.incidentId, body);
+      const res = await fetchHitlQuestions(hitlSeed.incidentId, body, {
+        signal: undefined,
+        onRetry: (attempt) => {
+          onPipelineStatusChange?.(
+            String(language || '').toLowerCase().startsWith('tr')
+              ? `Sorular hazırlanıyor… (${attempt}. deneme, model yanıtı bekleniyor)`
+              : `Preparing questions… (attempt ${attempt}, waiting for model)`,
+          );
+        },
+      });
       const payload = res.data || {};
       const q = (payload.questions && payload.questions[0]) || null;
       return {
@@ -636,7 +645,7 @@ const ChatInterface = ({
         immediateCauses: payload.immediate_causes || null,
       };
     },
-    [hitlSeed, probeCodes, hitlImmediateCauses, hitlWhyDisplay, language],
+    [hitlSeed, probeCodes, hitlImmediateCauses, hitlWhyDisplay, language, onPipelineStatusChange],
   );
 
   const resolveNextQuestion = useCallback(

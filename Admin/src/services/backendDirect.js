@@ -19,6 +19,7 @@ const DIRECT_ACTIONS = new Set([
   'job_status',
   'get_incident',
   'generate_html',
+  'hitl_questions',
 ]);
 
 export function canUseDirectBackend(action) {
@@ -81,6 +82,25 @@ function buildDirectRequest(action, data = {}) {
           force_regenerate: !!data.force_regenerate,
         },
       };
+    case 'hitl_questions':
+      return {
+        method: 'POST',
+        path: `/api/v1/incidents/${encodeURIComponent(data.incident_id)}/hitl/questions`,
+        body: {
+          how_happened: data.how_happened || '',
+          root_cause_initial: data.root_cause_initial || '',
+          answered_ids: data.answered_ids || [],
+          immediate_causes: data.immediate_causes ?? null,
+          immediate_code: data.immediate_code || '',
+          why_level: data.why_level ?? 0,
+          current_why_question: data.current_why_question || '',
+          previous_why_answer: data.previous_why_answer || '',
+          mode: data.mode || 'global',
+          batch_size: data.batch_size ?? 1,
+          known_fields: data.known_fields || [],
+          output_language: data.output_language || '',
+        },
+      };
     default:
       return null;
   }
@@ -117,7 +137,11 @@ export async function fetchBackendDirect(action, data, options = {}) {
     throw new Error(`Direct backend not mapped for action: ${action}`);
   }
   const base = getBackendBaseUrl();
-  const timeoutMs = options.timeoutMs ?? (action === 'generate_html' ? 90000 : 25000);
+  const timeoutMs = options.timeoutMs ?? (
+    action === 'generate_html' ? 90000
+      : action === 'hitl_questions' ? 55000
+        : 25000
+  );
   const headers = {
     'Content-Type': 'application/json',
     ...getUserContextHeaders(),

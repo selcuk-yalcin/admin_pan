@@ -10,6 +10,7 @@ const BACKEND_RETRY_ACTIONS = new Set([
   'pipeline_start',
   'generate_html',
   'job_status',
+  'hitl_questions',
 ])
 const BACKEND_MAX_ATTEMPTS = 4
 const BACKEND_RETRY_DELAY_MS = 3000
