@@ -411,28 +411,23 @@ export async function fetchHitlQuestions(incidentId, body, options = {}) {
 }
 
 export async function startPipelineJob(incidentId, data, options = {}) {
-  const response = await fetch(`${API_GATEWAY_URL}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
-    signal: options.signal,
-    body: JSON.stringify({
-      action: 'pipeline_start',
-      data: {
-        incident_id: incidentId,
-        how_happened: data.how_happened,
-        location: data.location || '',
-        who_involved: data.who_involved || '',
-        activities: data.activities || '',
-        working_conditions: data.working_conditions || '',
-        safety_procedures: data.safety_procedures || '',
-        injuries: data.injuries || '',
-        why_probe_answers: data.why_probe_answers || [],
-        root_cause_probe_answers: data.root_cause_probe_answers || [],
-        output_language: data.output_language || '',
-        analysis_model_preset: data.analysis_model_preset || '',
-      },
-    }),
-  });
+  const response = await fetchGatewayWithRetry({
+    action: 'pipeline_start',
+    data: {
+      incident_id: incidentId,
+      how_happened: data.how_happened,
+      location: data.location || '',
+      who_involved: data.who_involved || '',
+      activities: data.activities || '',
+      working_conditions: data.working_conditions || '',
+      safety_procedures: data.safety_procedures || '',
+      injuries: data.injuries || '',
+      why_probe_answers: data.why_probe_answers || [],
+      root_cause_probe_answers: data.root_cause_probe_answers || [],
+      output_language: data.output_language || '',
+      analysis_model_preset: data.analysis_model_preset || '',
+    },
+  }, { signal: options.signal });
   return handleResponse(response);
 }
 

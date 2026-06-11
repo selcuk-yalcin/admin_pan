@@ -74,6 +74,7 @@ const IncidentForm = ({
   seedSnapshot = null,
   onSeedConsumed,
   onSaveDraft,
+  interactiveEnabled = false,
 }) => {
   const testScenarios = getTestScenarioList(language);
   const [activeSection, setActiveSection] = useState(0);
@@ -1186,16 +1187,18 @@ const IncidentForm = ({
             {t('save_draft')}
           </button>
           <div className="form-actions-primary-group">
-            <button
-              type="button"
-              className="btn-secondary btn-interactive"
-              onClick={handleInteractive}
-              disabled={isSubmitting || tokensBlocked}
-            >
-              {isSubmitting && activeSubmitMode === 'interactive'
-                ? t('submitting_hitl_seed')
-                : t('btn_interactive_hitl')}
-            </button>
+            {interactiveEnabled ? (
+              <button
+                type="button"
+                className="btn-secondary btn-interactive"
+                onClick={handleInteractive}
+                disabled={isSubmitting || tokensBlocked}
+              >
+                {isSubmitting && activeSubmitMode === 'interactive'
+                  ? t('submitting_hitl_seed')
+                  : t('btn_interactive_hitl')}
+              </button>
+            ) : null}
             <button type="submit" className="btn-primary" disabled={isSubmitting || tokensBlocked}>
               {isSubmitting && activeSubmitMode === 'report'
                 ? t('submitting_pdf_pipeline')

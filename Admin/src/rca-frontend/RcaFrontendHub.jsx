@@ -13,12 +13,9 @@ import {
   notifyDraftsChanged,
 } from "./utils/draftReportsStorage";
 import {
-  createIncident,
   bootstrapInteractiveSession,
   checkHealth,
-  addAssessment,
-  investigateIncident,
-  generateActionPlan,
+  runPipelineJobWithPolling,
   generatePDFReport,
 } from "../services/hsg245Api";
 import { buildHowHappenedText, buildInvestigationPayload } from "./utils/investigationPayload";
@@ -28,6 +25,8 @@ import "./rcaEmbedLayout.css";
 
 const TAB_KEYS = ["form", "chat", "reports", "guide"];
 const LIBRARY_TABS = new Set(["reports", "guide"]);
+/** Test aşamasında etkileşimli analiz kapalı; yalnızca doğrudan rapor oluşturma. */
+const INTERACTIVE_ANALYSIS_ENABLED = false;
 
 /**
  * Kök Neden araçları: Manuel form + Etkileşimli analiz (?tab=form|chat|reports|guide).
@@ -202,6 +201,13 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       let incidentId = "";
 
       if (mode === "interactive") {
+        if (!INTERACTIVE_ANALYSIS_ENABLED) {
+          throw new Error(
+            selectedLanguage === "tr"
+              ? "Etkileşimli analiz test aşamasında kapalıdır. Lütfen Rapor Oluştur kullanın."
+              : "Interactive analysis is disabled during testing. Please use Create report.",
+          );
+        }
         const bootstrapResult = await bootstrapInteractiveSession({
           reported_by: formData.reportedBy || "Unknown reporter",
           description,
@@ -237,7 +243,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         return;
       }
 
-      const part1Result = await createIncident({
+      const bootstrapResult = await bootstrapInteractiveSession({
         reported_by: formData.reportedBy || "Unknown reporter",
         description,
         injury_description: [
@@ -251,39 +257,45 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         forwarded_to: formData.department || "",
         event_category: formData.eventCategory || "incident",
         date_time: dateTime || new Date().toISOString(),
-      }, { signal: controller.signal });
-
-      incidentId = part1Result?.data?.incident_id;
-      if (!incidentId) {
-        throw new Error("Incident ID donmedi.");
-      }
-      setCreatedIncidentId(incidentId);
-
-      setFormSubmitInfo(`Incident olusturuldu (${incidentId}). Assessment calisiyor...`);
-
-      await addAssessment(incidentId, {
         event_type: mapEventCategoryToEventType(formData.eventCategory),
         actual_harm: mapInjurySeverityToActualHarm(formData.injurySeverity),
         riddor_reportable: mapInjurySeverityToRiddor(formData.injurySeverity),
       }, { signal: controller.signal });
 
-      setFormSubmitInfo("Assessment tamamlandi. Kök neden analizi calisiyor...");
+      incidentId = bootstrapResult?.data?.incident_id;
+      if (!incidentId) {
+        throw new Error("Incident ID donmedi.");
+      }
+      setCreatedIncidentId(incidentId);
 
-      await investigateIncident(
+      setFormSubmitInfo(`Kayit tamam (${incidentId}). Kök neden analizi baslatiliyor...`);
+
+      const pipelineResult = await runPipelineJobWithPolling(
         incidentId,
         buildInvestigationPayload(formData, "", selectedLanguage),
-        { signal: controller.signal },
+        {
+          signal: controller.signal,
+          onUpdate: (job) => {
+            const stage = job?.stage || "";
+            const message = job?.message || "";
+            if (message) {
+              setFormSubmitInfo(message);
+            } else if (stage) {
+              setFormSubmitInfo(`Asama: ${stage} (${job?.progress ?? 0}%)`);
+            }
+          },
+        },
       );
 
-      setFormSubmitInfo("Root cause analizi tamamlandi. Aksiyon plani uretiliyor...");
+      if (!pipelineResult?.data && !pipelineResult?.job?.result) {
+        throw new Error("Pipeline tamamlandi ancak sonuc donmedi.");
+      }
 
-      await generateActionPlan(incidentId, { signal: controller.signal });
-
-      setFormSubmitInfo("PDF rapor indiriliyor...");
+      setFormSubmitInfo("HTML rapor olusturuluyor ve indiriliyor...");
       await generatePDFReport(incidentId, { signal: controller.signal });
 
       setFormSubmitInfo(
-        `Tamamlandi. Incident ID: ${incidentId}. PDF indirildi. İsterseniz Etkilesimli Analiz sekmesinden ek soru-cevap yapabilirsiniz.`,
+        `Tamamlandi. Incident ID: ${incidentId}. Rapor indirildi.`,
       );
     } catch (error) {
       if (error?.name === "AbortError") {
@@ -448,10 +460,21 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         </div>
         <button
           type="button"
-          className={`tab-btn ${activeTab === "chat" ? "active" : ""}${!hasHitlSession() ? " tab-btn--locked" : ""}`}
-          onClick={() => setTab("chat")}
-          title={!hasHitlSession() ? translate("chat_tab_locked_hint") : undefined}
-          aria-disabled={!hasHitlSession()}
+          className={`tab-btn ${activeTab === "chat" ? "active" : ""}${!hasHitlSession() || !INTERACTIVE_ANALYSIS_ENABLED ? " tab-btn--locked" : ""}`}
+          onClick={() => {
+            if (!INTERACTIVE_ANALYSIS_ENABLED) return;
+            setTab("chat");
+          }}
+          title={
+            !INTERACTIVE_ANALYSIS_ENABLED
+              ? (selectedLanguage === "tr"
+                ? "Etkileşimli analiz test aşamasında kapalı"
+                : "Interactive analysis is disabled during testing")
+              : !hasHitlSession()
+                ? translate("chat_tab_locked_hint")
+                : undefined
+          }
+          aria-disabled={!hasHitlSession() || !INTERACTIVE_ANALYSIS_ENABLED}
         >
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -587,6 +610,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
             onSeedConsumed={() => setFormDraftSeed(null)}
             onSaveDraft={handlePersistDraft}
             tokensBlocked={tokensBlocked}
+            interactiveEnabled={INTERACTIVE_ANALYSIS_ENABLED}
           />
         )}
         {activeTab === "chat" && (
