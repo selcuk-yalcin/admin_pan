@@ -11,10 +11,11 @@ const BACKEND_RETRY_ACTIONS = new Set([
   'generate_html',
   'job_status',
 ])
-const BACKEND_MAX_ATTEMPTS = 8
-const BACKEND_RETRY_DELAY_MS = 5000
-const HEALTH_MAX_ATTEMPTS = 10
-const HEALTH_RETRY_DELAY_MS = 3500
+const BACKEND_MAX_ATTEMPTS = 4
+const BACKEND_RETRY_DELAY_MS = 3000
+const HEALTH_MAX_ATTEMPTS = 3
+const HEALTH_RETRY_DELAY_MS = 2000
+const BACKEND_FETCH_TIMEOUT_MS = 22000
 
 /** Railway / gateway hata metnini kullanıcı dostu stringe çevirir. */
 function parseBackendErrorText(raw) {
@@ -46,6 +47,16 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function fetchWithTimeout(url, fetchOptions, timeoutMs = BACKEND_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...fetchOptions, signal: controller.signal })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 async function fetchBackendWithRetry(url, fetchOptions, action) {
   const shouldRetry = BACKEND_RETRY_ACTIONS.has(action)
   const maxAttempts = shouldRetry ? BACKEND_MAX_ATTEMPTS : 1
@@ -53,7 +64,7 @@ async function fetchBackendWithRetry(url, fetchOptions, action) {
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
-      const response = await fetch(url, fetchOptions)
+      const response = await fetchWithTimeout(url, fetchOptions)
       if (
         shouldRetry
         && BACKEND_RETRY_STATUSES.has(response.status)
@@ -146,13 +157,13 @@ export default async function handler(req, res) {
 
       for (let attempt = 0; attempt < HEALTH_MAX_ATTEMPTS; attempt += 1) {
         try {
-          response = await fetch(`${BACKEND_URL}/api/v1/health`, {
+          response = await fetchWithTimeout(`${BACKEND_URL}/api/v1/health`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               ...forwardHeaders,
             },
-          })
+          }, 15000)
           if (
             BACKEND_RETRY_STATUSES.has(response.status)
             && attempt < HEALTH_MAX_ATTEMPTS - 1
@@ -269,23 +280,10 @@ export default async function handler(req, res) {
           break
 
         case 'investigate':
-          endpoint = `/api/v1/incidents/${data.incident_id}/investigate`
-          payload = {
-            incident_id: data.incident_id,
-            location: data.location || '',
-            who_involved: data.who_involved || '',
-            how_happened: data.how_happened,
-            activities: data.activities || '',
-            working_conditions: data.working_conditions || '',
-            safety_procedures: data.safety_procedures || '',
-            injuries: data.injuries || '',
-            why_probe_answers: data.why_probe_answers || [],
-            root_cause_probe_answers: data.root_cause_probe_answers || [],
-            output_language: data.output_language || '',
-            oracle_context: data.oracle_context || '',
-            analysis_model_preset: data.analysis_model_preset || '',
-          }
-          break
+          return res.status(410).json({
+            error: 'Deprecated action',
+            details: 'investigate artik desteklenmiyor. pipeline_start + job_status kullanin.',
+          })
 
         case 'pipeline_start':
           endpoint = `/api/v1/incidents/${data.incident_id}/pipeline/start`

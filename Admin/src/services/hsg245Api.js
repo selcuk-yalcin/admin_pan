@@ -4,19 +4,20 @@
  * UPDATED: Now uses Vercel API Route as proxy to Railway backend
  */
 import { getUserContextHeaders as buildUserContextHeaders } from '../rca-frontend/utils/userContext';
+import {
+  canUseDirectBackend,
+  fetchBackendDirect,
+  fetchBackendHealthDirect,
+  getBackendBaseUrl,
+} from './backendDirect';
 
-// IMPORTANT: Use Vercel serverless gateway endpoint.
+// Gateway: yalnızca direct backend başarısız olursa veya desteklenmeyen action'lar.
 const API_GATEWAY_URL = '/api/hsg245';
 const BOOTSTRAP_RETRY_STATUSES = new Set([502, 503, 504]);
-const BOOTSTRAP_RETRY_DELAY_MS = 5000;
-const BOOTSTRAP_MAX_ATTEMPTS = 10;
-const PREWARM_MAX_ATTEMPTS = 10;
-const PREWARM_DELAY_MS = 4000;
-const BACKEND_HTTP_BASE = (
-  import.meta.env.VITE_BACKEND_API_URL ||
-  import.meta.env.VITE_HSG245_BACKEND_URL ||
-  ''
-).trim();
+const BOOTSTRAP_RETRY_DELAY_MS = 3000;
+const BOOTSTRAP_MAX_ATTEMPTS = 5;
+const PREWARM_MAX_ATTEMPTS = 5;
+const PREWARM_DELAY_MS = 2500;
 
 function getTenantContextHeaders() {
   return buildUserContextHeaders();
@@ -39,7 +40,7 @@ function normalizeWebSocketBase(raw) {
 
 function resolveJobWebSocketUrl(jobId) {
   const explicitWs = (import.meta.env.VITE_BACKEND_WS_URL || '').trim();
-  const wsBase = normalizeWebSocketBase(explicitWs || BACKEND_HTTP_BASE);
+  const wsBase = normalizeWebSocketBase(explicitWs || getBackendBaseUrl());
   if (!wsBase || !jobId) return '';
   const tenantId = (typeof window !== 'undefined' && window.localStorage.getItem('tenant_id')) || import.meta.env.VITE_TENANT_ID || '';
   const query = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : '';
@@ -143,6 +144,22 @@ async function fetchGatewayWithRetry(body, options = {}) {
 }
 
 /**
+ * Pipeline / bootstrap: önce doğrudan Railway, olmazsa Vercel gateway.
+ */
+async function fetchHsg245Action(body, options = {}) {
+  const { action, data } = body;
+  if (canUseDirectBackend(action)) {
+    try {
+      return await fetchBackendDirect(action, data, options);
+    } catch (err) {
+      if (err?.name === 'AbortError') throw err;
+      console.warn(`[WARN] Direct ${action} failed, falling back to gateway:`, err?.message || err);
+    }
+  }
+  return fetchGatewayWithRetry(body, options);
+}
+
+/**
  * ============================================================================
  * HEALTH CHECK - Sistem Durumu Kontrolü
  * ============================================================================
@@ -150,14 +167,36 @@ async function fetchGatewayWithRetry(body, options = {}) {
  * Admin panel açıldığında otomatik çağrılmalı.
  */
 export async function checkHealth(options = {}) {
+  // Doğrudan Railway — Vercel gateway 300s limitine takılmaz
+  for (let attempt = 0; attempt < PREWARM_MAX_ATTEMPTS; attempt += 1) {
+    if (options.signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    try {
+      const response = await fetchBackendHealthDirect(options);
+      if (response.ok) {
+        const backend = await response.json();
+        return { status: 'healthy', backend, via: 'direct' };
+      }
+      if (!BOOTSTRAP_RETRY_STATUSES.has(response.status) || attempt >= PREWARM_MAX_ATTEMPTS - 1) {
+        break;
+      }
+    } catch (err) {
+      if (err?.name === 'AbortError') throw err;
+      if (attempt >= PREWARM_MAX_ATTEMPTS - 1) {
+        console.error('[ERROR] Direct health failed:', err.message);
+      }
+    }
+    await sleep(PREWARM_DELAY_MS);
+  }
+
   try {
     const response = await fetch(`${API_GATEWAY_URL}`, {
       method: 'GET',
       signal: options.signal,
     });
     const data = await handleResponse(response);
-
-    console.log('[SUCCESS] Backend bağlantısı başarılı:', data);
+    console.log('[SUCCESS] Backend bağlantısı başarılı (gateway):', data);
     return data;
   } catch (error) {
     console.error('[ERROR] Backend bağlantısı başarısız:', error.message);
@@ -193,19 +232,6 @@ export async function prewarmBackend(options = {}) {
     } catch (err) {
       if (err?.name === 'AbortError') throw err;
       lastError = err;
-      // Gateway başarısızsa doğrudan Railway health dene (VITE_BACKEND_API_URL tanımlıysa)
-      if (BACKEND_HTTP_BASE) {
-        try {
-          const direct = await fetch(`${BACKEND_HTTP_BASE.replace(/\/$/, '')}/api/v1/health`, {
-            signal,
-          });
-          if (direct.ok) {
-            return { status: 'healthy', backend: await direct.json(), via: 'direct' };
-          }
-        } catch {
-          // gateway retry döngüsü devam eder
-        }
-      }
       if (attempt < PREWARM_MAX_ATTEMPTS - 1) {
         await sleep(PREWARM_DELAY_MS);
       }
@@ -324,7 +350,7 @@ export async function bootstrapInteractiveSession(data, options = {}) {
   console.log('[INFO] Bootstrapping interactive session (fast)...');
 
   try {
-    const response = await fetchGatewayWithRetry({
+    const response = await fetchHsg245Action({
       action: 'bootstrap_interactive',
       data: {
         reported_by: data.reported_by || 'Unknown reporter',
@@ -468,7 +494,7 @@ export async function fetchHitlQuestions(incidentId, body, options = {}) {
 }
 
 export async function startPipelineJob(incidentId, data, options = {}) {
-  const response = await fetchGatewayWithRetry({
+  const response = await fetchHsg245Action({
     action: 'pipeline_start',
     data: {
       incident_id: incidentId,
@@ -489,10 +515,10 @@ export async function startPipelineJob(incidentId, data, options = {}) {
 }
 
 export async function getPipelineJobStatus(jobId, options = {}) {
-  const response = await fetchGatewayWithRetry({
+  const response = await fetchHsg245Action({
     action: 'job_status',
     data: { job_id: jobId },
-  }, { signal: options.signal, maxAttempts: 4 });
+  }, { signal: options.signal, maxAttempts: 3 });
   return handleResponse(response);
 }
 
@@ -798,18 +824,10 @@ export async function getIncident(incidentId, options = {}) {
   console.log(`📖 Fetching incident ${incidentId}...`);
   
   try {
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getTenantContextHeaders(),
-      },
-      signal: options.signal,
-      body: JSON.stringify({
-        action: 'get_incident',
-        data: { incident_id: incidentId }
-      })
-    });
+    const response = await fetchHsg245Action({
+      action: 'get_incident',
+      data: { incident_id: incidentId },
+    }, { signal: options.signal });
     
     const result = await handleResponse(response);
     console.log('[SUCCESS] Incident data retrieved');
@@ -875,13 +893,14 @@ export async function generateHTMLReport(incidentId, options = {}) {
       data.report_layout = options.report_layout;
       data.force_regenerate = options.force_regenerate !== false;
     }
-    const response = await fetchGatewayWithRetry({
+    const response = await fetchHsg245Action({
       action: 'generate_html',
       data,
     }, {
       signal: options.signal,
-      maxAttempts: 6,
-      retryDelayMs: 5000,
+      maxAttempts: 3,
+      retryDelayMs: 4000,
+      timeoutMs: 90000,
     });
 
     const result = await handleResponse(response);

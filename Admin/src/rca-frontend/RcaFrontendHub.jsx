@@ -277,15 +277,10 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     const controller = new AbortController();
     submitAbortRef.current = controller;
     setIsSubmittingForm(true);
-    setFormSubmitError("");
+    setFormSubmitInfo("");
     setActiveSubmitMode(mode);
     hitlSeedRef.current = null;
     setHitlSeed(null);
-    setFormSubmitInfo(
-      mode === "interactive"
-        ? "Kayit hazirlaniyor (sunucu uyaniyorsa birkaç saniye surebilir)..."
-        : "Ajan pipeline ve PDF rapor baslatiliyor...",
-    );
     if (mode === "report") {
       clearReportProgress();
       setReportProgressStep(1, getReportPhaseLabel(selectedLanguage, "prewarm", 1), "prewarm");
@@ -294,6 +289,9 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       setPipelineResumeOffer(null);
     } else {
       clearReportProgress();
+      setFormSubmitInfo(
+        "Kayit hazirlaniyor (sunucu uyaniyorsa birkaç saniye surebilir)...",
+      );
     }
     setCreatedIncidentId("");
 
