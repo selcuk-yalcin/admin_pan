@@ -5,7 +5,7 @@
   "framework": "vite",
   "functions": {
     "api/hsg245.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   },
   "headers": [
