@@ -1,6 +1,53 @@
-/** Vercel serverless: allow up to 60s for backend cold-start + proxy. */
+/** Vercel serverless: cold-start + bootstrap retry penceresi. */
 export const config = {
-  maxDuration: 60,
+  maxDuration: 300,
+}
+
+const BACKEND_RETRY_STATUSES = new Set([502, 503, 504])
+const BACKEND_RETRY_ACTIONS = new Set([
+  'bootstrap_interactive',
+  'create_incident_fast',
+  'pipeline_start',
+  'generate_html',
+  'job_status',
+])
+const BACKEND_MAX_ATTEMPTS = 5
+const BACKEND_RETRY_DELAY_MS = 4000
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function fetchBackendWithRetry(url, fetchOptions, action) {
+  const shouldRetry = BACKEND_RETRY_ACTIONS.has(action)
+  const maxAttempts = shouldRetry ? BACKEND_MAX_ATTEMPTS : 1
+  let lastError = null
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, fetchOptions)
+      if (
+        shouldRetry
+        && BACKEND_RETRY_STATUSES.has(response.status)
+        && attempt < maxAttempts - 1
+      ) {
+        console.warn(`[RETRY] ${action} backend ${response.status}, attempt ${attempt + 1}/${maxAttempts}`)
+        await sleep(BACKEND_RETRY_DELAY_MS)
+        continue
+      }
+      return response
+    } catch (err) {
+      lastError = err
+      if (shouldRetry && attempt < maxAttempts - 1) {
+        console.warn(`[RETRY] ${action} fetch failed, attempt ${attempt + 1}/${maxAttempts}:`, err?.message || err)
+        await sleep(BACKEND_RETRY_DELAY_MS)
+        continue
+      }
+      throw err
+    }
+  }
+
+  throw lastError || new Error('Backend request failed after retries')
 }
 
 /**
@@ -243,11 +290,15 @@ export default async function handler(req, res) {
           }
 
           // HTML report links endpoint
-          const htmlMetaResp = await fetch(`${BACKEND_URL}${endpoint}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...forwardHeaders },
-            body: JSON.stringify(payload)
-          })
+          const htmlMetaResp = await fetchBackendWithRetry(
+            `${BACKEND_URL}${endpoint}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...forwardHeaders },
+              body: JSON.stringify(payload),
+            },
+            action,
+          )
 
           if (!htmlMetaResp.ok) {
             const error = await htmlMetaResp.text()
@@ -428,7 +479,11 @@ export default async function handler(req, res) {
 
       let response
       try {
-        response = await fetch(`${BACKEND_URL}${endpoint}`, fetchOptions)
+        response = await fetchBackendWithRetry(
+          `${BACKEND_URL}${endpoint}`,
+          fetchOptions,
+          action,
+        )
       } catch (fetchError) {
         console.error('[ERROR] Backend fetch failed:', fetchError?.message || fetchError)
         return res.status(502).json({

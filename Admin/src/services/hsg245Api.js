@@ -8,8 +8,10 @@ import { getUserContextHeaders as buildUserContextHeaders } from '../rca-fronten
 // IMPORTANT: Use Vercel serverless gateway endpoint.
 const API_GATEWAY_URL = '/api/hsg245';
 const BOOTSTRAP_RETRY_STATUSES = new Set([502, 503, 504]);
-const BOOTSTRAP_RETRY_DELAY_MS = 3500;
-const BOOTSTRAP_MAX_ATTEMPTS = 4;
+const BOOTSTRAP_RETRY_DELAY_MS = 4500;
+const BOOTSTRAP_MAX_ATTEMPTS = 8;
+const PREWARM_MAX_ATTEMPTS = 6;
+const PREWARM_DELAY_MS = 3000;
 const BACKEND_HTTP_BASE = (
   import.meta.env.VITE_BACKEND_API_URL ||
   import.meta.env.VITE_HSG245_BACKEND_URL ||
@@ -73,10 +75,10 @@ async function handleResponse(response) {
     }
     if (response.status === 504) {
       message =
-        'Sunucu uyanıyor olabilir (504). 10-15 saniye bekleyip tekrar deneyin; sorun sürerse sayfayı yenileyin.';
+        'Sunucu zaman aşımı (504). Rapor oluşturma birkaç saniye sürebilir; 15-20 saniye bekleyip «Rapor Oluştur»a tekrar basın. Sorun sürerse sayfayı yenileyin.';
     } else if (response.status === 502 || response.status === 503) {
       message =
-        'Backend geçici olarak ulaşılamıyor. Birkaç saniye bekleyip tekrar deneyin.';
+        'Backend geçici olarak ulaşılamıyor (sunucu uyanıyor olabilir). Birkaç saniye bekleyip tekrar deneyin.';
     }
     throw new Error(message || 'Unknown error');
   }
@@ -141,21 +143,57 @@ async function fetchGatewayWithRetry(body, options = {}) {
  * Backend'in çalışıp çalışmadığını kontrol eder.
  * Admin panel açıldığında otomatik çağrılmalı.
  */
-export async function checkHealth() {
+export async function checkHealth(options = {}) {
   try {
-    const response = await fetch(`${API_GATEWAY_URL}`, { method: 'GET' });
+    const response = await fetch(`${API_GATEWAY_URL}`, {
+      method: 'GET',
+      signal: options.signal,
+    });
     const data = await handleResponse(response);
-    
+
     console.log('[SUCCESS] Backend bağlantısı başarılı:', data);
     return data;
   } catch (error) {
     console.error('[ERROR] Backend bağlantısı başarısız:', error.message);
-    return { 
-      status: 'offline', 
+    if (options.strict) {
+      throw error;
+    }
+    return {
+      status: 'offline',
       error: error.message,
-      agents: {}
+      agents: {},
     };
   }
+}
+
+/**
+ * Railway cold-start: rapor gönderiminden önce backend'i uyandır.
+ */
+export async function prewarmBackend(options = {}) {
+  const { signal, onAttempt } = options;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < PREWARM_MAX_ATTEMPTS; attempt += 1) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    onAttempt?.(attempt + 1, PREWARM_MAX_ATTEMPTS);
+    try {
+      const data = await checkHealth({ signal, strict: true });
+      if (data?.status === 'offline') {
+        throw new Error(data.error || 'Backend offline');
+      }
+      return data;
+    } catch (err) {
+      if (err?.name === 'AbortError') throw err;
+      lastError = err;
+      if (attempt < PREWARM_MAX_ATTEMPTS - 1) {
+        await sleep(PREWARM_DELAY_MS);
+      }
+    }
+  }
+
+  throw lastError || new Error('Backend prewarm failed');
 }
 
 /**
@@ -432,15 +470,10 @@ export async function startPipelineJob(incidentId, data, options = {}) {
 }
 
 export async function getPipelineJobStatus(jobId, options = {}) {
-  const response = await fetch(`${API_GATEWAY_URL}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getTenantContextHeaders() },
-    signal: options.signal,
-    body: JSON.stringify({
-      action: 'job_status',
-      data: { job_id: jobId },
-    }),
-  });
+  const response = await fetchGatewayWithRetry({
+    action: 'job_status',
+    data: { job_id: jobId },
+  }, { signal: options.signal, maxAttempts: 4 });
   return handleResponse(response);
 }
 
@@ -798,17 +831,13 @@ export async function generateHTMLReport(incidentId, options = {}) {
       data.report_layout = options.report_layout;
       data.force_regenerate = options.force_regenerate !== false;
     }
-    const response = await fetch(`${API_GATEWAY_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getTenantContextHeaders(),
-      },
+    const response = await fetchGatewayWithRetry({
+      action: 'generate_html',
+      data,
+    }, {
       signal: options.signal,
-      body: JSON.stringify({
-        action: 'generate_html',
-        data,
-      })
+      maxAttempts: 6,
+      retryDelayMs: 5000,
     });
 
     const result = await handleResponse(response);

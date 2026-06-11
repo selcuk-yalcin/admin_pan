@@ -15,6 +15,7 @@ import {
 import {
   bootstrapInteractiveSession,
   checkHealth,
+  prewarmBackend,
   runPipelineJobWithPolling,
   generatePDFReport,
 } from "../services/hsg245Api";
@@ -243,6 +244,16 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
         return;
       }
 
+      setFormSubmitInfo("Sunucu hazirlaniyor (ilk acilista 15-30 sn surebilir)...");
+      await prewarmBackend({
+        signal: controller.signal,
+        onAttempt: (attempt, total) => {
+          setFormSubmitInfo(
+            `Sunucu baglantisi kontrol ediliyor (${attempt}/${total})...`,
+          );
+        },
+      });
+
       const bootstrapResult = await bootstrapInteractiveSession({
         reported_by: formData.reportedBy || "Unknown reporter",
         description,
@@ -268,7 +279,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       }
       setCreatedIncidentId(incidentId);
 
-      setFormSubmitInfo(`Kayit tamam (${incidentId}). Kök neden analizi baslatiliyor...`);
+      setFormSubmitInfo(`Kök neden analizi baslatiliyor (${incidentId})...`);
 
       const pipelineResult = await runPipelineJobWithPolling(
         incidentId,
