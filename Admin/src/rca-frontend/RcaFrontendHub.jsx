@@ -200,20 +200,45 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
 
   const finalizeReportAfterPipeline = useCallback(async (incidentId, controller) => {
     const formData = lastReportFormRef.current || {};
+    const titleHint = [formData.location, formData.reportedBy]
+      .filter(Boolean)
+      .join(" — ")
+      .slice(0, 96);
+
     setReportProgressStep(
       88,
       selectedLanguage === "tr"
-        ? "Rapor buluta kaydediliyor… (88%)"
-        : "Saving report to cloud… (88%)",
+        ? "Rapor listeye kaydediliyor… (88%)"
+        : "Saving report to library… (88%)",
       "report_html",
     );
-    await finalizeSavedReport({
-      incidentId,
-      snapshot: formData,
-      titleHint: [formData.location, formData.reportedBy].filter(Boolean).join(" — ").slice(0, 96),
-      analysisModelPreset: formData.analysisModelPreset || "",
-    });
-    notifyDraftsChanged();
+
+    try {
+      await upsertSavedReport({
+        incidentId,
+        snapshot: formData,
+        titleHint,
+        reportReady: false,
+      });
+      notifyDraftsChanged();
+    } catch (metaErr) {
+      console.warn("[WARN] Report metadata save failed:", metaErr?.message || metaErr);
+    }
+
+    let htmlSynced = false;
+    try {
+      const saved = await finalizeSavedReport({
+        incidentId,
+        snapshot: formData,
+        titleHint,
+        analysisModelPreset: formData.analysisModelPreset || "",
+      });
+      htmlSynced = !saved?.partialSave;
+      notifyDraftsChanged();
+    } catch (saveErr) {
+      console.warn("[WARN] HTML library sync failed:", saveErr?.message || saveErr);
+      notifyDraftsChanged();
+    }
 
     setReportProgressStep(95, getReportPhaseLabel(selectedLanguage, "report_html", 95), "report_html");
     try {
@@ -232,8 +257,16 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     setPipelineResumeOffer(null);
     setFormSubmitError("");
     setFlowComplete(true);
-    setFormSubmitInfo(translate("report_saved_toast"));
-  }, [selectedLanguage, setReportProgressStep, translate]);
+    setActiveTab("reports");
+    setSearchParams({ tab: "reports" }, { replace: true });
+    setFormSubmitInfo(
+      htmlSynced
+        ? translate("report_saved_toast")
+        : selectedLanguage === "tr"
+          ? "Rapor listeye eklendi. HTML için Raporlar sekmesinde «Rapor ve karar ağacını buluta kaydet» kullanın."
+          : "Report added to the list. Use «Save report and decision tree to cloud» on the Reports tab for HTML.",
+    );
+  }, [selectedLanguage, setReportProgressStep, setSearchParams, translate]);
 
   const runPipelineRecovery = useCallback(async (offer) => {
     if (!offer?.incidentId) return;

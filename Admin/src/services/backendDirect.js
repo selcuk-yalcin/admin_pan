@@ -199,8 +199,8 @@ export async function fetchBackendDirect(action, data, options = {}) {
   const timeoutMs = options.timeoutMs ?? (
     action === 'generate_html' ? 90000
       : action === 'hitl_questions' ? 55000
-        : action === 'library_save_html' ? 120000
-          : action === 'library_finalize' ? 120000
+        : action === 'library_save_html' ? 300000
+          : action === 'library_finalize' ? 600000
             : 25000
   );
   const headers = {
@@ -211,15 +211,21 @@ export async function fetchBackendDirect(action, data, options = {}) {
   if (spec.method !== 'GET' && spec.body) {
     fetchOptions.body = JSON.stringify(spec.body);
   }
-  return fetchWithTimeout(`${base}${spec.path}`, fetchOptions, timeoutMs, options);
+  if (options.signal) {
+    fetchOptions.signal = options.signal;
+  }
+  return fetchWithTimeout(`${base}${spec.path}`, fetchOptions, timeoutMs);
 }
 
 export async function fetchBackendHealthDirect(options = {}) {
   const base = getBackendBaseUrl();
+  const fetchOptions = { headers: { ...getUserContextHeaders() } };
+  if (options.signal) {
+    fetchOptions.signal = options.signal;
+  }
   return fetchWithTimeout(
     `${base}/api/v1/health`,
-    { headers: { ...getUserContextHeaders() } },
+    fetchOptions,
     options.timeoutMs ?? 20000,
-    options,
   );
 }

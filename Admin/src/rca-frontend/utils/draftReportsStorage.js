@@ -193,8 +193,13 @@ export async function finalizeSavedReport({
       notifyDraftsChanged();
       return mapServerItem(item);
     } catch (err) {
-      await upsertSavedReport({ incidentId, snapshot, titleHint, reportReady: false });
-      throw err;
+      const fallback = await upsertSavedReport({
+        incidentId,
+        snapshot,
+        titleHint,
+        reportReady: false,
+      });
+      return { ...fallback, partialSave: true, saveError: err?.message || String(err) };
     }
   }
   return upsertSavedReport({ incidentId, snapshot, titleHint, reportReady: true });

@@ -65,7 +65,7 @@ export async function finalizeLibraryReport({
     snapshot,
     title_hint: titleHint,
     analysis_model_preset: analysisModelPreset,
-  }, { timeoutMs: 120000 });
+  }, { timeoutMs: 600000 });
   return json?.data;
 }
 
@@ -84,7 +84,7 @@ export async function saveLibraryHtml({
     analysis_model_preset: analysisModelPreset,
     report_html: reportHtml,
     decision_tree_html: decisionTreeHtml,
-  }, { timeoutMs: 120000 });
+  }, { timeoutMs: 300000 });
   return json?.data;
 }
 
