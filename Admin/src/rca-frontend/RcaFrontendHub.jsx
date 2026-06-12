@@ -10,15 +10,17 @@ import { getTranslation } from "./utils/translations";
 import {
   upsertDraftReport,
   upsertSavedReport,
+  finalizeSavedReport,
   notifyDraftsChanged,
 } from "./utils/draftReportsStorage";
 import {
   bootstrapInteractiveSession,
   checkHealth,
+  getPipelineJobStatus,
   prewarmBackend,
   runPipelineJobWithPolling,
   resumePipelineJobForIncident,
-  generatePDFReport,
+  downloadHTMLReport,
 } from "../services/hsg245Api";
 import ReportProgressBanner from "./components/ReportProgressBanner";
 import { buildHowHappenedText, buildInvestigationPayload } from "./utils/investigationPayload";
@@ -41,6 +43,8 @@ const TAB_KEYS = ["form", "chat", "reports", "guide"];
 const LIBRARY_TABS = new Set(["reports", "guide"]);
 /** Test aşamasında etkileşimli analiz kapalı; yalnızca doğrudan rapor oluşturma. */
 const INTERACTIVE_ANALYSIS_ENABLED = false;
+/** sessionStorage'daki yarım job bu süreden eskiyse otomatik kurtarma denenmez. */
+const PIPELINE_JOB_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function isResumablePipelineError(error) {
   if (error?.name === "AbortError") return false;
@@ -87,6 +91,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   /** React state gecikmesi olmadan HITL oturumu (setTab ?tab=chat senkron kontrolü) */
   const hitlSeedRef = useRef(null);
   const [pipelineResumeOffer, setPipelineResumeOffer] = useState(null);
+  const autoRecoverStartedRef = useRef(false);
 
   const tokensBlocked =
     tokenSummary?.warn_level === "blocked" ||
@@ -133,18 +138,6 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     };
   }, [activeTab, isSubmittingForm]);
 
-  useEffect(() => {
-    const saved = loadPipelineJob();
-    if (saved?.jobId && saved?.incidentId) {
-      setPipelineResumeOffer(saved);
-      setCreatedIncidentId(saved.incidentId);
-      setFormSubmitError(
-        selectedLanguage === "tr"
-          ? "Önceki analiz yarım kalmış olabilir. «Devam Et» ile kaldığınız yerden sürdürebilirsiniz."
-          : "A previous analysis may still be running. Use «Continue» to resume.",
-      );
-    }
-  }, [selectedLanguage]);
   useEffect(() => {
     if (activeTab !== "form") return;
     checkHealth().catch(() => {});
@@ -206,8 +199,29 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   }, [selectedLanguage, setReportProgressStep]);
 
   const finalizeReportAfterPipeline = useCallback(async (incidentId, controller) => {
-    setReportProgressStep(90, getReportPhaseLabel(selectedLanguage, "report_html", 90), "report_html");
-    await generatePDFReport(incidentId, { signal: controller.signal });
+    const formData = lastReportFormRef.current || {};
+    setReportProgressStep(
+      88,
+      selectedLanguage === "tr"
+        ? "Rapor buluta kaydediliyor… (88%)"
+        : "Saving report to cloud… (88%)",
+      "report_html",
+    );
+    await finalizeSavedReport({
+      incidentId,
+      snapshot: formData,
+      titleHint: [formData.location, formData.reportedBy].filter(Boolean).join(" — ").slice(0, 96),
+      analysisModelPreset: formData.analysisModelPreset || "",
+    });
+    notifyDraftsChanged();
+
+    setReportProgressStep(95, getReportPhaseLabel(selectedLanguage, "report_html", 95), "report_html");
+    try {
+      await downloadHTMLReport(incidentId, { signal: controller.signal });
+    } catch (downloadErr) {
+      console.warn("[WARN] HTML download skipped after library save:", downloadErr?.message || downloadErr);
+    }
+
     setReportProgressStep(
       100,
       getReportPhaseLabel(selectedLanguage, "report_done", 100),
@@ -216,7 +230,142 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     pendingPipelineJobRef.current = null;
     clearPipelineJob();
     setPipelineResumeOffer(null);
-  }, [selectedLanguage, setReportProgressStep]);
+    setFormSubmitError("");
+    setFlowComplete(true);
+    setFormSubmitInfo(translate("report_saved_toast"));
+  }, [selectedLanguage, setReportProgressStep, translate]);
+
+  const runPipelineRecovery = useCallback(async (offer) => {
+    if (!offer?.incidentId) return;
+
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
+    setIsSubmittingForm(true);
+    setActiveSubmitMode("report");
+    setCreatedIncidentId(offer.incidentId);
+    pendingPipelineJobRef.current = offer;
+    setReportProgressStep(
+      12,
+      selectedLanguage === "tr"
+        ? "Analiz durumu kontrol ediliyor…"
+        : "Checking analysis status…",
+      "queued",
+    );
+
+    try {
+      const pipelineOpts = attachPipelineProgress(controller);
+      const pipelineResult = await resumePipelineJobForIncident(offer.incidentId, {
+        ...pipelineOpts,
+        jobId: offer.jobId,
+      });
+
+      smoothProgressRef.current?.finish(true);
+
+      if (!pipelineResult?.data && !pipelineResult?.job?.result) {
+        throw new Error("Pipeline tamamlandi ancak sonuc donmedi.");
+      }
+
+      await finalizeReportAfterPipeline(offer.incidentId, controller);
+    } catch (error) {
+      const pendingJob = pendingPipelineJobRef.current || offer;
+      if (error?.name === "AbortError") {
+        clearReportProgress();
+        setFormSubmitInfo(getReportPhaseLabel(selectedLanguage, "cancelled", 0));
+        setFormSubmitError("");
+      } else if (pendingJob?.jobId && isResumablePipelineError(error)) {
+        setPipelineResumeOffer(pendingJob);
+        savePipelineJob(pendingJob);
+        setFormSubmitError(
+          selectedLanguage === "tr"
+            ? `${error?.message || "Bağlantı kesildi."} «Devam Et» ile tekrar deneyin veya sayfayı yenileyin.`
+            : `${error?.message || "Connection lost."} Use «Continue» or refresh the page.`,
+        );
+      } else {
+        clearReportProgress();
+        setFormSubmitError(error?.message || "Devam islemi basarisiz oldu.");
+        setFormSubmitInfo("");
+      }
+    } finally {
+      submitAbortRef.current = null;
+      setIsSubmittingForm(false);
+      setActiveSubmitMode(null);
+    }
+  }, [
+    attachPipelineProgress,
+    finalizeReportAfterPipeline,
+    selectedLanguage,
+    setReportProgressStep,
+  ]);
+
+  /** Sayfa yenilendiğinde yarım job varsa backend durumuna göre otomatik devam et. */
+  useEffect(() => {
+    if (autoRecoverStartedRef.current) return;
+    const saved = loadPipelineJob();
+    if (!saved?.jobId || !saved?.incidentId) return;
+
+    const ageMs = Date.now() - Number(saved.savedAt || 0);
+    if (saved.savedAt && ageMs > PIPELINE_JOB_MAX_AGE_MS) {
+      clearPipelineJob();
+      return;
+    }
+
+    autoRecoverStartedRef.current = true;
+    setCreatedIncidentId(saved.incidentId);
+    setPipelineResumeOffer(saved);
+    pendingPipelineJobRef.current = saved;
+
+    const manualResumeMsg = selectedLanguage === "tr"
+      ? "Önceki analiz yarım kalmış olabilir. «Devam Et» ile sürdürebilirsiniz."
+      : "A previous analysis may still be running. Use «Continue» to resume.";
+
+    (async () => {
+      try {
+        const statusResp = await getPipelineJobStatus(saved.jobId);
+        const job = statusResp?.data || {};
+        const stillRunning = ["running", "queued", "pending"].includes(
+          String(job.status || "").toLowerCase(),
+        );
+
+        if (job.status === "completed") {
+          setFormSubmitError("");
+          setFormSubmitInfo(
+            selectedLanguage === "tr"
+              ? "Önceki analiz tamamlanmış; rapor hazırlanıyor…"
+              : "Previous analysis finished; preparing report…",
+          );
+          await runPipelineRecovery(saved);
+          return;
+        }
+
+        if (stillRunning) {
+          setFormSubmitError("");
+          setFormSubmitInfo(
+            selectedLanguage === "tr"
+              ? "Analiz arka planda devam ediyor; otomatik bağlanılıyor…"
+              : "Analysis still running; reconnecting…",
+          );
+          await runPipelineRecovery(saved);
+          return;
+        }
+
+        if (job.status === "failed") {
+          clearPipelineJob();
+          pendingPipelineJobRef.current = null;
+          setPipelineResumeOffer(null);
+          setFormSubmitError(
+            selectedLanguage === "tr"
+              ? `Önceki analiz hata ile bitti: ${job.error || "bilinmeyen hata"}`
+              : `Previous analysis failed: ${job.error || "unknown error"}`,
+          );
+          return;
+        }
+
+        setFormSubmitError(manualResumeMsg);
+      } catch {
+        setFormSubmitError(manualResumeMsg);
+      }
+    })();
+  }, [runPipelineRecovery, selectedLanguage]);
 
   const setTab = (tab) => {
     if (!TAB_KEYS.includes(tab)) return;
@@ -416,9 +565,25 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
       const pendingJob = pendingPipelineJobRef.current;
       if (error?.name === "AbortError") {
         clearReportProgress();
-        const cancelled = getReportPhaseLabel(selectedLanguage, "cancelled", 0);
-        setFormSubmitInfo(cancelled);
-        setFormSubmitError("");
+        const pending = pendingPipelineJobRef.current || loadPipelineJob();
+        if (pending?.jobId) {
+          setPipelineResumeOffer(pending);
+          savePipelineJob(pending);
+          setFormSubmitInfo(
+            selectedLanguage === "tr"
+              ? "İstemci bağlantısı kesildi."
+              : "Client connection was stopped.",
+          );
+          setFormSubmitError(
+            selectedLanguage === "tr"
+              ? "Analiz sunucuda devam ediyor olabilir. Sayfayı yenileyin — otomatik devam eder — veya «Devam Et» kullanın."
+              : "Analysis may still be running on the server. Refresh the page for auto-resume, or use «Continue».",
+          );
+        } else {
+          const cancelled = getReportPhaseLabel(selectedLanguage, "cancelled", 0);
+          setFormSubmitInfo(cancelled);
+          setFormSubmitError("");
+        }
       } else if (pendingJob?.jobId && isResumablePipelineError(error)) {
         setPipelineResumeOffer(pendingJob);
         setFormSubmitError(
@@ -444,58 +609,8 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const handleResumeReport = async () => {
     const offer = pipelineResumeOffer || pendingPipelineJobRef.current || loadPipelineJob();
     if (!offer?.incidentId || isSubmittingForm) return;
-
-    const controller = new AbortController();
-    submitAbortRef.current = controller;
-    setIsSubmittingForm(true);
     setFormSubmitError("");
-    setActiveSubmitMode("report");
-    setCreatedIncidentId(offer.incidentId);
-    setReportProgressStep(
-      12,
-      selectedLanguage === "tr"
-        ? "Analiz durumu kontrol ediliyor…"
-        : "Checking analysis status…",
-      "queued",
-    );
-
-    try {
-      const pipelineOpts = attachPipelineProgress(controller);
-      const pipelineResult = await resumePipelineJobForIncident(offer.incidentId, {
-        ...pipelineOpts,
-        jobId: offer.jobId,
-      });
-
-      smoothProgressRef.current?.finish(true);
-
-      if (!pipelineResult?.data && !pipelineResult?.job?.result) {
-        throw new Error("Pipeline tamamlandi ancak sonuc donmedi.");
-      }
-
-      await finalizeReportAfterPipeline(offer.incidentId, controller);
-    } catch (error) {
-      const pendingJob = pendingPipelineJobRef.current || offer;
-      if (error?.name === "AbortError") {
-        clearReportProgress();
-        setFormSubmitInfo(getReportPhaseLabel(selectedLanguage, "cancelled", 0));
-        setFormSubmitError("");
-      } else if (pendingJob?.jobId && isResumablePipelineError(error)) {
-        setPipelineResumeOffer(pendingJob);
-        setFormSubmitError(
-          selectedLanguage === "tr"
-            ? `${error?.message || "Bağlantı kesildi."} «Devam Et» ile tekrar deneyin.`
-            : `${error?.message || "Connection lost."} Try «Continue» again.`,
-        );
-      } else {
-        clearReportProgress();
-        setFormSubmitError(error?.message || "Devam islemi basarisiz oldu.");
-        setFormSubmitInfo("");
-      }
-    } finally {
-      submitAbortRef.current = null;
-      setIsSubmittingForm(false);
-      setActiveSubmitMode(null);
-    }
+    await runPipelineRecovery(offer);
   };
 
   const handleCancelSubmit = () => {
