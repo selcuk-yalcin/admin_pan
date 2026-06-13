@@ -3,6 +3,71 @@ export const config = {
   maxDuration: 60,
 }
 
+const BACKEND_FETCH_TIMEOUT_MS = 55_000
+const BACKEND_FETCH_MAX_RETRIES = 2
+const USAGE_ACTIONS = new Set([
+  'usage_summary',
+  'usage_timeseries',
+  'usage_by_module',
+  'usage_recent',
+  'list_deliveries',
+])
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function fetchBackendWithRetry(url, options = {}, { retries = BACKEND_FETCH_MAX_RETRIES } = {}) {
+  let lastError = null
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), BACKEND_FETCH_TIMEOUT_MS)
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      return response
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      lastError = fetchError
+      const retriable =
+        attempt < retries &&
+        /aborted|abort|timeout|ECONNRESET|ETIMEDOUT|fetch failed|network/i.test(
+          String(fetchError?.message || fetchError || ''),
+        )
+      if (retriable) {
+        console.warn(
+          `[RETRY ${attempt + 1}/${retries}] Backend fetch failed for ${url}: ${fetchError?.message || fetchError}`,
+        )
+        await sleep(1800 * (attempt + 1))
+        continue
+      }
+      break
+    }
+  }
+  throw lastError
+}
+
+async function prewarmBackendHealth(backendUrl, headers) {
+  try {
+    await fetchBackendWithRetry(
+      `${backendUrl}/api/v1/health`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+      },
+      { retries: 1 },
+    )
+  } catch (prewarmError) {
+    console.warn('[PREWARM] Backend health failed:', prewarmError?.message || prewarmError)
+  }
+}
+
 /**
  * Vercel Serverless Function for HSG245 Investigation
  * 
@@ -67,7 +132,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       console.log(`[HEALTH CHECK] ${BACKEND_URL}/api/v1/health`)
       
-      const response = await fetch(`${BACKEND_URL}/api/v1/health`, {
+      const response = await fetchBackendWithRetry(`${BACKEND_URL}/api/v1/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -411,6 +476,10 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: `Unknown action: ${action}` })
       }
 
+      if (USAGE_ACTIONS.has(action)) {
+        await prewarmBackendHealth(BACKEND_URL, forwardHeaders)
+      }
+
       // Make request to backend
       console.log(`[CALLING] ${BACKEND_URL}${endpoint}`)
       
@@ -428,12 +497,16 @@ export default async function handler(req, res) {
 
       let response
       try {
-        response = await fetch(`${BACKEND_URL}${endpoint}`, fetchOptions)
+        response = await fetchBackendWithRetry(`${BACKEND_URL}${endpoint}`, fetchOptions)
       } catch (fetchError) {
         console.error('[ERROR] Backend fetch failed:', fetchError?.message || fetchError)
+        const msg = String(fetchError?.message || fetchError || 'fetch failed')
+        const friendly = /aborted|abort|timeout/i.test(msg)
+          ? 'Backend uykuda olabilir (Railway cold-start). Birkaç saniye sonra yenileyin.'
+          : msg
         return res.status(502).json({
           error: 'Backend unreachable',
-          details: `Gateway could not reach backend at ${BACKEND_URL}${endpoint}: ${fetchError?.message || 'fetch failed'}`,
+          details: `Gateway could not reach backend at ${BACKEND_URL}${endpoint}: ${friendly}`,
           backend_url: BACKEND_URL
         })
       }

@@ -20,6 +20,7 @@ import {
   fetchUsageByModule,
   fetchUsageRecent,
   fetchReportDeliveries,
+  prewarmUsageBackend,
   formatToken,
   formatTokenFull,
   formatUsageDate,
@@ -157,22 +158,63 @@ export default function Dashboard() {
   const loadData = useCallback(async (days, isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
+    const warnings = [];
     try {
-      const [s, ts, mod, rec, del] = await Promise.all([
-        fetchUsageSummary(),
+      await prewarmUsageBackend();
+
+      let s = null;
+      try {
+        s = await fetchUsageSummary();
+        setSummary(s);
+      } catch (e) {
+        warnings.push(e?.message || String(e));
+      }
+
+      const [tsResult, modResult, recResult, delResult] = await Promise.allSettled([
         fetchUsageTimeseries(days),
         fetchUsageByModule(30),
         fetchUsageRecent(20),
-        fetchReportDeliveries(8).catch(() => ({ deliveries: [], smtp: {} })),
+        fetchReportDeliveries(8),
       ]);
-      setSummary(s);
-      setSeries(ts?.series || []);
-      setModules(mod?.modules || []);
-      setRecent(rec?.operations || []);
-      setDeliveries(del?.deliveries || []);
-      setSmtpInfo(del?.smtp || null);
+
+      if (tsResult.status === 'fulfilled') {
+        setSeries(tsResult.value?.series || []);
+      } else {
+        warnings.push(tsResult.reason?.message || String(tsResult.reason));
+        setSeries([]);
+      }
+
+      if (modResult.status === 'fulfilled') {
+        setModules(modResult.value?.modules || []);
+      } else {
+        warnings.push(modResult.reason?.message || String(modResult.reason));
+        setModules([]);
+      }
+
+      if (recResult.status === 'fulfilled') {
+        setRecent(recResult.value?.operations || []);
+      } else {
+        warnings.push(recResult.reason?.message || String(recResult.reason));
+        setRecent([]);
+      }
+
+      if (delResult.status === 'fulfilled') {
+        setDeliveries(delResult.value?.deliveries || []);
+        setSmtpInfo(delResult.value?.smtp || null);
+      } else {
+        setDeliveries([]);
+        setSmtpInfo(null);
+      }
+
       setLastUpdated(new Date());
-      setError('');
+      if (!s && warnings.length) {
+        setError(warnings[0]);
+      } else if (warnings.length) {
+        setError('');
+        console.warn('[Dashboard] partial load:', warnings.join(' | '));
+      } else {
+        setError('');
+      }
     } catch (e) {
       setError(e?.message || String(e));
     } finally {
