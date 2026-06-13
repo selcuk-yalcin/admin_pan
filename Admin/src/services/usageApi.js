@@ -9,12 +9,41 @@ const BACKEND_HTTP_BASE = (
   import.meta.env.VITE_HSG245_BACKEND_URL ||
   ''
 ).trim();
+const GATEWAY_RETRIES = 2;
+const GATEWAY_RETRY_DELAY_MS = 2000;
 
 function headers() {
   return {
     'Content-Type': 'application/json',
     ...buildUserContextHeaders(),
   };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Browser always uses Vercel gateway (cold-start retry, no CORS). */
+function useDirectBackend() {
+  if (typeof window !== 'undefined') {
+    return false;
+  }
+  return Boolean(BACKEND_HTTP_BASE);
+}
+
+function isRetriableGatewayError(message) {
+  const msg = String(message || '').toLowerCase();
+  return (
+    msg.includes('aborted') ||
+    msg.includes('timeout') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('504') ||
+    msg.includes('backend unreachable') ||
+    msg.includes('cold-start') ||
+    msg.includes('fetch failed') ||
+    msg.includes('network')
+  );
 }
 
 async function handleResponse(response) {
@@ -30,12 +59,25 @@ async function handleResponse(response) {
 }
 
 async function gatewayGet(action, extra = {}) {
-  const response = await fetch(API_GATEWAY_URL, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify({ action, data: extra }),
-  });
-  return handleResponse(response);
+  let lastError = null;
+  for (let attempt = 0; attempt <= GATEWAY_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(API_GATEWAY_URL, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ action, data: extra }),
+      });
+      return handleResponse(response);
+    } catch (error) {
+      lastError = error;
+      if (attempt < GATEWAY_RETRIES && isRetriableGatewayError(error?.message)) {
+        await sleep(GATEWAY_RETRY_DELAY_MS * (attempt + 1));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 async function directGet(path, query = {}) {
@@ -46,8 +88,23 @@ async function directGet(path, query = {}) {
   return handleResponse(response);
 }
 
+/** Wake Railway backend via gateway health before dashboard batch load. */
+export async function prewarmUsageBackend() {
+  try {
+    const response = await fetch(API_GATEWAY_URL, {
+      method: 'GET',
+      headers: headers(),
+    });
+    if (!response.ok) return false;
+    await response.json().catch(() => null);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchUsageSummary() {
-  if (BACKEND_HTTP_BASE) {
+  if (useDirectBackend()) {
     const res = await directGet('/api/v1/usage/summary');
     return res.data;
   }
@@ -56,7 +113,7 @@ export async function fetchUsageSummary() {
 }
 
 export async function fetchUsageTimeseries(days = 7) {
-  if (BACKEND_HTTP_BASE) {
+  if (useDirectBackend()) {
     const res = await directGet('/api/v1/usage/timeseries', { days: String(days) });
     return res.data;
   }
@@ -65,7 +122,7 @@ export async function fetchUsageTimeseries(days = 7) {
 }
 
 export async function fetchUsageByModule(days = 30) {
-  if (BACKEND_HTTP_BASE) {
+  if (useDirectBackend()) {
     const res = await directGet('/api/v1/usage/by-module', { days: String(days) });
     return res.data;
   }
@@ -74,7 +131,7 @@ export async function fetchUsageByModule(days = 30) {
 }
 
 export async function fetchUsageRecent(limit = 20) {
-  if (BACKEND_HTTP_BASE) {
+  if (useDirectBackend()) {
     const res = await directGet('/api/v1/usage/recent', { limit: String(limit) });
     return res.data;
   }
@@ -109,7 +166,7 @@ export function formatUsageDate(iso) {
 }
 
 export async function fetchReportDeliveries(limit = 10) {
-  if (BACKEND_HTTP_BASE) {
+  if (useDirectBackend()) {
     const res = await directGet('/api/v1/deliveries', { limit: String(limit) });
     return res.data;
   }

@@ -11,6 +11,18 @@ const BACKEND_RETRY_ACTIONS = new Set([
   'generate_html',
   'job_status',
   'hitl_questions',
+  'usage_summary',
+  'usage_timeseries',
+  'usage_by_module',
+  'usage_recent',
+  'list_deliveries',
+])
+const USAGE_ACTIONS = new Set([
+  'usage_summary',
+  'usage_timeseries',
+  'usage_by_module',
+  'usage_recent',
+  'list_deliveries',
 ])
 const BACKEND_MAX_ATTEMPTS = 4
 const BACKEND_RETRY_DELAY_MS = 3000
@@ -61,11 +73,12 @@ async function fetchWithTimeout(url, fetchOptions, timeoutMs = BACKEND_FETCH_TIM
 async function fetchBackendWithRetry(url, fetchOptions, action) {
   const shouldRetry = BACKEND_RETRY_ACTIONS.has(action)
   const maxAttempts = shouldRetry ? BACKEND_MAX_ATTEMPTS : 1
+  const timeoutMs = USAGE_ACTIONS.has(action) ? 55_000 : BACKEND_FETCH_TIMEOUT_MS
   let lastError = null
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
-      const response = await fetchWithTimeout(url, fetchOptions)
+      const response = await fetchWithTimeout(url, fetchOptions, timeoutMs)
       if (
         shouldRetry
         && BACKEND_RETRY_STATUSES.has(response.status)
@@ -88,6 +101,39 @@ async function fetchBackendWithRetry(url, fetchOptions, action) {
   }
 
   throw lastError || new Error('Backend request failed after retries')
+}
+
+async function prewarmBackendHealth(backendUrl, headers) {
+  for (let attempt = 0; attempt < HEALTH_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(
+        `${backendUrl}/api/v1/health`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+          },
+        },
+        30_000,
+      )
+      if (response.ok) return
+      if (
+        BACKEND_RETRY_STATUSES.has(response.status)
+        && attempt < HEALTH_MAX_ATTEMPTS - 1
+      ) {
+        await sleep(HEALTH_RETRY_DELAY_MS)
+        continue
+      }
+      return
+    } catch (prewarmError) {
+      if (attempt < HEALTH_MAX_ATTEMPTS - 1) {
+        await sleep(HEALTH_RETRY_DELAY_MS)
+        continue
+      }
+      console.warn('[PREWARM] Backend health failed:', prewarmError?.message || prewarmError)
+    }
+  }
 }
 
 /**
@@ -518,6 +564,10 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: `Unknown action: ${action}` })
       }
 
+      if (USAGE_ACTIONS.has(action)) {
+        await prewarmBackendHealth(BACKEND_URL, forwardHeaders)
+      }
+
       // Make request to backend
       console.log(`[CALLING] ${BACKEND_URL}${endpoint}`)
       
@@ -542,9 +592,13 @@ export default async function handler(req, res) {
         )
       } catch (fetchError) {
         console.error('[ERROR] Backend fetch failed:', fetchError?.message || fetchError)
+        const msg = String(fetchError?.message || fetchError || 'fetch failed')
+        const friendly = /aborted|abort|timeout/i.test(msg)
+          ? 'Backend uykuda olabilir (Railway cold-start). Birkaç saniye sonra yenileyin.'
+          : msg
         return res.status(502).json({
           error: 'Backend unreachable',
-          details: `Gateway could not reach backend at ${BACKEND_URL}${endpoint}: ${fetchError?.message || 'fetch failed'}`,
+          details: `Gateway could not reach backend at ${BACKEND_URL}${endpoint}: ${friendly}`,
           backend_url: BACKEND_URL
         })
       }
