@@ -116,3 +116,25 @@ export async function fetchReportDeliveries(limit = 10) {
   const res = await gatewayGet('list_deliveries', { limit });
   return res.data;
 }
+
+export function usesAnalysisCredits(summary) {
+  return Boolean(summary?.analysis_credits_enforcement_enabled);
+}
+
+export function analysisCreditsLabel(summary) {
+  if (!summary) return '';
+  const rem = summary.analysis_credits_remaining ?? 0;
+  const lim = summary.analysis_credits_limit ?? 3;
+  return `${rem} / ${lim}`;
+}
+
+export function isAnalysisBlocked(summary) {
+  if (!summary) return false;
+  if (usesAnalysisCredits(summary)) {
+    return (summary.analysis_credits_remaining ?? 0) <= 0;
+  }
+  return (
+    summary.warn_level === 'blocked' ||
+    (summary.enforcement_enabled && (summary.available ?? 1) <= 0)
+  );
+}
