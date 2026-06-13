@@ -35,7 +35,13 @@ import {
   getStageLabel,
   mapPipelineToOverallPct,
 } from "./utils/reportProgressLabels";
-import { fetchUsageSummary, formatToken } from "../services/usageApi";
+import {
+  fetchUsageSummary,
+  analysisCreditsLabel,
+  isAnalysisBlocked,
+  usesAnalysisCredits,
+  formatToken,
+} from "../services/usageApi";
 import "./RcaFrontendHub.css";
 import "./rcaEmbedLayout.css";
 
@@ -93,9 +99,7 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
   const [pipelineResumeOffer, setPipelineResumeOffer] = useState(null);
   const autoRecoverStartedRef = useRef(false);
 
-  const tokensBlocked =
-    tokenSummary?.warn_level === "blocked" ||
-    (tokenSummary?.enforcement_enabled && (tokenSummary?.available ?? 1) <= 0);
+  const tokensBlocked = isAnalysisBlocked(tokenSummary);
 
   const syncTabFromUrl = useCallback(() => {
     const raw = searchParams.get("tab");
@@ -451,7 +455,9 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
     if (isSubmittingForm) return;
     if (tokensBlocked) {
       setFormSubmitError(
-        "Token limitiniz doldu. Lütfen Panel → Kullanım İstatistikleri üzerinden bakiyenizi kontrol edin.",
+        usesAnalysisCredits(tokenSummary)
+          ? `Analiz hakkınız tükendi (${analysisCreditsLabel(tokenSummary)}). Yeni analiz başlatılamaz.`
+          : "Token limitiniz doldu. Lütfen Panel → Kullanım İstatistikleri üzerinden bakiyenizi kontrol edin.",
       );
       return;
     }
@@ -844,8 +850,16 @@ export default function RcaFrontendHub({ showAdminReturn = false }) {
           style={{ marginBottom: 12 }}
         >
           <span>
-            Token: <strong>{formatToken(tokenSummary.available)}</strong> kalan /{" "}
-            {formatToken(tokenSummary.period_limit)} limit
+            {usesAnalysisCredits(tokenSummary) ? (
+              <>
+                Analiz hakkı: <strong>{analysisCreditsLabel(tokenSummary)}</strong> kalan
+              </>
+            ) : (
+              <>
+                Token: <strong>{formatToken(tokenSummary.available)}</strong> kalan /{" "}
+                {formatToken(tokenSummary.period_limit)} limit
+              </>
+            )}
           </span>
           {tokensBlocked ? (
             <span className="token-usage-strip-warn"> — Yeni analiz kapalı</span>
