@@ -204,9 +204,11 @@ export async function fetchBackendDirect(action, data, options = {}) {
             : 25000
   );
   const headers = {
-    'Content-Type': 'application/json',
     ...getUserContextHeaders(),
   };
+  if (spec.method !== 'GET') {
+    headers['Content-Type'] = 'application/json';
+  }
   const fetchOptions = { method: spec.method, headers };
   if (spec.method !== 'GET' && spec.body) {
     fetchOptions.body = JSON.stringify(spec.body);
